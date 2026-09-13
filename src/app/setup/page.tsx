@@ -168,7 +168,7 @@ export default function SetupPage() {
           backend.items[0] = {
             ...backend.items[0],
             status: 'missing',
-            detail: 'Add NEXT_PUBLIC_SUPABASE_URL to .env.local',
+            detail: 'Add NEXT_PUBLIC_SUPABASE_URL to .env',
             action: { label: 'Docs', href: 'https://supabase.com/docs/guides/getting-started/quickstarts/nextjs' },
           };
         } else {
@@ -180,7 +180,7 @@ export default function SetupPage() {
           backend.items[1] = {
             ...backend.items[1],
             status: 'missing',
-            detail: 'Add NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local',
+            detail: 'Add NEXT_PUBLIC_SUPABASE_ANON_KEY to .env',
           };
         } else {
           backend.items[1] = { ...backend.items[1], status: 'ok', detail: `${supabaseKey.substring(0, 12)}...` };
@@ -228,7 +228,7 @@ export default function SetupPage() {
         if (isConfigured) {
           deploy.items[0] = { ...deploy.items[0], status: 'ok', detail: 'Environment variables configured' };
         } else {
-          deploy.items[0] = { ...deploy.items[0], status: 'missing', detail: 'Copy .env.example to .env.local and fill in values', action: { label: 'View .env.example', href: '#' } };
+          deploy.items[0] = { ...deploy.items[0], status: 'missing', detail: 'Copy .env.example to .env and fill in values', action: { label: 'View .env.example', href: '#' } };
         }
         deploy.items[1] = { ...deploy.items[1], status: 'warning', detail: 'Configure before deploying to production' };
 
@@ -311,8 +311,8 @@ export default function SetupPage() {
               <li className="flex gap-3">
                 <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[var(--color-brand-100)] dark:bg-[var(--color-brand-900)]/30 text-[var(--color-brand-600)] flex items-center justify-center text-xs font-bold">3</span>
                 <div>
-                  <p className="font-medium text-[var(--color-text)]">Configure .env.local</p>
-                  <p>Copy <code className="px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] text-xs">.env.example</code> to <code className="px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] text-xs">.env.local</code> and add your values.</p>
+                  <p className="font-medium text-[var(--color-text)]">Configure .env</p>
+                  <p>Copy <code className="px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] text-xs">.env.example</code> to <code className="px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] text-xs">.env</code> and add your values.</p>
                 </div>
               </li>
               <li className="flex gap-3">

@@ -36,10 +36,10 @@ npm install
 ### 4. Configure environment variables
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Edit `.env.local` and add your Supabase credentials:
+Edit `.env` and add your Supabase credentials:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -111,7 +111,7 @@ Kura/
 │   │   └── constants.ts       # App constants
 │   └── middleware.ts          # Auth middleware
 ├── .env.example
-├── .env.local                 # Your local config (git-ignored)
+├── .env                 # Your local config (git-ignored)
 ├── next.config.mjs
 ├── package.json
 ├── postcss.config.mjs
