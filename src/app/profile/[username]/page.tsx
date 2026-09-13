@@ -1,194 +1,134 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
 import PostList from '@/components/post/PostList';
+import type { PostData } from '@/components/post/PostCard';
 import Avatar from '@/components/ui/Avatar';
-import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import Link from 'next/link';
-import { MapPin, Calendar, Link as LinkIcon, MessageSquare, ArrowBigUp } from 'lucide-react';
-
-const MOCK_PROFILE = {
-  username: 'wanderer_np',
-  display_name: 'Wanderer',
-  bio: 'Travel enthusiast | Photography lover | Exploring Nepal one trail at a time',
-  location: 'Kathmandu, Nepal',
-  website: 'https://wanderer.com.np',
-  created_at: '2024-01-10',
-  post_count: 45,
-  comment_count: 234,
-  reputation: 1567,
-  communities: [
-    { slug: 'travel-nepal', name: 'Travel Nepal', color: '#10b981' },
-    { slug: 'kathmandu', name: 'Kathmandu', color: '#6366f1' },
-    { slug: 'nepal-food', name: 'Nepal Food', color: '#ef4444' },
-  ],
-};
-
-const MOCK_POSTS = [
-  {
-    id: '1',
-    title: 'What are the best places to visit in Pokhara during Dashain?',
-    body: 'Planning a trip to Pokhara with family during Dashain this year...',
-    author: { username: 'wanderer_np', display_name: 'Wanderer' },
-    community: { name: 'Travel Nepal', slug: 'travel-nepal', color: '#10b981' },
-    upvotes: 234,
-    downvotes: 12,
-    comment_count: 67,
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '4',
-    title: 'Best momo spots in Kathmandu — let\'s settle this once and for all',
-    body: 'Every neighborhood claims to have the best momos...',
-    author: { username: 'wanderer_np', display_name: 'Wanderer' },
-    community: { name: 'Nepal Food', slug: 'nepal-food', color: '#ef4444' },
-    upvotes: 423,
-    downvotes: 45,
-    comment_count: 231,
-    created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-  },
-];
+import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
+import { cn } from '@/lib/utils';
+import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare } from 'lucide-react';
 
 export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'communities'>('posts');
-  const profile = MOCK_PROFILE;
+  const [username, setUsername] = useState('');
+  const [profile, setProfile] = useState<any>(null);
+  const [posts, setPosts] = useState<PostData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
+
+  useEffect(() => { params.then(p => setUsername(p.username)); }, [params]);
+
+  useEffect(() => {
+    if (!username) return;
+    async function load() {
+      try {
+        const supabase = createClient();
+        const { data: prof } = await supabase.from('profiles').select('*').eq('username', username).single();
+        setProfile(prof);
+
+        if (prof) {
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)')
+            .eq('author_id', prof.id)
+            .eq('is_removed', false)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+          if (postData) {
+            setPosts(postData.map(p => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
+          }
+        }
+      } catch {
+        // not found
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [username]);
+
+  if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="max-w-3xl mx-auto px-4 py-8">
+          <EmptyState title="User not found" description="This profile doesn't exist." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-4xl px-4 py-6">
+      <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Profile header */}
-        <Card className="mb-6 animate-fade-in overflow-hidden">
-          {/* Cover */}
-          <div className="h-32 bg-gradient-to-r from-[var(--color-brand-400)] to-[var(--color-brand-600)] relative">
-            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+        <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] overflow-hidden mb-5 anim-fade-up">
+          <div className="h-24 sm:h-32 bg-gradient-to-r from-[var(--brand-400)] to-[var(--brand-600)] relative">
+            <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IndoaXRlIi8+PC9zdmc+')] [mask-image:linear-gradient(to_bottom,white_30%,transparent)]" />
           </div>
-
-          <div className="px-6 pb-6">
-            <div className="flex items-end gap-4 -mt-10">
-              <Avatar
-                name={profile.display_name || profile.username}
-                size="xl"
-                className="border-4 border-[var(--color-bg)]"
-              />
-              <div className="flex-1 min-w-0 pb-1">
-                <h1 className="text-xl font-bold text-[var(--color-text)]">
-                  {profile.display_name}
-                </h1>
-                <p className="text-sm text-[var(--color-text-muted)]">u/{profile.username}</p>
+          <div className="px-4 sm:px-6 pb-5 sm:pb-6">
+            <div className="flex items-end gap-3 sm:gap-4 -mt-8 sm:-mt-10">
+              <Avatar name={profile.display_name || profile.username} size="xl" className="border-4 border-[var(--bg)]" />
+              <div className="flex-1 min-w-0 pb-0.5">
+                <h1 className="text-lg sm:text-xl font-bold text-[var(--fg)] truncate">{profile.display_name || profile.username}</h1>
+                <p className="text-xs sm:text-sm text-[var(--fg4)]">u/{profile.username}</p>
               </div>
-              <Button variant="secondary" size="sm">
-                Edit Profile
-              </Button>
             </div>
 
-            {/* Bio */}
-            {profile.bio && (
-              <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
-                {profile.bio}
-              </p>
-            )}
+            {profile.bio && <p className="mt-3 text-sm text-[var(--fg2)]">{profile.bio}</p>}
 
-            {/* Meta */}
-            <div className="flex items-center gap-4 mt-3 text-xs text-[var(--color-text-muted)]">
-              {profile.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {profile.location}
-                </span>
-              )}
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2.5 text-[11px] sm:text-xs text-[var(--fg4)]">
+              {profile.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {profile.location}</span>}
               {profile.website && (
-                <a
-                  href={profile.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 hover:text-[var(--color-brand-600)]"
-                >
-                  <LinkIcon className="h-3.5 w-3.5" />
-                  {profile.website.replace(/https?:\/\//, '')}
+                <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[var(--brand-600)]">
+                  <LinkIcon className="h-3 w-3" /> {profile.website.replace(/https?:\/\//, '')}
                 </a>
               )}
               <span className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5" />
-                Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                <Calendar className="h-3 w-3" /> Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
               </span>
             </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[var(--color-border)]">
-              <div className="text-center">
-                <p className="text-lg font-bold text-[var(--color-text)]">{profile.post_count}</p>
-                <p className="text-xs text-[var(--color-text-muted)]">Posts</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-[var(--color-text)]">{profile.comment_count}</p>
-                <p className="text-xs text-[var(--color-text-muted)]">Comments</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-[var(--color-brand-600)]">{profile.reputation.toLocaleString()}</p>
-                <p className="text-xs text-[var(--color-text-muted)]">Karma</p>
-              </div>
+            <div className="flex items-center gap-5 mt-4 pt-3 border-t border-[var(--border)]">
+              <div className="text-center"><p className="text-base sm:text-lg font-bold text-[var(--fg)]">{profile.post_count}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
+              <div className="text-center"><p className="text-base sm:text-lg font-bold text-[var(--fg)]">{profile.comment_count}</p><p className="text-[11px] text-[var(--fg4)]">Comments</p></div>
+              <div className="text-center"><p className="text-base sm:text-lg font-bold text-[var(--brand-600)]">{(profile.reputation || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Karma</p></div>
             </div>
-          </div>
-        </Card>
-
-        {/* Communities */}
-        <div className="mb-6 animate-fade-in">
-          <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3">Communities</h2>
-          <div className="flex flex-wrap gap-2">
-            {profile.communities.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/r/${c.slug}`}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-full)] border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)] transition-colors text-sm"
-              >
-                <div
-                  className="h-5 w-5 rounded-sm flex items-center justify-center text-white text-[10px] font-bold"
-                  style={{ backgroundColor: c.color }}
-                >
-                  {c.name.charAt(0)}
-                </div>
-                r/{c.slug}
-              </Link>
-            ))}
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 border-b border-[var(--color-border)] mb-4 animate-fade-in">
+        <div className="flex items-center gap-1 border-b border-[var(--border)] mb-4 anim-fade-up" style={{ animationDelay: '100ms' }}>
           {[
             { key: 'posts' as const, label: 'Posts', icon: ArrowBigUp },
             { key: 'comments' as const, label: 'Comments', icon: MessageSquare },
-          ].map((tab) => (
+          ].map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              className={cn(
+                'flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
                 activeTab === tab.key
-                  ? 'border-[var(--color-brand-600)] text-[var(--color-brand-600)]'
-                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
-              }`}
+                  ? 'border-[var(--brand-600)] text-[var(--brand-600)]'
+                  : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]'
+              )}
             >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
+              <tab.icon className="h-4 w-4" /> {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Content */}
-        {activeTab === 'posts' && (
-          <PostList posts={MOCK_POSTS} emptyMessage="No posts yet." />
-        )}
-
-        {activeTab === 'comments' && (
-          <div className="py-16 text-center">
-            <p className="text-sm text-[var(--color-text-muted)]">Comments coming soon.</p>
-          </div>
-        )}
+        <div className="pb-20 lg:pb-8">
+          {activeTab === 'posts' && <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." />}
+          {activeTab === 'comments' && <EmptyState title="Comments coming soon" />}
+        </div>
       </div>
       <MobileNav />
     </div>

@@ -1,4 +1,4 @@
-import { forwardRef, InputHTMLAttributes } from 'react';
+import { forwardRef, type InputHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -12,10 +12,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5"
-          >
+          <label htmlFor={inputId} className="block text-sm font-medium text-[var(--fg2)] mb-1.5">
             {label}
           </label>
         )}
@@ -23,24 +20,21 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full h-10 px-3 text-sm rounded-[var(--radius-md)]',
-            'bg-[var(--color-bg)] border border-[var(--color-border)]',
-            'text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]',
-            'transition-colors duration-150',
-            'hover:border-[var(--color-border-strong)]',
-            'focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-500)] focus:border-transparent',
+            'w-full h-11 px-3.5 text-sm rounded-[var(--r-md)]',
+            'bg-[var(--bg)] border border-[var(--border)]',
+            'text-[var(--fg)] placeholder:text-[var(--fg4)]',
+            'transition-all duration-150',
+            'hover:border-[var(--border-strong)]',
+            'focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:border-transparent',
             error && 'border-red-500 focus:ring-red-500',
             className
           )}
           {...props}
         />
-        {error && (
-          <p className="mt-1 text-xs text-red-500">{error}</p>
-        )}
+        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
       </div>
     );
   }
 );
-
 Input.displayName = 'Input';
 export default Input;

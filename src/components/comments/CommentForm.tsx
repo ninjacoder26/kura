@@ -2,16 +2,15 @@
 
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
-import Avatar from '@/components/ui/Avatar';
 
 interface CommentFormProps {
   onSubmit: (body: string) => void;
   placeholder?: string;
-  autoFocus?: boolean;
 }
 
-export default function CommentForm({ onSubmit, placeholder = 'Write a comment...', autoFocus = false }: CommentFormProps) {
+export default function CommentForm({ onSubmit, placeholder = 'Write a comment...' }: CommentFormProps) {
   const [body, setBody] = useState('');
+  const [focused, setFocused] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,21 +20,18 @@ export default function CommentForm({ onSubmit, placeholder = 'Write a comment..
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden">
+    <form onSubmit={handleSubmit} className={`border rounded-[var(--r-md)] overflow-hidden transition-all ${focused ? 'border-[var(--brand-500)] ring-1 ring-[var(--brand-500)]' : 'border-[var(--border)]'}`}>
       <textarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={e => setBody(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholder={placeholder}
-        autoFocus={autoFocus}
-        className="w-full p-3 text-sm bg-[var(--color-bg)] border-none outline-none resize-none min-h-[100px] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]"
+        className="w-full p-3 text-sm bg-[var(--bg)] border-none outline-none resize-none min-h-[90px] text-[var(--fg)] placeholder:text-[var(--fg4)]"
       />
-      <div className="flex items-center justify-between px-3 py-2 bg-[var(--color-bg-secondary)] border-t border-[var(--color-border)]">
-        <p className="text-xs text-[var(--color-text-muted)]">
-          Markdown supported
-        </p>
-        <Button type="submit" size="sm" disabled={!body.trim()}>
-          Comment
-        </Button>
+      <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-alt)] border-t border-[var(--border)]">
+        <p className="text-[11px] text-[var(--fg4)] hidden sm:block">Markdown supported</p>
+        <Button type="submit" size="xs" disabled={!body.trim()}>Comment</Button>
       </div>
     </form>
   );

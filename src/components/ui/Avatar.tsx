@@ -1,5 +1,4 @@
-import { cn } from '@/lib/utils';
-import { getInitials } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 
 interface AvatarProps {
   src?: string | null;
@@ -9,9 +8,9 @@ interface AvatarProps {
   className?: string;
 }
 
-const sizeClasses = {
-  xs: 'h-6 w-6 text-[10px]',
-  sm: 'h-8 w-8 text-xs',
+const dims: Record<string, string> = {
+  xs: 'h-6 w-6 text-[9px]',
+  sm: 'h-8 w-8 text-[11px]',
   md: 'h-10 w-10 text-sm',
   lg: 'h-14 w-14 text-lg',
   xl: 'h-20 w-20 text-xl',
@@ -23,23 +22,17 @@ export default function Avatar({ src, alt, name, size = 'md', className }: Avata
       <img
         src={src}
         alt={alt || name}
-        className={cn(
-          'rounded-full object-cover ring-2 ring-[var(--color-bg)]',
-          sizeClasses[size],
-          className
-        )}
+        className={cn('rounded-full object-cover ring-2 ring-[var(--bg)] shrink-0', dims[size], className)}
       />
     );
   }
-
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-semibold',
-        'bg-gradient-to-br from-[var(--color-brand-400)] to-[var(--color-brand-600)] text-white',
-        'ring-2 ring-[var(--color-bg)]',
-        sizeClasses[size],
-        className
+        'rounded-full flex items-center justify-center font-semibold text-white shrink-0',
+        'bg-gradient-to-br from-[var(--brand-400)] to-[var(--brand-700)]',
+        'ring-2 ring-[var(--bg)]',
+        dims[size], className
       )}
       title={name}
     >

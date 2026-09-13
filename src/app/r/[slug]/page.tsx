@@ -1,219 +1,164 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
 import PostList from '@/components/post/PostList';
+import type { PostData } from '@/components/post/PostCard';
 import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
 import Avatar from '@/components/ui/Avatar';
-import { Users, Calendar, Shield, ChevronRight, Plus } from 'lucide-react';
-
-// Mock data
-const MOCK_COMMUNITY = {
-  name: 'Nepali Tech',
-  slug: 'nepali-tech',
-  description: 'Technology discussions from Nepal. Software, hardware, startups, and everything tech.',
-  long_description: 'A community for tech enthusiasts in Nepal. Discuss the latest in software development, hardware, startups, and digital innovation in Nepal and beyond.',
-  color: '#10b981',
-  member_count: 1820,
-  post_count: 345,
-  category: 'technology',
-  created_at: '2024-01-15',
-  rules: [
-    'Be respectful and constructive',
-    'No spam or self-promotion without context',
-    'Use appropriate flairs',
-    'Keep discussions relevant to tech in Nepal',
-  ],
-  moderators: [
-    { username: 'tech_admin', display_name: 'Tech Admin' },
-  ],
-};
-
-const MOCK_POSTS = [
-  {
-    id: '1',
-    title: 'What tech stack do Nepali startups prefer in 2025?',
-    body: 'I\'ve been noticing a shift towards Next.js and Go in the Kathmandu startup scene. What are you seeing?',
-    author: { username: 'startup_watcher', display_name: 'Startup Watcher' },
-    community: { name: 'Nepali Tech', slug: 'nepali-tech', color: '#10b981' },
-    upvotes: 89,
-    downvotes: 3,
-    comment_count: 34,
-    created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Free AWS certifications for Nepali students — how to apply',
-    body: 'AWS is offering free certification vouchers for students in Nepal through their Academic Partnership program. Here\'s how to apply.',
-    author: { username: 'cloud_guru', display_name: 'Cloud Guru' },
-    community: { name: 'Nepali Tech', slug: 'nepali-tech', color: '#10b981' },
-    upvotes: 234,
-    downvotes: 5,
-    comment_count: 67,
-    created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Built a Nepali date converter — would love feedback',
-    body: 'I built a web app that converts BS dates to AD and vice versa. It also handles Nepali time zones. Check it out and let me know what you think.',
-    author: { username: 'nepali_dev', display_name: 'Nepali Dev' },
-    community: { name: 'Nepali Tech', slug: 'nepali-tech', color: '#10b981' },
-    upvotes: 156,
-    downvotes: 2,
-    comment_count: 45,
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
+import { Users, Calendar, Shield, Plus, ArrowLeft } from 'lucide-react';
 
 export default function CommunityPage({ params }: { params: Promise<{ slug: string }> }) {
+  const [slug, setSlug] = useState('');
+  const [community, setCommunity] = useState<any>(null);
+  const [posts, setPosts] = useState<PostData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isMember, setIsMember] = useState(false);
-  const community = MOCK_COMMUNITY;
+
+  useEffect(() => {
+    params.then(p => setSlug(p.slug));
+  }, [params]);
+
+  useEffect(() => {
+    if (!slug) return;
+    async function load() {
+      try {
+        const supabase = createClient();
+        const { data: comm } = await supabase.from('communities').select('*').eq('slug', slug).single();
+        setCommunity(comm);
+
+        if (comm) {
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)')
+            .eq('community_id', comm.id)
+            .eq('is_removed', false)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+          if (postData) {
+            setPosts(postData.map(p => ({
+              ...p,
+              author: p.author || { username: 'unknown' },
+              community: p.community || undefined,
+            })));
+          }
+        }
+      } catch {
+        // not found or supabase not configured
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [slug]);
+
+  if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
+
+  if (!community) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <EmptyState title="Community not found" description="This community doesn't exist yet." action={<Link href="/communities"><Button size="sm">Browse communities</Button></Link>} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
       <Header />
 
-      {/* Community banner */}
-      <div className="h-32 sm:h-48" style={{ backgroundColor: community.color }}>
-        <div className="mx-auto max-w-4xl h-full px-4 flex items-end pb-4">
-          {/* Banner content if needed */}
-        </div>
-      </div>
+      {/* Banner */}
+      <div className="h-24 sm:h-32 lg:h-40" style={{ backgroundColor: community.color }} />
 
-      <div className="mx-auto max-w-4xl px-4">
-        {/* Community header */}
-        <div className="relative -mt-8 mb-6 animate-fade-in">
-          <div className="flex items-end gap-4">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-6">
+        {/* Header */}
+        <div className="relative -mt-7 sm:-mt-8 mb-5 sm:mb-6 anim-fade-up">
+          <div className="flex items-end gap-3 sm:gap-4">
             <div
-              className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl flex items-center justify-center text-white font-bold text-3xl border-4 border-[var(--color-bg)] shadow-lg shrink-0"
+              className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 rounded-2xl flex items-center justify-center text-white font-bold text-2xl sm:text-3xl border-4 border-[var(--bg)] shadow-lg shrink-0"
               style={{ backgroundColor: community.color }}
             >
-              {community.name.charAt(0)}
-            </div>
-            <div className="min-w-0 flex-1 pb-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--color-text)]">
-                {community.name}
-              </h1>
-              <p className="text-sm text-[var(--color-text-muted)]">r/{community.slug}</p>
-            </div>
-            <div className="flex items-center gap-2 pb-1">
-              {isMember ? (
-                <Button variant="secondary" onClick={() => setIsMember(false)}>
-                  Joined
-                </Button>
+              {community.icon_url ? (
+                <img src={community.icon_url} alt={community.name} className="h-full w-full rounded-2xl object-cover" />
               ) : (
-                <Button onClick={() => setIsMember(true)}>
-                  Join Community
-                </Button>
+                community.name.charAt(0)
+              )}
+            </div>
+            <div className="min-w-0 flex-1 pb-0.5">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--fg)] truncate">{community.name}</h1>
+              <p className="text-xs sm:text-sm text-[var(--fg4)]">r/{community.slug}</p>
+            </div>
+            <div className="flex items-center gap-2 pb-0.5 shrink-0">
+              {isMember ? (
+                <Button variant="secondary" size="sm" onClick={() => setIsMember(false)}>Joined</Button>
+              ) : (
+                <Button size="sm" onClick={() => setIsMember(true)}>Join</Button>
               )}
               <Link href={`/submit?community=${community.slug}`}>
-                <Button variant="ghost" size="sm">
-                  <Plus className="h-4 w-4" />
-                </Button>
+                <Button variant="ghost" size="sm" className="p-2"><Plus className="h-4 w-4" /></Button>
               </Link>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-4 mt-4 text-sm text-[var(--color-text-secondary)]">
-            <span className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              {community.member_count.toLocaleString()} members
-            </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              Created {new Date(community.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </span>
+          <div className="flex items-center flex-wrap gap-3 sm:gap-4 mt-3 text-xs sm:text-sm text-[var(--fg3)]">
+            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {community.member_count?.toLocaleString()} members</span>
+            <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Created {new Date(community.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
           </div>
 
-          {/* Description */}
-          <p className="mt-3 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-            {community.description}
-          </p>
-
-          {/* Category */}
-          <div className="mt-3">
-            <Badge variant="brand">{community.category}</Badge>
-          </div>
+          {community.description && (
+            <p className="mt-2.5 text-sm text-[var(--fg2)] leading-relaxed">{community.description}</p>
+          )}
         </div>
 
-        {/* Content */}
-        <div className="flex gap-6 pb-16">
+        <div className="flex gap-5 lg:gap-6 pb-20 lg:pb-8">
           <main className="flex-1 min-w-0">
-            {/* Create post CTA */}
-            <Link href={`/submit?community=${community.slug}`} className="block mb-4">
-              <div className="flex items-center gap-3 p-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)] transition-colors cursor-pointer">
-                <Avatar name="You" size="sm" />
-                <span className="text-sm text-[var(--color-text-muted)]">Create a post in {community.name}...</span>
+            <Link href={`/submit?community=${community.slug}`} className="block mb-3">
+              <div className="flex items-center gap-3 p-3 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-colors">
+                <div className="h-8 w-8 rounded-full bg-[var(--bg-raised)] flex items-center justify-center text-[var(--fg4)] text-sm">?</div>
+                <span className="text-sm text-[var(--fg4)]">Create a post in {community.name}...</span>
               </div>
             </Link>
-
-            <PostList posts={MOCK_POSTS} />
+            <PostList posts={posts} showCommunity={false} />
           </main>
 
-          {/* Sidebar info */}
-          <aside className="hidden sm:block w-72 shrink-0">
+          {/* Sidebar — hidden on mobile */}
+          <aside className="hidden lg:block w-64 xl:w-72 shrink-0">
             <div className="sticky top-[72px] space-y-4 pb-8">
-              {/* About */}
-              <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-                <h3 className="font-semibold text-sm text-[var(--color-text)] mb-2">About Community</h3>
-                <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                  {community.description}
-                </p>
-                <div className="mt-4 pt-4 border-t border-[var(--color-border)] space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[var(--color-text-muted)]">Members</span>
-                    <span className="font-medium text-[var(--color-text)]">{community.member_count.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[var(--color-text-muted)]">Posts</span>
-                    <span className="font-medium text-[var(--color-text)]">{community.post_count.toLocaleString()}</span>
-                  </div>
+              <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
+                <h3 className="font-semibold text-sm text-[var(--fg)] mb-2">About</h3>
+                <p className="text-sm text-[var(--fg2)] leading-relaxed">{community.description}</p>
+                <div className="mt-3 pt-3 border-t border-[var(--border)] space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-[var(--fg4)]">Members</span><span className="font-medium text-[var(--fg)]">{community.member_count?.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[var(--fg4)]">Posts</span><span className="font-medium text-[var(--fg)]">{community.post_count?.toLocaleString()}</span></div>
                 </div>
               </div>
 
-              {/* Rules */}
               {community.rules && (
-                <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-                  <h3 className="font-semibold text-sm text-[var(--color-text)] mb-3 flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    Community Rules
+                <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
+                  <h3 className="font-semibold text-sm text-[var(--fg)] mb-2 flex items-center gap-2">
+                    <Shield className="h-4 w-4" /> Rules
                   </h3>
                   <ol className="space-y-2">
-                    {community.rules.map((rule, i) => (
-                      <li key={i} className="flex gap-2 text-sm text-[var(--color-text-secondary)]">
-                        <span className="flex-shrink-0 font-medium text-[var(--color-text-muted)]">{i + 1}.</span>
-                        {rule}
+                    {community.rules.split('\n').filter(Boolean).map((rule: string, i: number) => (
+                      <li key={i} className="flex gap-2 text-sm text-[var(--fg2)]">
+                        <span className="font-medium text-[var(--fg4)] shrink-0">{i + 1}.</span>
+                        {rule.trim()}
                       </li>
                     ))}
                   </ol>
                 </div>
               )}
-
-              {/* Moderators */}
-              <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-                <h3 className="font-semibold text-sm text-[var(--color-text)] mb-3">Moderators</h3>
-                <div className="space-y-2">
-                  {community.moderators.map((mod) => (
-                    <Link
-                      key={mod.username}
-                      href={`/profile/${mod.username}`}
-                      className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-brand-600)]"
-                    >
-                      <Avatar name={mod.display_name || mod.username} size="xs" />
-                      u/{mod.username}
-                    </Link>
-                  ))}
-                </div>
-              </div>
             </div>
           </aside>
         </div>
       </div>
-
       <MobileNav />
     </div>
   );

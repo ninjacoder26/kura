@@ -1,28 +1,24 @@
+import { type HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
-  className?: string;
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  children?: React.ReactNode;
   hover?: boolean;
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
+const pads = { none: '', sm: 'p-3', md: 'p-4', lg: 'p-6' };
+
 export default function Card({ children, className, hover = false, padding = 'md', ...props }: CardProps) {
   return (
     <div
-      {...props}
       className={cn(
-        'rounded-[var(--radius-lg)] border border-[var(--color-border)]',
-        'bg-[var(--color-surface)]',
-        hover && 'transition-all duration-200 hover:shadow-[var(--shadow-md)] hover:border-[var(--color-border-strong)] cursor-pointer',
-        {
-          'p-0': padding === 'none',
-          'p-3': padding === 'sm',
-          'p-4': padding === 'md',
-          'p-6': padding === 'lg',
-        },
+        'rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)]',
+        hover && 'transition-all duration-200 hover:shadow-[var(--shadow-md)] hover:border-[var(--border-strong)] cursor-pointer',
+        pads[padding],
         className
       )}
+      {...props}
     >
       {children}
     </div>

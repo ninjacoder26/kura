@@ -1,13 +1,12 @@
 export const SITE_NAME = 'Kura';
 export const SITE_DESCRIPTION = 'Kura — Nepal, talking.';
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const COMMUNITY_CATEGORIES = [
   { value: 'general', label: 'General' },
-  { value: 'cities', label: 'Cities & Regions' },
+  { value: 'cities', label: 'Cities' },
   { value: 'universities', label: 'Universities' },
   { value: 'schools', label: 'Schools' },
-  { value: 'technology', label: 'Technology' },
+  { value: 'technology', label: 'Tech' },
   { value: 'gaming', label: 'Gaming' },
   { value: 'culture', label: 'Culture' },
   { value: 'sports', label: 'Sports' },
@@ -22,10 +21,10 @@ export const COMMUNITY_CATEGORIES = [
   { value: 'other', label: 'Other' },
 ] as const;
 
-export const REPORT_CATEGORIES = [
+export const REPORT_REASONS = [
   { value: 'spam', label: 'Spam' },
   { value: 'harassment', label: 'Harassment' },
-  { value: 'hate_speech', label: 'Hate Speech' },
+  { value: 'hate_speech', label: 'Hate speech' },
   { value: 'violence', label: 'Violence' },
   { value: 'misinformation', label: 'Misinformation' },
   { value: 'copyright', label: 'Copyright' },

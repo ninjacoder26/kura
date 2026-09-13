@@ -1,206 +1,208 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
-import Card from '@/components/ui/Card';
-import { FileText, Link2, Image as ImageIcon, ChevronDown, ArrowLeft, X } from 'lucide-react';
+import { FileText, Link2, Image as ImageIcon, ChevronDown, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
-const POST_TYPES = [
+const TYPES = [
   { value: 'text', label: 'Text', icon: FileText },
   { value: 'link', label: 'Link', icon: Link2 },
   { value: 'image', label: 'Image', icon: ImageIcon },
 ];
 
-const MOCK_COMMUNITIES = [
-  { slug: 'kathmandu', name: 'Kathmandu' },
-  { slug: 'nepali-tech', name: 'Nepali Tech' },
-  { slug: 'tu-students', name: 'TU Students' },
-  { slug: 'nepal-food', name: 'Nepal Food' },
-  { slug: 'gaming-nepal', name: 'Gaming Nepal' },
-  { slug: 'travel-nepal', name: 'Travel Nepal' },
-];
-
-export default function SubmitPage() {
+function SubmitForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedCommunity = searchParams.get('community') || '';
+
   const [type, setType] = useState('text');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [url, setUrl] = useState('');
-  const [communitySlug, setCommunitySlug] = useState('');
-  const [showCommunityDropdown, setShowCommunityDropdown] = useState(false);
+  const [communityId, setCommunityId] = useState('');
   const [communitySearch, setCommunitySearch] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [communities, setCommunities] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const filteredCommunities = MOCK_COMMUNITIES.filter((c) =>
-    c.name.toLowerCase().includes(communitySearch.toLowerCase())
-  );
+  useEffect(() => {
+    async function load() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.from('communities').select('id, slug, name').order('name');
+        if (data) {
+          setCommunities(data);
+          if (preselectedCommunity) {
+            const match = data.find(c => c.slug === preselectedCommunity);
+            if (match) setCommunityId(match.id);
+          }
+        }
+      } catch {
+        // Supabase not configured
+      }
+    }
+    load();
+  }, [preselectedCommunity]);
 
-  function handleSubmit(e: React.FormEvent) {
+  const filtered = communities.filter(c => c.name.toLowerCase().includes(communitySearch.toLowerCase()) || c.slug.includes(communitySearch.toLowerCase()));
+  const selectedCommunity = communities.find(c => c.id === communityId);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!title.trim()) return;
     setSubmitting(true);
-    // Simulate submission
-    setTimeout(() => {
-      setSubmitting(false);
-      if (communitySlug) {
-        router.push(`/r/${communitySlug}`);
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push('/login'); return; }
+
+      const { error } = await supabase.from('posts').insert({
+        title: title.trim(),
+        body: body.trim(),
+        type,
+        url: type === 'link' ? url : null,
+        author_id: user.id,
+        community_id: communityId || null,
+      });
+
+      if (error) throw error;
+
+      if (selectedCommunity) {
+        router.push(`/r/${selectedCommunity.slug}`);
       } else {
         router.push('/');
       }
-    }, 1000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to create post');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-2xl px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6 animate-fade-in">
-          <Link href="/" className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="flex items-center gap-3 mb-5 anim-fade-up">
+          <Link href="/" className="p-1 text-[var(--fg4)] hover:text-[var(--fg)] transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-xl font-bold text-[var(--color-text)]">Create a post</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-[var(--fg)]">Create a post</h1>
         </div>
 
         {/* Community selector */}
-        <div className="mb-4 animate-fade-in">
+        <div className="mb-4 anim-fade-up" style={{ animationDelay: '50ms' }}>
           <div className="relative">
             <button
-              onClick={() => setShowCommunityDropdown(!showCommunityDropdown)}
-              className="w-full flex items-center justify-between h-10 px-3 text-sm rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)] transition-colors"
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="w-full flex items-center justify-between h-11 px-3.5 text-sm rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-colors text-left"
             >
-              {communitySlug ? (
-                <span className="text-[var(--color-text)]">
-                  r/{communitySlug}
-                </span>
+              {selectedCommunity ? (
+                <span className="text-[var(--fg)]">{selectedCommunity.name}</span>
               ) : (
-                <span className="text-[var(--color-text-muted)]">Choose a community</span>
+                <span className="text-[var(--fg4)]">Choose a community (optional)</span>
               )}
-              <ChevronDown className="h-4 w-4 text-[var(--color-text-muted)]" />
+              <ChevronDown className="h-4 w-4 text-[var(--fg4)] shrink-0" />
             </button>
-
-            {showCommunityDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-lg)] z-10 animate-slide-down">
-                <div className="p-2 border-b border-[var(--color-border)]">
+            {showDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-1 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] z-20 anim-slide-down">
+                <div className="p-2 border-b border-[var(--border)]">
                   <input
-                    type="text"
-                    placeholder="Search communities..."
-                    value={communitySearch}
-                    onChange={(e) => setCommunitySearch(e.target.value)}
-                    className="w-full h-8 px-2 text-sm bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] outline-none focus:ring-1 focus:ring-[var(--color-brand-500)]"
+                    type="text" placeholder="Search..." value={communitySearch}
+                    onChange={e => setCommunitySearch(e.target.value)}
+                    className="w-full h-9 px-2.5 text-sm bg-[var(--bg)] border border-[var(--border)] rounded-[var(--r-sm)] outline-none focus:ring-1 focus:ring-[var(--brand-500)]"
                     autoFocus
                   />
                 </div>
                 <div className="max-h-[200px] overflow-y-auto p-1">
-                  {filteredCommunities.map((c) => (
+                  {filtered.map(c => (
                     <button
-                      key={c.slug}
-                      onClick={() => {
-                        setCommunitySlug(c.slug);
-                        setShowCommunityDropdown(false);
-                        setCommunitySearch('');
-                      }}
+                      key={c.id}
+                      onClick={() => { setCommunityId(c.id); setShowDropdown(false); setCommunitySearch(''); }}
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-[var(--radius-sm)] text-left transition-colors',
-                        communitySlug === c.slug
-                          ? 'bg-[var(--color-brand-50)] text-[var(--color-brand-600)]'
-                          : 'text-[var(--color-text)] hover:bg-[var(--color-bg-tertiary)]'
+                        'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-[var(--r-sm)] text-left transition-colors',
+                        communityId === c.id ? 'bg-[var(--brand-50)] text-[var(--brand-600)]' : 'text-[var(--fg)] hover:bg-[var(--bg-raised)]'
                       )}
                     >
-                      <div className="h-6 w-6 rounded bg-[var(--color-brand-500)] flex items-center justify-center text-white text-[10px] font-bold">
-                        {c.name.charAt(0)}
-                      </div>
-                      r/{c.slug}
+                      <div className="h-6 w-6 rounded bg-[var(--brand-500)] flex items-center justify-center text-white text-[10px] font-bold">{c.name.charAt(0)}</div>
+                      {c.name}
                     </button>
                   ))}
+                  {filtered.length === 0 && <p className="py-3 text-center text-sm text-[var(--fg4)]">No communities found</p>}
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Post type tabs */}
-        <div className="flex border border-[var(--color-border)] rounded-t-[var(--radius-md)] bg-[var(--color-bg-secondary)] animate-fade-in">
-          {POST_TYPES.map((postType) => {
-            const Icon = postType.icon;
+        {/* Type tabs */}
+        <div className="flex border border-[var(--border)] rounded-t-[var(--r-md)] bg-[var(--bg-alt)] anim-fade-up" style={{ animationDelay: '100ms' }}>
+          {TYPES.map(t => {
+            const Icon = t.icon;
             return (
               <button
-                key={postType.value}
-                onClick={() => setType(postType.value)}
+                key={t.value}
+                onClick={() => setType(t.value)}
                 className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors',
-                  type === postType.value
-                    ? 'border-[var(--color-brand-600)] text-[var(--color-brand-600)] bg-[var(--color-surface)]'
-                    : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
+                  'flex-1 flex items-center justify-center gap-1.5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors',
+                  type === t.value
+                    ? 'border-[var(--brand-600)] text-[var(--brand-600)] bg-[var(--surface)]'
+                    : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]'
                 )}
               >
                 <Icon className="h-4 w-4" />
-                {postType.label}
+                {t.label}
               </button>
             );
           })}
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="animate-fade-in">
-          <div className="border border-t-0 border-[var(--color-border)] rounded-b-[var(--radius-md)] bg-[var(--color-surface)] p-4 space-y-4">
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Title"
-              maxLength={300}
-              required
-            />
-
+        <form onSubmit={handleSubmit} className="anim-fade-up" style={{ animationDelay: '150ms' }}>
+          <div className="border border-t-0 border-[var(--border)] rounded-b-[var(--r-md)] bg-[var(--surface)] p-3 sm:p-4 space-y-3 sm:space-y-4">
+            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title" maxLength={300} required />
             {type === 'text' && (
-              <Textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="Text (optional). Markdown is supported."
-                className="min-h-[200px]"
-              />
+              <Textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Text (optional). Markdown is supported." className="min-h-[150px] sm:min-h-[200px]" />
             )}
-
             {type === 'link' && (
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="URL"
-                type="url"
-              />
+              <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..." type="url" />
             )}
-
             {type === 'image' && (
-              <div className="border-2 border-dashed border-[var(--color-border)] rounded-[var(--radius-md)] p-8 text-center hover:border-[var(--color-brand-500)] transition-colors cursor-pointer">
-                <ImageIcon className="h-8 w-8 mx-auto text-[var(--color-text-muted)] mb-2" />
-                <p className="text-sm text-[var(--color-text-muted)]">
-                  Drag and drop an image, or click to browse
-                </p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                  PNG, JPG, GIF up to 10MB
-                </p>
+              <div className="border-2 border-dashed border-[var(--border)] rounded-[var(--r-md)] p-6 sm:p-8 text-center hover:border-[var(--brand-500)] transition-colors cursor-pointer">
+                <ImageIcon className="h-8 w-8 mx-auto text-[var(--fg4)] mb-2" />
+                <p className="text-sm text-[var(--fg4)]">Drag and drop or click to browse</p>
+                <p className="text-xs text-[var(--fg4)] mt-1">PNG, JPG, GIF up to 10MB</p>
               </div>
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 mt-4">
-            <Link href="/">
-              <Button variant="ghost" type="button">Cancel</Button>
-            </Link>
-            <Button type="submit" disabled={!title.trim() || submitting}>
-              {submitting ? 'Posting...' : 'Post'}
+          <div className="flex items-center justify-end gap-2 sm:gap-3 mt-4">
+            <Link href="/"><Button variant="ghost" type="button" size="sm">Cancel</Button></Link>
+            <Button type="submit" size="sm" disabled={!title.trim() || submitting} loading={submitting}>
+              Post
             </Button>
           </div>
         </form>
       </div>
       <MobileNav />
     </div>
+  );
+}
+
+export default function SubmitPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen"><Header /></div>}>
+      <SubmitForm />
+    </Suspense>
   );
 }
