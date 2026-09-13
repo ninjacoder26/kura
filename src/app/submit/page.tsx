@@ -12,6 +12,8 @@ import { FileText, Link2, Image as ImageIcon, ChevronDown, ArrowLeft } from 'luc
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { useToast } from '@/components/providers/ToastProvider';
 
 const TYPES = [
   { value: 'text', label: 'Text', icon: FileText },
@@ -22,6 +24,8 @@ const TYPES = [
 function SubmitForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   const preselectedCommunity = searchParams.get('community') || '';
 
   const [type, setType] = useState('text');
@@ -35,6 +39,12 @@ function SubmitForm() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/login?redirect=/submit');
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
     async function load() {
       try {
         const supabase = createClient();
@@ -46,26 +56,24 @@ function SubmitForm() {
             if (match) setCommunityId(match.id);
           }
         }
-      } catch {
-        // Supabase not configured
-      }
+      } catch { /* not configured */ }
     }
     load();
   }, [preselectedCommunity]);
 
-  const filtered = communities.filter(c => c.name.toLowerCase().includes(communitySearch.toLowerCase()) || c.slug.includes(communitySearch.toLowerCase()));
+  const filtered = communities.filter(c =>
+    c.name.toLowerCase().includes(communitySearch.toLowerCase()) ||
+    c.slug.includes(communitySearch.toLowerCase())
+  );
   const selectedCommunity = communities.find(c => c.id === communityId);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || !user) return;
     setSubmitting(true);
 
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/login'); return; }
-
       const { error } = await supabase.from('posts').insert({
         title: title.trim(),
         body: body.trim(),
@@ -77,17 +85,24 @@ function SubmitForm() {
 
       if (error) throw error;
 
+      toast('success', 'Post created!');
       if (selectedCommunity) {
         router.push(`/r/${selectedCommunity.slug}`);
       } else {
         router.push('/');
       }
     } catch (err: any) {
-      alert(err.message || 'Failed to create post');
+      toast('error', err.message || 'Failed to create post');
     } finally {
       setSubmitting(false);
     }
   }
+
+  if (authLoading) {
+    return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-600)] border-t-transparent" /></div></div>;
+  }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen">
@@ -188,9 +203,7 @@ function SubmitForm() {
 
           <div className="flex items-center justify-end gap-2 sm:gap-3 mt-4">
             <Link href="/"><Button variant="ghost" type="button" size="sm">Cancel</Button></Link>
-            <Button type="submit" size="sm" disabled={!title.trim() || submitting} loading={submitting}>
-              Post
-            </Button>
+            <Button type="submit" size="sm" disabled={!title.trim() || submitting} loading={submitting}>Post</Button>
           </div>
         </form>
       </div>

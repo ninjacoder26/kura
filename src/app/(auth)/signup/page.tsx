@@ -2,11 +2,15 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/components/providers/ToastProvider';
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -17,12 +21,26 @@ export default function SignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
+
     if (username.length < 3) { setError('Username must be at least 3 characters'); setLoading(false); return; }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) { setError('Letters, numbers, and underscores only'); setLoading(false); return; }
+    if (password.length < 6) { setError('Password must be at least 6 characters'); setLoading(false); return; }
+
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signUp({ email, password, options: { data: { username, full_name: username } } });
-    if (authError) { setError(authError.message); setLoading(false); return; }
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username, full_name: username } },
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+      return;
+    }
+
     setSuccess(true); setLoading(false);
+    toast('success', 'Account created! Check your email to confirm.');
   }
 
   if (success) {
