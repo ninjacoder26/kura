@@ -13,8 +13,8 @@ export default function Card({ children, className, hover = false, padding = 'md
   return (
     <div
       className={cn(
-        'rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)]',
-        hover && 'transition-all duration-200 hover:shadow-[var(--shadow-md)] hover:border-[var(--border-strong)] cursor-pointer',
+        'post-card',
+        hover && 'hover:border-[var(--border-strong)] cursor-pointer',
         pads[padding],
         className
       )}

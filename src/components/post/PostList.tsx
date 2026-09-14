@@ -1,7 +1,6 @@
 import PostCard, { type PostData } from './PostCard';
 import { EmptyState } from '@/components/ui/Feedback';
 import { FileText } from 'lucide-react';
-import Button from '@/components/ui/Button';
 import Link from 'next/link';
 
 interface PostListProps {
@@ -14,14 +13,14 @@ interface PostListProps {
 export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDescription = 'Be the first to share something.', showCommunity = true }: PostListProps) {
   if (posts.length === 0) {
     return (
-      <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)]">
+      <div className="py-12">
         <EmptyState
           icon={<FileText className="h-7 w-7" />}
           title={emptyTitle}
           description={emptyDescription}
           action={
-            <Link href="/submit">
-              <Button size="sm">Create a post</Button>
+            <Link href="/submit" className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]">
+              Create a post
             </Link>
           }
         />
@@ -30,7 +29,7 @@ export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDesc
   }
 
   return (
-    <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] overflow-hidden divide-y divide-[var(--border)]">
+    <div className="space-2">
       {posts.map(post => (
         <PostCard key={post.id} post={post} showCommunity={showCommunity} />
       ))}

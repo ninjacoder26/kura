@@ -23,8 +23,8 @@ export default function MobileNav() {
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-xl safe-bottom">
-      <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-2">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-[var(--border)] bg-[var(--surface)] safe-bottom">
+      <div className="flex items-center justify-around h-12 max-w-lg mx-auto px-1">
         {navItems.map(item => {
           const Icon = item.icon;
           const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
@@ -33,15 +33,15 @@ export default function MobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 min-w-[48px] py-1 rounded-[var(--r-md)] transition-colors',
+                'flex flex-col items-center justify-center gap-0.5 min-w-[48px] py-0.5 transition-colors',
                 item.accent
                   ? 'text-[var(--brand-600)]'
                   : active ? 'text-[var(--brand-600)]' : 'text-[var(--fg4)]'
               )}
             >
               {item.accent ? (
-                <div className="h-10 w-10 -mt-5 rounded-full bg-[var(--brand-600)] flex items-center justify-center shadow-lg shadow-[var(--brand-600)]/30">
-                  <Icon className="h-5 w-5 text-white" />
+                <div className="h-8 w-8 -mt-3 rounded-full bg-[var(--brand-600)] flex items-center justify-center shadow">
+                  <Icon className="h-4 w-4 text-white" />
                 </div>
               ) : (
                 <Icon className="h-5 w-5" />

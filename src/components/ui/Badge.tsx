@@ -19,7 +19,7 @@ const sizes = { sm: 'px-2 py-0.5 text-[10px]', md: 'px-2.5 py-1 text-xs' };
 
 export default function Badge({ children, variant = 'default', size = 'sm', className }: BadgeProps) {
   return (
-    <span className={cn('inline-flex items-center font-medium rounded-[var(--r-full)]', sizes[size], variants[variant], className)}>
+    <span className={cn('inline-flex items-center font-bold rounded-full uppercase tracking-wide', sizes[size], variants[variant], className)}>
       {children}
     </span>
   );

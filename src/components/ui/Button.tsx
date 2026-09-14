@@ -11,17 +11,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] active:bg-[var(--brand-800)] shadow-sm',
-  secondary: 'bg-[var(--bg-raised)] text-[var(--fg)] border border-[var(--border)] hover:bg-[var(--border)]',
-  ghost: 'text-[var(--fg2)] hover:bg-[var(--bg-raised)] hover:text-[var(--fg)]',
-  danger: 'bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-sm',
+  primary: 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] active:bg-[var(--brand-800)]',
+  secondary: 'bg-transparent text-[var(--fg2)] border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)]',
+  ghost: 'text-[var(--fg3)] hover:bg-[var(--surface-hover)] hover:text-[var(--fg)]',
+  danger: 'bg-red-500 text-white hover:bg-red-600 active:bg-red-700',
 };
 
 const sizes: Record<Size, string> = {
-  xs: 'h-7 px-2 text-xs gap-1 rounded-[var(--r-sm)]',
-  sm: 'h-8 px-3 text-xs gap-1.5 rounded-[var(--r-sm)]',
-  md: 'h-10 px-4 text-sm gap-2 rounded-[var(--r-md)]',
-  lg: 'h-12 px-6 text-base gap-2 rounded-[var(--r-md)]',
+  xs: 'h-6 px-2 text-[11px] gap-1 rounded-full',
+  sm: 'h-7 px-3 text-xs gap-1.5 rounded-full',
+  md: 'h-9 px-4 text-sm gap-2 rounded-full',
+  lg: 'h-10 px-6 text-sm gap-2 rounded-full',
 };
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -30,7 +30,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center font-medium transition-all duration-150',
+        'inline-flex items-center justify-center font-bold transition-all',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-500)] focus-visible:ring-offset-2',
         'disabled:opacity-50 disabled:pointer-events-none',
         'active:scale-[0.98]',

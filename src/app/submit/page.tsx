@@ -16,7 +16,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 
 const TYPES = [
-  { value: 'text', label: 'Text', icon: FileText },
+  { value: 'text', label: 'Post', icon: FileText },
   { value: 'link', label: 'Link', icon: Link2 },
   { value: 'image', label: 'Image', icon: ImageIcon },
 ];
@@ -45,7 +45,6 @@ function SubmitForm() {
     }
   }, [user, authLoading, router]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -113,7 +112,7 @@ function SubmitForm() {
   }
 
   if (authLoading) {
-    return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-600)] border-t-transparent" /></div></div>;
+    return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><LoadingSpinner /></div></div>;
   }
 
   if (!user) return null;
@@ -121,35 +120,32 @@ function SubmitForm() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <div className="flex items-center gap-3 mb-5 anim-fade-up">
-          <Link href="/" className="p-1 text-[var(--fg4)] hover:text-[var(--fg)] transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <h1 className="text-lg sm:text-xl font-bold text-[var(--fg)]">Create a post</h1>
+      <div className="max-w-[740px] mx-auto px-4 py-4">
+        <div className="flex items-center gap-3 mb-4 anim-fade-up">
+          <h1 className="text-lg font-medium text-[var(--fg)]">Create a post</h1>
         </div>
 
         {/* Community selector */}
-        <div className="mb-4 anim-fade-up" style={{ animationDelay: '50ms' }} ref={dropdownRef}>
+        <div className="mb-3 anim-fade-up" ref={dropdownRef}>
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="w-full flex items-center justify-between h-11 px-3.5 text-sm rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-colors text-left"
+              className="flex items-center justify-between w-64 h-9 px-3 text-sm rounded border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-colors text-left"
             >
               {selectedCommunity ? (
-                <span className="text-[var(--fg)]">{selectedCommunity.name}</span>
+                <span className="text-[var(--fg)] font-medium">{selectedCommunity.name}</span>
               ) : (
-                <span className="text-[var(--fg4)]">Choose a community (optional)</span>
+                <span className="text-[var(--fg4)]">Choose a community</span>
               )}
               <ChevronDown className={cn('h-4 w-4 text-[var(--fg4)] shrink-0 transition-transform', showDropdown && 'rotate-180')} />
             </button>
             {showDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-1 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] z-20 anim-slide-down">
+              <div className="absolute top-full left-0 w-72 mt-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] z-20 anim-slide-down">
                 <div className="p-2 border-b border-[var(--border)]">
                   <input
-                    type="text" placeholder="Search..." value={communitySearch}
+                    type="text" placeholder="Search communities" value={communitySearch}
                     onChange={e => setCommunitySearch(e.target.value)}
-                    className="w-full h-9 px-2.5 text-sm bg-[var(--bg)] border border-[var(--border)] rounded-[var(--r-sm)] outline-none focus:ring-1 focus:ring-[var(--brand-500)]"
+                    className="w-full h-8 px-2.5 text-sm bg-[var(--bg)] border border-[var(--border)] rounded outline-none focus:border-[var(--brand-600)]"
                     autoFocus
                   />
                 </div>
@@ -159,15 +155,15 @@ function SubmitForm() {
                       key={c.id}
                       onClick={() => { setCommunityId(c.id); setShowDropdown(false); setCommunitySearch(''); }}
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-[var(--r-sm)] text-left transition-colors',
-                        communityId === c.id ? 'bg-[var(--brand-50)] text-[var(--brand-600)]' : 'text-[var(--fg)] hover:bg-[var(--bg-raised)]'
+                        'w-full flex items-center gap-2 px-3 py-1.5 text-sm rounded text-left transition-colors',
+                        communityId === c.id ? 'bg-[var(--surface-hover)] text-[var(--brand-600)]' : 'text-[var(--fg)] hover:bg-[var(--surface-hover)]'
                       )}
                     >
-                      <div className="h-6 w-6 rounded bg-[var(--brand-500)] flex items-center justify-center text-white text-[10px] font-bold">{c.name.charAt(0)}</div>
-                      {c.name}
+                      <div className="h-6 w-6 rounded-full bg-[var(--brand-500)] flex items-center justify-center text-white text-[10px] font-bold shrink-0">{c.name.charAt(0)}</div>
+                      <span className="truncate">{c.name}</span>
                     </button>
                   ))}
-                  {filtered.length === 0 && <p className="py-3 text-center text-sm text-[var(--fg4)]">No communities found</p>}
+                  {filtered.length === 0 && <p className="py-3 text-center text-xs text-[var(--fg4)]">No communities found</p>}
                 </div>
               </div>
             )}
@@ -175,53 +171,66 @@ function SubmitForm() {
         </div>
 
         {/* Type tabs */}
-        <div className="flex border border-[var(--border)] rounded-t-[var(--r-md)] bg-[var(--bg-alt)] anim-fade-up" style={{ animationDelay: '100ms' }}>
-          {TYPES.map(t => {
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.value}
-                onClick={() => setType(t.value)}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-1.5 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors',
-                  type === t.value
-                    ? 'border-[var(--brand-600)] text-[var(--brand-600)] bg-[var(--surface)]'
-                    : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]'
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
+        <div className="border border-[var(--border)] rounded-t anim-fade-up">
+          <div className="flex border-b border-[var(--border)]">
+            {TYPES.map(t => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.value}
+                  onClick={() => setType(t.value)}
+                  className={cn(
+                    'flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-bold border-b-2 transition-colors',
+                    type === t.value
+                      ? 'border-[var(--brand-600)] text-[var(--brand-600)] bg-[var(--surface)]'
+                      : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]'
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="anim-fade-up" style={{ animationDelay: '150ms' }}>
-          <div className="border border-t-0 border-[var(--border)] rounded-b-[var(--r-md)] bg-[var(--surface)] p-3 sm:p-4 space-y-3 sm:space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="p-3 space-y-3 bg-[var(--surface)]">
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title" maxLength={300} required />
             {type === 'text' && (
-              <Textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Text (optional). Markdown is supported." className="min-h-[150px] sm:min-h-[200px]" />
+              <Textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Text (optional)" className="min-h-[150px]" />
             )}
             {type === 'link' && (
-              <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..." type="url" />
+              <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="Url" type="url" />
             )}
             {type === 'image' && (
-              <div className="border-2 border-dashed border-[var(--border)] rounded-[var(--r-md)] p-6 sm:p-8 text-center hover:border-[var(--brand-500)] transition-colors cursor-pointer">
+              <div className="border-2 border-dashed border-[var(--border)] rounded p-8 text-center hover:border-[var(--brand-500)] transition-colors cursor-pointer">
                 <ImageIcon className="h-8 w-8 mx-auto text-[var(--fg4)] mb-2" />
-                <p className="text-sm text-[var(--fg4)]">Drag and drop or click to browse</p>
-                <p className="text-xs text-[var(--fg4)] mt-1">PNG, JPG, GIF up to 10MB</p>
+                <p className="text-xs text-[var(--fg4)]">Drag and drop or click to browse</p>
+                <p className="text-[10px] text-[var(--fg4)] mt-1">PNG, JPG, GIF up to 20MB</p>
               </div>
             )}
-          </div>
+          </form>
+        </div>
 
-          <div className="flex items-center justify-end gap-2 sm:gap-3 mt-4">
-            <Link href="/"><Button variant="ghost" type="button" size="sm">Cancel</Button></Link>
-            <Button type="submit" size="sm" disabled={!title.trim() || submitting} loading={submitting}>Post</Button>
-          </div>
-        </form>
+        <div className="flex items-center justify-end gap-2 mt-3">
+          <Link href="/"><button className="reddit-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-xs">Cancel</button></Link>
+          <button onClick={handleSubmit} disabled={!title.trim() || submitting} className={cn('reddit-btn text-xs', title.trim() && !submitting ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
+            {submitting ? 'Posting...' : 'Post'}
+          </button>
+        </div>
       </div>
       <MobileNav />
+    </div>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <svg className="animate-spin h-8 w-8 text-[var(--brand-600)]" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
     </div>
   );
 }

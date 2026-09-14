@@ -9,11 +9,11 @@ interface AvatarProps {
 }
 
 const dims: Record<string, string> = {
-  xs: 'h-6 w-6 text-[9px]',
-  sm: 'h-8 w-8 text-[11px]',
-  md: 'h-10 w-10 text-sm',
-  lg: 'h-14 w-14 text-lg',
-  xl: 'h-20 w-20 text-xl',
+  xs: 'h-5 w-5 text-[8px]',
+  sm: 'h-6 w-6 text-[10px]',
+  md: 'h-8 w-8 text-xs',
+  lg: 'h-12 w-12 text-sm',
+  xl: 'h-16 w-16 text-lg',
 };
 
 export default function Avatar({ src, alt, name, size = 'md', className }: AvatarProps) {
@@ -22,16 +22,15 @@ export default function Avatar({ src, alt, name, size = 'md', className }: Avata
       <img
         src={src}
         alt={alt || name}
-        className={cn('rounded-full object-cover ring-2 ring-[var(--bg)] shrink-0', dims[size], className)}
+        className={cn('rounded-full object-cover shrink-0', dims[size], className)}
       />
     );
   }
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-semibold text-white shrink-0',
+        'rounded-full flex items-center justify-center font-bold text-white shrink-0',
         'bg-gradient-to-br from-[var(--brand-400)] to-[var(--brand-700)]',
-        'ring-2 ring-[var(--bg)]',
         dims[size], className
       )}
       title={name}

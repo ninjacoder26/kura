@@ -7,28 +7,27 @@ import Sidebar from '@/components/layout/Sidebar';
 import MobileNav from '@/components/layout/MobileNav';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
-import Button from '@/components/ui/Button';
 import Link from 'next/link';
-import { TrendingUp, Sparkles, Plus, Users, ArrowRight } from 'lucide-react';
+import { Sparkles, TrendingUp, Plus, Users } from 'lucide-react';
 
 function FeedSkeleton() {
   return (
-    <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+    <div className="space-2">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="flex gap-3 p-4 border-b border-[var(--border)] last:border-b-0">
-          <div className="hidden sm:flex flex-col items-center gap-1 px-1">
-            <div className="h-6 w-6 rounded skeleton" />
-            <div className="h-3 w-5 rounded skeleton" />
-            <div className="h-6 w-6 rounded skeleton" />
+        <div key={i} className="post-card flex">
+          <div className="flex flex-col items-center gap-1 px-2 py-3 bg-[var(--bg-raised)] rounded-l w-10">
+            <div className="h-5 w-5 rounded skeleton" />
+            <div className="h-3 w-6 rounded skeleton" />
+            <div className="h-5 w-5 rounded skeleton" />
           </div>
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 p-2 space-y-2">
             <div className="h-3 w-32 rounded skeleton" />
             <div className="h-4 w-full rounded skeleton" />
             <div className="h-3 w-3/4 rounded skeleton" />
-            <div className="flex gap-3 mt-2">
-              <div className="h-3 w-16 rounded skeleton" />
-              <div className="h-3 w-12 rounded skeleton" />
-              <div className="h-3 w-12 rounded skeleton" />
+            <div className="flex gap-2 mt-1">
+              <div className="h-6 w-20 rounded skeleton" />
+              <div className="h-6 w-16 rounded skeleton" />
+              <div className="h-6 w-14 rounded skeleton" />
             </div>
           </div>
         </div>
@@ -71,42 +70,49 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 flex gap-5 lg:gap-6">
+      <div className="max-w-[1200px] mx-auto px-4 py-4 flex gap-6">
         <Sidebar />
 
-        <main className="flex-1 min-w-0 space-y-4 sm:space-y-6">
+        {/* Main feed — centered */}
+        <main className="flex-1 min-w-0 max-w-[740px]">
+          {/* Sort bar */}
+          <div className="post-card flex items-center gap-2 px-3 py-2 mb-2">
+            <button className="text-xs font-bold text-[var(--fg)] px-2 py-1 rounded hover:bg-[var(--surface-hover)]">Best</button>
+            <button className="text-xs font-bold text-[var(--fg4)] px-2 py-1 rounded hover:bg-[var(--surface-hover)]">New</button>
+            <button className="text-xs font-bold text-[var(--fg4)] px-2 py-1 rounded hover:bg-[var(--surface-hover)]">Top</button>
+          </div>
+
           {/* Hero — only when empty */}
           {!loading && posts.length === 0 && (
-            <div className="rounded-[var(--r-xl)] bg-gradient-to-br from-[var(--brand-600)] to-[var(--brand-800)] text-white overflow-hidden relative anim-fade-up">
-              <div className="absolute inset-0 opacity-[0.07]">
-                <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white" />
-                <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-white" />
-              </div>
-              <div className="relative p-5 sm:p-8">
-                <h1 className="text-xl sm:text-2xl font-bold">Kura — Nepal, talking.</h1>
-                <p className="text-sm sm:text-base text-white/75 mt-1.5 max-w-lg leading-relaxed">
-                  A community platform for Nepal. Share ideas, discover communities, connect with people across the country.
-                </p>
-                <div className="flex flex-wrap gap-3 mt-5">
-                  <Link href="/communities">
-                    <Button className="bg-white text-[var(--brand-700)] hover:bg-white/90 gap-1.5">
-                      <Users className="h-4 w-4" /> Browse Communities
-                    </Button>
-                  </Link>
-                  <Link href="/submit">
-                    <Button className="bg-white/10 text-white border border-white/20 hover:bg-white/20 gap-1.5">
-                      <Plus className="h-4 w-4" /> Create Post
-                    </Button>
-                  </Link>
+            <div className="post-card p-6 mb-2 anim-fade-up">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] flex items-center justify-center shrink-0">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium text-[var(--fg)]">Welcome to Kura</h2>
+                  <p className="text-sm text-[var(--fg3)] mt-1">
+                    Your personal frontpage. Join communities, share ideas, connect with people across Nepal.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Link href="/communities">
+                      <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-xs">
+                        <Users className="h-3.5 w-3.5" /> Browse Communities
+                      </button>
+                    </Link>
+                    <Link href="/submit">
+                      <button className="reddit-btn border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent text-xs">
+                        <Plus className="h-3.5 w-3.5" /> Create Post
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
           {/* Feed */}
-          {loading ? (
-            <FeedSkeleton />
-          ) : (
+          {loading ? <FeedSkeleton /> : (
             <PostList
               posts={posts}
               emptyTitle="No posts in your feed"
@@ -115,40 +121,95 @@ export default function HomePage() {
           )}
         </main>
 
-        {/* Right sidebar — hidden on small screens */}
-        <aside className="hidden xl:block w-64 2xl:w-72 shrink-0">
-          <div className="sticky top-[72px] space-y-4 pb-8">
-            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
-              <h3 className="font-semibold text-sm text-[var(--fg)] mb-3 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-[var(--brand-500)]" />
-                Getting started
-              </h3>
-              <div className="space-y-2.5">
-                <Link href="/communities" className="flex items-center gap-2 text-sm text-[var(--fg2)] hover:text-[var(--brand-600)] transition-colors">
-                  <Users className="h-4 w-4" /> Browse communities
-                </Link>
-                <Link href="/submit" className="flex items-center gap-2 text-sm text-[var(--fg2)] hover:text-[var(--brand-600)] transition-colors">
-                  <Sparkles className="h-4 w-4" /> Create your first post
-                </Link>
-                <Link href="/search" className="flex items-center gap-2 text-sm text-[var(--fg2)] hover:text-[var(--brand-600)] transition-colors">
-                  <TrendingUp className="h-4 w-4" /> Explore topics
+        {/* Right sidebar */}
+        <aside className="hidden xl:block w-[312px] shrink-0">
+          <div className="sticky top-[calc(var(--header-h)+12px)] space-y-4 pb-8">
+            {/* Home widget */}
+            <div className="sidebar-widget">
+              <div className="bg-gradient-to-b from-[var(--brand-500)] to-[var(--brand-700)] h-8" />
+              <div className="p-3">
+                <div className="flex items-center gap-2 -mt-5 mb-2">
+                  <div className="h-10 w-10 rounded-full bg-[var(--brand-600)] border-2 border-[var(--surface)] flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">K</span>
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-[var(--fg)]">Home</p>
+                <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">
+                  Your personal Kura frontpage. Come here to check in with your favorite communities.
+                </p>
+                <div className="mt-3 space-y-2">
+                  <Link href="/submit">
+                    <button className="reddit-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]">
+                      Create Post
+                    </button>
+                  </Link>
+                  <Link href="/communities">
+                    <button className="reddit-btn w-full border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent">
+                      Create Community
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Popular Communities */}
+            <div className="sidebar-widget">
+              <div className="sidebar-widget-header">Popular Communities</div>
+              <div className="p-2">
+                {[
+                  { name: 'kathmandu', members: '24.5k' },
+                  { name: 'nepal', members: '89.2k' },
+                  { name: 'technology', members: '12.8k' },
+                  { name: 'gaming', members: '31.4k' },
+                  { name: 'culture', members: '8.7k' },
+                ].map((c, i) => (
+                  <Link
+                    key={c.name}
+                    href={`/r/${c.name}`}
+                    className="flex items-center gap-2.5 px-2 py-1.5 rounded text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"
+                  >
+                    <span className="text-xs font-bold text-[var(--fg4)] w-4 text-right">{i + 1}</span>
+                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[var(--brand-400)] to-[var(--brand-700)] flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                      {c.name[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-[var(--fg)] truncate">r/{c.name}</p>
+                    </div>
+                    <span className="text-[10px] text-[var(--fg4)]">{c.members}</span>
+                  </Link>
+                ))}
+                <Link href="/communities" className="block px-2 py-1.5 text-xs font-bold text-[var(--brand-600)] hover:underline">
+                  See more
                 </Link>
               </div>
             </div>
 
-            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-alt)] p-4">
+            {/* Rules / info */}
+            <div className="sidebar-widget p-3">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-6 w-6 rounded-[var(--r-xs)] bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] flex items-center justify-center">
-                  <span className="text-white font-bold text-[10px]">K</span>
-                </div>
-                <span className="font-semibold text-sm">About Kura</span>
+                <TrendingUp className="h-4 w-4 text-[var(--fg4)]" />
+                <span className="text-xs font-bold text-[var(--fg)]">Home</span>
               </div>
               <p className="text-xs text-[var(--fg3)] leading-relaxed">
-                A community platform built for Nepal. Open source, community driven.
+                Your personal Kura frontpage. Come here to check in with your favorite communities.
               </p>
-              <Link href="/setup" className="inline-flex items-center gap-1 mt-2 text-xs text-[var(--brand-600)] hover:underline">
-                System status <ArrowRight className="h-3 w-3" />
-              </Link>
+            </div>
+
+            {/* Footer */}
+            <div className="text-[10px] text-[var(--fg4)] space-y-1 px-1">
+              <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                <Link href="/" className="hover:underline">Home</Link>
+                <Link href="/communities" className="hover:underline">About</Link>
+                <Link href="/setup" className="hover:underline">Careers</Link>
+                <Link href="/setup" className="hover:underline">Press</Link>
+              </div>
+              <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                <Link href="/setup" className="hover:underline">Help</Link>
+                <Link href="/setup" className="hover:underline">Blog</Link>
+                <Link href="/setup" className="hover:underline">Terms</Link>
+                <Link href="/setup" className="hover:underline">Privacy</Link>
+              </div>
+              <p>Kura Inc. 2026. All rights reserved.</p>
             </div>
           </div>
         </aside>

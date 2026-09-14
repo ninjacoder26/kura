@@ -39,7 +39,7 @@ export default function SearchPage() {
           .order('member_count', { ascending: false }).limit(10),
       ]);
       if (postRes.data) setPosts((postRes.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
-      if (commRes.data) setCommunities(commRes.data);
+      if (commRes.data) setCommunities(commRes.data as any[]);
     } catch { /* not configured */ } finally { setSearching(false); }
   }, []);
 
@@ -53,25 +53,25 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <div className="relative mb-5 anim-fade-up">
-          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg4)]" />
+      <div className="max-w-[840px] mx-auto px-4 py-4">
+        <div className="relative mb-4 anim-fade-up">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)]" />
           <input
             type="text" value={query} onChange={e => handleSearch(e.target.value)}
-            placeholder="Search posts, communities..."
-            className="w-full h-11 sm:h-12 pl-11 sm:pl-12 pr-4 text-sm sm:text-base rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:border-transparent transition-all"
+            placeholder="Search Kura"
+            className="w-full h-10 pl-10 pr-4 text-sm rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-colors"
             autoFocus
           />
-          {searching && <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg4)] animate-spin" />}
+          {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)] animate-spin" />}
         </div>
 
         {query.length >= 2 && (
-          <div className="flex items-center gap-1 border-b border-[var(--border)] mb-5 anim-fade-up">
+          <div className="flex items-center gap-0 border-b border-[var(--border)] mb-3 anim-fade-up">
             {TABS.map(tab => {
               const Icon = tab.icon;
               return (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  className={cn('flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                  className={cn('flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold border-b-2 transition-colors',
                     activeTab === tab.key ? 'border-[var(--brand-600)] text-[var(--brand-600)]' : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]'
                   )}>
                   <Icon className="h-4 w-4" /> {tab.label}
@@ -83,20 +83,20 @@ export default function SearchPage() {
 
         {query.length < 2 ? (
           <div className="py-16 text-center anim-fade-up">
-            <div className="h-14 w-14 rounded-2xl bg-[var(--bg-raised)] flex items-center justify-center mx-auto mb-4">
-              <SearchIcon className="h-7 w-7 text-[var(--fg4)]" />
+            <div className="h-12 w-12 rounded-full bg-[var(--bg-raised)] flex items-center justify-center mx-auto mb-3">
+              <SearchIcon className="h-6 w-6 text-[var(--fg4)]" />
             </div>
-            <h2 className="text-base sm:text-lg font-semibold text-[var(--fg)] mb-1">Explore Kura</h2>
-            <p className="text-sm text-[var(--fg4)] max-w-sm mx-auto">Search for posts, communities, or topics that interest you.</p>
+            <h2 className="text-sm font-medium text-[var(--fg)] mb-1">Search Kura</h2>
+            <p className="text-xs text-[var(--fg4)] max-w-sm mx-auto">Find posts, communities, and more.</p>
           </div>
         ) : (
           <div className="anim-fade-up pb-20 lg:pb-8">
             {activeTab === 'posts' && <PostList posts={posts} emptyTitle="No posts found" emptyDescription={`No results for "${query}"`} />}
             {activeTab === 'communities' && (
               communities.length === 0 ? (
-                <p className="py-12 text-center text-sm text-[var(--fg4)]">No communities found for &ldquo;{query}&rdquo;</p>
+                <p className="py-12 text-center text-xs text-[var(--fg4)]">No communities found for &ldquo;{query}&rdquo;</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 stagger">
+                <div className="space-2 stagger">
                   {communities.map(c => <CommunityCard key={c.slug} community={c} />)}
                 </div>
               )

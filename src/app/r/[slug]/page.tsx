@@ -33,7 +33,6 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       setCommunity(comm);
 
       if (comm) {
-        // Check membership
         if (user) {
           const { data: member } = await supabase
             .from('community_members')
@@ -86,7 +85,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
     return (
       <div className="min-h-screen">
         <Header />
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-[1200px] mx-auto px-4 py-8">
           <EmptyState title="Community not found" description="This community doesn't exist yet." action={<Link href="/communities"><Button size="sm">Browse communities</Button></Link>} />
         </div>
       </div>
@@ -96,69 +95,88 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="h-24 sm:h-32 lg:h-40" style={{ backgroundColor: community.color }} />
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="relative -mt-7 sm:-mt-8 mb-5 sm:mb-6 anim-fade-up">
-          <div className="flex items-end gap-3 sm:gap-4">
-            <div className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 rounded-2xl flex items-center justify-center text-white font-bold text-2xl sm:text-3xl border-4 border-[var(--bg)] shadow-lg shrink-0" style={{ backgroundColor: community.color }}>
-              {community.icon_url ? <img src={community.icon_url} alt={community.name} className="h-full w-full rounded-2xl object-cover" /> : community.name.charAt(0)}
+      {/* Banner */}
+      <div className="h-20 sm:h-28" style={{ backgroundColor: community.color }} />
+      {/* Community header */}
+      <div className="bg-[var(--surface)] border-b border-[var(--border)]">
+        <div className="max-w-[1200px] mx-auto px-4">
+          <div className="flex items-end gap-3 -mt-4 pb-3">
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center text-white font-bold text-2xl sm:text-3xl border-4 border-[var(--surface)] shrink-0" style={{ backgroundColor: community.color }}>
+              {community.icon_url ? <img src={community.icon_url} alt={community.name} className="h-full w-full rounded-full object-cover" /> : community.name.charAt(0)}
             </div>
-            <div className="min-w-0 flex-1 pb-0.5">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--fg)] truncate">{community.name}</h1>
-              <p className="text-xs sm:text-sm text-[var(--fg4)]">r/{community.slug}</p>
-            </div>
-            <div className="flex items-center gap-2 pb-0.5 shrink-0">
-              <Button size="sm" variant={isMember ? 'secondary' : 'primary'} onClick={toggleJoin} loading={joining} disabled={joining}>
-                {isMember ? 'Joined' : 'Join'}
-              </Button>
-              <Link href={`/submit?community=${community.slug}`}>
-                <Button variant="ghost" size="sm" className="p-2"><Plus className="h-4 w-4" /></Button>
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center flex-wrap gap-3 sm:gap-4 mt-3 text-xs sm:text-sm text-[var(--fg3)]">
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {community.member_count?.toLocaleString()} members</span>
-            <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Created {new Date(community.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-          </div>
-          {community.description && <p className="mt-2.5 text-sm text-[var(--fg2)] leading-relaxed">{community.description}</p>}
-        </div>
-
-        <div className="flex gap-5 lg:gap-6 pb-20 lg:pb-8">
-          <main className="flex-1 min-w-0">
-            <Link href={`/submit?community=${community.slug}`} className="block mb-3">
-              <div className="flex items-center gap-3 p-3 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-colors">
-                <div className="h-8 w-8 rounded-full bg-[var(--bg-raised)] flex items-center justify-center text-[var(--fg4)] text-sm">?</div>
-                <span className="text-sm text-[var(--fg4)]">Create a post in {community.name}...</span>
+            <div className="flex-1 min-w-0 pb-1">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-bold text-[var(--fg)]">{community.name}</h1>
+                <Button size="sm" variant={isMember ? 'secondary' : 'primary'} onClick={toggleJoin} loading={joining} disabled={joining}>
+                  {isMember ? 'Joined' : 'Join'}
+                </Button>
               </div>
+              <p className="text-sm text-[var(--fg4)]">r/{community.slug}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-[1200px] mx-auto px-4 py-4 flex gap-6">
+        {/* Main content */}
+        <main className="flex-1 min-w-0 max-w-[740px]">
+          {/* Sort bar */}
+          <div className="post-card flex items-center gap-2 px-3 py-2 mb-2">
+            <Link href={`/submit?community=${community.slug}`}>
+              <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-xs">
+                <Plus className="h-3.5 w-3.5" /> Create Post
+              </button>
             </Link>
-            <PostList posts={posts} showCommunity={false} />
-          </main>
+          </div>
+          <PostList posts={posts} showCommunity={false} />
+        </main>
 
-          <aside className="hidden lg:block w-64 xl:w-72 shrink-0">
-            <div className="sticky top-[72px] space-y-4 pb-8">
-              <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
-                <h3 className="font-semibold text-sm text-[var(--fg)] mb-2">About</h3>
+        {/* Sidebar */}
+        <aside className="hidden lg:block w-[312px] shrink-0">
+          <div className="sticky top-[calc(var(--header-h)+12px)] space-y-4 pb-8">
+            <div className="sidebar-widget">
+              <div className="sidebar-widget-header">About Community</div>
+              <div className="p-3">
                 <p className="text-sm text-[var(--fg2)] leading-relaxed">{community.description}</p>
-                <div className="mt-3 pt-3 border-t border-[var(--border)] space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-[var(--fg4)]">Members</span><span className="font-medium text-[var(--fg)]">{community.member_count?.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-[var(--fg4)]">Posts</span><span className="font-medium text-[var(--fg)]">{community.post_count?.toLocaleString()}</span></div>
+                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[var(--border)] text-sm">
+                  <div>
+                    <p className="font-bold text-[var(--fg)]">{community.member_count?.toLocaleString()}</p>
+                    <p className="text-[11px] text-[var(--fg4)]">Members</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-[var(--fg)]">{community.post_count?.toLocaleString()}</p>
+                    <p className="text-[11px] text-[var(--fg4)]">Posts</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 mt-3 text-xs text-[var(--fg4)]">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Created {new Date(community.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+                <Link href={`/submit?community=${community.slug}`} className="block mt-3">
+                  <button className="reddit-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]">
+                    Create Post
+                  </button>
+                </Link>
+              </div>
+            </div>
+
+            {community.rules && (
+              <div className="sidebar-widget">
+                <div className="sidebar-widget-header flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5" /> Rules
+                </div>
+                <div className="p-3 space-y-2">
+                  {community.rules.split('\n').filter(Boolean).map((rule: string, i: number) => (
+                    <div key={i} className="flex gap-2 text-sm text-[var(--fg2)]">
+                      <span className="font-bold text-[var(--fg4)] shrink-0">{i + 1}.</span>
+                      <span>{rule.trim()}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              {community.rules && (
-                <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
-                  <h3 className="font-semibold text-sm text-[var(--fg)] mb-2 flex items-center gap-2"><Shield className="h-4 w-4" /> Rules</h3>
-                  <ol className="space-y-2">
-                    {community.rules.split('\n').filter(Boolean).map((rule: string, i: number) => (
-                      <li key={i} className="flex gap-2 text-sm text-[var(--fg2)]">
-                        <span className="font-medium text-[var(--fg4)] shrink-0">{i + 1}.</span>{rule.trim()}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-            </div>
-          </aside>
-        </div>
+            )}
+          </div>
+        </aside>
       </div>
       <MobileNav />
     </div>

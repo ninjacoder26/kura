@@ -10,7 +10,7 @@ import CommentThread, { type CommentData } from '@/components/comments/CommentTh
 import CommentForm from '@/components/comments/CommentForm';
 import Button from '@/components/ui/Button';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, ArrowLeft } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -38,7 +38,6 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         .eq('id', id).single();
       setPost(postData);
 
-      // Load existing vote if user is logged in
       if (user && postData) {
         const { data: voteData } = await supabase
           .from('votes')
@@ -113,7 +112,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     return (
       <div className="min-h-screen">
         <Header />
-        <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="max-w-[840px] mx-auto px-4 py-8">
           <EmptyState title="Post not found" action={<Link href="/"><Button size="sm">Go home</Button></Link>} />
         </div>
       </div>
@@ -125,76 +124,91 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="max-w-[840px] mx-auto px-4 py-4">
         <Link
           href={post.community ? `/r/${post.community.slug}` : '/'}
-          className="inline-flex items-center gap-1 text-sm text-[var(--fg4)] hover:text-[var(--fg)] mb-3 sm:mb-4 transition-colors"
+          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--fg4)] hover:text-[var(--fg)] mb-3 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Back to {post.community ? `r/${post.community.slug}` : 'home'}</span>
-          <span className="sm:hidden">Back</span>
+          Back to {post.community ? `r/${post.community.slug}` : 'home'}
         </Link>
 
-        <article className="anim-fade-up">
-          <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] sm:text-xs text-[var(--fg4)] mb-2">
-            {post.community && (
-              <>
-                <Link href={`/r/${post.community.slug}`} className="font-semibold text-[var(--fg)] hover:underline">r/{post.community.slug}</Link>
-                <span>·</span>
-              </>
-            )}
-            <span className="hidden sm:inline">Posted by</span>
-            <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link>
-            <span>·</span>
-            <time>{formatDate(post.created_at)}</time>
-          </div>
-
-          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-[var(--fg)] leading-tight">{post.title}</h1>
-
-          {post.body && (
-            <div className="mt-3 sm:mt-4 text-sm sm:text-[15px] text-[var(--fg)] leading-relaxed whitespace-pre-wrap">{post.body}</div>
-          )}
-
-          {/* Vote bar */}
-          <div className="flex items-center gap-1 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-[var(--border)]">
-            <div className="flex items-center gap-0.5 bg-[var(--bg-raised)] rounded-[var(--r-full)] px-1">
-              <button onClick={() => handleVote('up')} className={cn('p-1.5 rounded-full transition-color', vote === 'up' ? 'text-[var(--brand-600)]' : 'text-[var(--fg4)] hover:text-[var(--brand-600)]')}>
-                <ArrowBigUp className="h-5 w-5" />
+        <article className="post-card">
+          <div className="flex">
+            {/* Vote sidebar */}
+            <div className="flex flex-col items-center gap-0.5 px-2 py-3 bg-[var(--bg-raised)] rounded-l">
+              <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')}>
+                <ArrowBigUp className="h-5 w-5" fill={vote === 'up' ? 'currentColor' : 'none'} />
               </button>
-              <span className={cn('text-xs sm:text-sm font-bold tabular-nums px-0.5', vote === 'up' && 'text-[var(--brand-600)]', vote === 'down' && 'text-red-500')}>
+              <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[#ff4500]', vote === 'down' && 'text-[#7193ff]')}>
                 {formatNumber(score)}
               </span>
-              <button onClick={() => handleVote('down')} className={cn('p-1.5 rounded-full transition-color', vote === 'down' ? 'text-red-500' : 'text-[var(--fg4)] hover:text-red-500')}>
-                <ArrowBigDown className="h-5 w-5" />
+              <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')}>
+                <ArrowBigDown className="h-5 w-5" fill={vote === 'down' ? 'currentColor' : 'none'} />
               </button>
             </div>
-            <div className="flex items-center gap-0.5 ml-1.5">
-              <span className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-medium text-[var(--fg4)]">
-                <MessageSquare className="h-4 w-4" /> {formatNumber(post.comment_count)}
-              </span>
-              <button className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-[var(--r-full)] text-xs font-medium text-[var(--fg4)] hover:bg-[var(--bg-raised)] transition-colors">
-                <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share</span>
-              </button>
-              <button className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-[var(--r-full)] text-xs font-medium text-[var(--fg4)] hover:bg-[var(--bg-raised)] transition-colors">
-                <Bookmark className="h-4 w-4" /> <span className="hidden sm:inline">Save</span>
-              </button>
+
+            <div className="flex-1 min-w-0 p-3">
+              {/* Meta */}
+              <div className="flex items-center flex-wrap gap-x-1 text-[12px] text-[var(--fg4)] mb-1.5">
+                {post.community && (
+                  <>
+                    <Link href={`/r/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">r/{post.community.slug}</Link>
+                    <span>·</span>
+                  </>
+                )}
+                <span>Posted by</span>
+                <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link>
+                <span>·</span>
+                <time>{formatDate(post.created_at)}</time>
+              </div>
+
+              {/* Title */}
+              <h1 className="text-xl font-medium text-[var(--fg)] leading-snug">{post.title}</h1>
+
+              {/* Body */}
+              {post.body && (
+                <div className="mt-3 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap">{post.body}</div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 mt-3 -ml-1">
+                <span className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-bold text-[var(--fg4)]">
+                  <MessageSquare className="h-4 w-4" /> {formatNumber(post.comment_count)} Comments
+                </span>
+                <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                  <Share2 className="h-4 w-4" /> Share
+                </button>
+                <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                  <Bookmark className="h-4 w-4" /> Save
+                </button>
+                <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </article>
 
-        <div className="mt-5 sm:mt-6 pb-20 lg:pb-8">
-          <h2 className="text-sm font-semibold text-[var(--fg)] mb-3">Comments</h2>
-          <div className="mb-5">
-            {user ? (
+        {/* Comment input */}
+        <div className="mt-3 mb-4">
+          {user ? (
+            <div className="post-card p-3">
+              <p className="text-xs text-[var(--fg4)] mb-2">Comment as <span className="text-[var(--brand-600)] font-bold">{user.username}</span></p>
               <CommentForm onSubmit={handleComment} loading={submittingComment} />
-            ) : (
-              <div className="border border-[var(--border)] rounded-[var(--r-md)] p-4 text-center bg-[var(--bg-alt)]">
-                <p className="text-sm text-[var(--fg3)]">
-                  <Link href="/login" className="text-[var(--brand-600)] font-medium hover:underline">Log in</Link> to leave a comment.
-                </p>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="post-card p-4 text-center">
+              <p className="text-sm text-[var(--fg3)]">
+                <Link href="/login" className="text-[var(--brand-600)] font-bold hover:underline">Log in</Link> or{' '}
+                <Link href="/signup" className="text-[var(--brand-600)] font-bold hover:underline">sign up</Link> to leave a comment
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Comments */}
+        <div className="pb-20 lg:pb-8">
           <CommentThread comments={comments} />
         </div>
       </div>

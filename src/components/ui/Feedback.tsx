@@ -5,31 +5,31 @@ export function EmptyState({ icon, title, description, action }: {
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
       {icon && (
-        <div className="h-14 w-14 rounded-2xl bg-[var(--bg-raised)] flex items-center justify-center mb-4 text-[var(--fg4)]">
+        <div className="h-12 w-12 rounded-full bg-[var(--bg-raised)] flex items-center justify-center mb-3 text-[var(--fg4)]">
           {icon}
         </div>
       )}
-      <h3 className="text-base font-semibold text-[var(--fg)] mb-1">{title}</h3>
-      {description && <p className="text-sm text-[var(--fg3)] max-w-sm">{description}</p>}
-      {action && <div className="mt-4">{action}</div>}
+      <h3 className="text-sm font-medium text-[var(--fg)] mb-1">{title}</h3>
+      {description && <p className="text-xs text-[var(--fg3)] max-w-sm">{description}</p>}
+      {action && <div className="mt-3">{action}</div>}
     </div>
   );
 }
 
 export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="h-14 w-14 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-4">
-        <svg className="h-7 w-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      <div className="h-12 w-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-3">
+        <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
         </svg>
       </div>
-      <h3 className="text-base font-semibold text-[var(--fg)] mb-1">Something went wrong</h3>
-      <p className="text-sm text-[var(--fg3)] max-w-sm">{message || 'An unexpected error occurred.'}</p>
+      <h3 className="text-sm font-medium text-[var(--fg)] mb-1">Something went wrong</h3>
+      <p className="text-xs text-[var(--fg3)] max-w-sm">{message || 'An unexpected error occurred.'}</p>
       {onRetry && (
-        <button onClick={onRetry} className="mt-4 text-sm font-medium text-[var(--brand-600)] hover:underline">
+        <button onClick={onRetry} className="mt-3 text-xs font-bold text-[var(--brand-600)] hover:underline">
           Try again
         </button>
       )}
@@ -43,37 +43,32 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function CommunitySkeleton() {
   return (
-    <div className="p-4 border border-[var(--border)] rounded-[var(--r-lg)] space-y-3">
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-11 w-11 sm:h-12 sm:w-12 rounded-[var(--r-md)]" />
-        <div className="space-y-1.5 flex-1">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-3 w-16" />
-        </div>
+    <div className="post-card flex items-center gap-3 p-3">
+      <Skeleton className="h-10 w-10 rounded-full" />
+      <div className="space-y-1.5 flex-1">
+        <Skeleton className="h-3.5 w-24" />
+        <Skeleton className="h-2.5 w-16" />
       </div>
-      <Skeleton className="h-3 w-full" />
-      <Skeleton className="h-3 w-2/3" />
     </div>
   );
 }
 
 export function PostSkeleton() {
   return (
-    <div className="flex gap-3 p-4 border-b border-[var(--border)]">
-      <div className="hidden sm:flex flex-col items-center gap-1.5 pt-1">
-        <Skeleton className="h-6 w-6 rounded-[var(--r-xs)]" />
-        <Skeleton className="h-4 w-8" />
-        <Skeleton className="h-6 w-6 rounded-[var(--r-xs)]" />
+    <div className="post-card flex">
+      <div className="flex flex-col items-center gap-1 px-2 py-3 bg-[var(--bg-raised)] rounded-l w-10">
+        <Skeleton className="h-5 w-5 rounded" />
+        <Skeleton className="h-3 w-6" />
+        <Skeleton className="h-5 w-5 rounded" />
       </div>
-      <div className="flex-1 space-y-2">
-        <Skeleton className="h-3 w-40" />
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-2/3" />
-        <div className="flex gap-3 pt-1">
-          <Skeleton className="h-6 w-20" />
-          <Skeleton className="h-6 w-16" />
-          <Skeleton className="h-6 w-16" />
+      <div className="flex-1 p-2 space-y-2">
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-full" />
+        <div className="flex gap-2 pt-1">
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-14 rounded-full" />
         </div>
       </div>
     </div>
