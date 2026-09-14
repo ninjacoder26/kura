@@ -395,9 +395,21 @@ end;
 $$ language plpgsql security definer;
 
 create trigger on_post_vote
-  after insert or update or delete on public.votes
+  after insert on public.votes
+  for each row
+  when (NEW.post_id is not null)
+  execute function public.handle_post_vote();
+
+create trigger on_post_vote_update
+  after update on public.votes
   for each row
   when (NEW.post_id is not null or OLD.post_id is not null)
+  execute function public.handle_post_vote();
+
+create trigger on_post_vote_delete
+  after delete on public.votes
+  for each row
+  when (OLD.post_id is not null)
   execute function public.handle_post_vote();
 
 -- Update comment vote counts
@@ -435,9 +447,21 @@ end;
 $$ language plpgsql security definer;
 
 create trigger on_comment_vote
-  after insert or update or delete on public.votes
+  after insert on public.votes
+  for each row
+  when (NEW.comment_id is not null)
+  execute function public.handle_comment_vote();
+
+create trigger on_comment_vote_update
+  after update on public.votes
   for each row
   when (NEW.comment_id is not null or OLD.comment_id is not null)
+  execute function public.handle_comment_vote();
+
+create trigger on_comment_vote_delete
+  after delete on public.votes
+  for each row
+  when (OLD.comment_id is not null)
   execute function public.handle_comment_vote();
 
 -- Update post comment count
