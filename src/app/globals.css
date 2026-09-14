@@ -19,8 +19,8 @@
   --bg-raised: #ffffff;
   --surface: #ffffff;
   --surface-hover: #f8f9fa;
-  --border: #ccc;
-  --border-strong: #898989;
+  --border: #edeff1;
+  --border-strong: #ccc;
   --fg: #1c1c1c;
   --fg2: #343536;
   --fg3: #787c7e;
@@ -39,7 +39,8 @@
   --r-full: 9999px;
 
   --header-h: 48px;
-  --sidebar-w: 220px;
+  --left-sidebar-w: 200px;
+  --right-sidebar-w: 312px;
 }
 
 .dark {
@@ -154,7 +155,7 @@ input, textarea, select, button { font-family: inherit; }
   border-color: var(--border-strong);
 }
 
-/* Reddit-style vote button */
+/* Vote buttons */
 .vote-btn {
   display: flex;
   align-items: center;
@@ -192,14 +193,13 @@ input, textarea, select, button { font-family: inherit; }
   white-space: nowrap;
 }
 
-/* Reddit-style sidebar widget */
+/* Sidebar widget */
 .sidebar-widget {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
 }
-
 .sidebar-widget-header {
   padding: 12px;
   font-size: 10px;
