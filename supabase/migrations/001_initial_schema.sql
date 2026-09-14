@@ -8,8 +8,10 @@ create extension if not exists "uuid-ossp";
 create extension if not exists pg_trgm;
 
 -- =============================================
--- PROFILES
+-- TABLES (order matters for foreign keys)
 -- =============================================
+
+-- 1. PROFILES
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
@@ -29,24 +31,7 @@ create table public.profiles (
   updated_at timestamptz default now()
 );
 
-alter table public.profiles enable row level security;
-
--- Profiles: readable by everyone, editable by owner
-create policy "Public profiles are viewable by everyone"
-  on public.profiles for select
-  using (true);
-
-create policy "Users can update own profile"
-  on public.profiles for update
-  using (auth.uid() = id);
-
-create policy "Users can insert own profile"
-  on public.profiles for insert
-  with check (auth.uid() = id);
-
--- =============================================
--- COMMUNITIES
--- =============================================
+-- 2. COMMUNITIES (depends on: profiles)
 create table public.communities (
   id uuid primary key default uuid_generate_v4(),
   name text unique not null,
@@ -72,37 +57,7 @@ create table public.communities (
   updated_at timestamptz default now()
 );
 
-alter table public.communities enable row level security;
-
-create index idx_communities_slug on public.communities(slug);
-create index idx_communities_category on public.communities(category);
-create index idx_communities_name_trgm on public.communities using gin (name gin_trgm_ops);
-
-create policy "Communities are viewable by everyone"
-  on public.communities for select
-  using (not is_private or exists (
-    select 1 from public.community_members
-    where community_id = id and user_id = auth.uid()
-  ));
-
-create policy "Authenticated users can create communities"
-  on public.communities for insert
-  with check (auth.uid() is not null);
-
-create policy "Community creators and moderators can update"
-  on public.communities for update
-  using (
-    created_by = auth.uid()
-    or exists (
-      select 1 from public.community_members
-      where community_id = id and user_id = auth.uid()
-      and role in ('moderator', 'admin')
-    )
-  );
-
--- =============================================
--- COMMUNITY MEMBERS
--- =============================================
+-- 3. COMMUNITY_MEMBERS (depends on: communities, profiles)
 create table public.community_members (
   id uuid primary key default uuid_generate_v4(),
   community_id uuid not null references public.communities(id) on delete cascade,
@@ -113,26 +68,7 @@ create table public.community_members (
   unique(community_id, user_id)
 );
 
-alter table public.community_members enable row level security;
-
-create index idx_community_members_user on public.community_members(user_id);
-create index idx_community_members_community on public.community_members(community_id);
-
-create policy "Community members are viewable by everyone"
-  on public.community_members for select
-  using (true);
-
-create policy "Authenticated users can join communities"
-  on public.community_members for insert
-  with check (auth.uid() = user_id);
-
-create policy "Users can leave communities"
-  on public.community_members for delete
-  using (auth.uid() = user_id);
-
--- =============================================
--- POSTS
--- =============================================
+-- 4. POSTS (depends on: profiles, communities)
 create table public.posts (
   id uuid primary key default uuid_generate_v4(),
   title text not null,
@@ -154,32 +90,7 @@ create table public.posts (
   updated_at timestamptz default now()
 );
 
-alter table public.posts enable row level security;
-
-create index idx_posts_author on public.posts(author_id);
-create index idx_posts_community on public.posts(community_id);
-create index idx_posts_created_at on public.posts(created_at desc);
-create index idx_posts_score on public.posts((upvotes - downvotes) desc);
-
-create policy "Posts are viewable by everyone"
-  on public.posts for select
-  using (not is_removed);
-
-create policy "Authenticated users can create posts"
-  on public.posts for insert
-  with check (auth.uid() = author_id);
-
-create policy "Authors can update own posts"
-  on public.posts for update
-  using (auth.uid() = author_id);
-
-create policy "Authors can delete own posts"
-  on public.posts for delete
-  using (auth.uid() = author_id);
-
--- =============================================
--- COMMENTS
--- =============================================
+-- 5. COMMENTS (depends on: profiles, posts, self-reference)
 create table public.comments (
   id uuid primary key default uuid_generate_v4(),
   body text not null,
@@ -196,32 +107,7 @@ create table public.comments (
   updated_at timestamptz default now()
 );
 
-alter table public.comments enable row level security;
-
-create index idx_comments_post on public.comments(post_id);
-create index idx_comments_author on public.comments(author_id);
-create index idx_comments_parent on public.comments(parent_id);
-create index idx_comments_created on public.comments(created_at desc);
-
-create policy "Comments are viewable by everyone"
-  on public.comments for select
-  using (not is_removed);
-
-create policy "Authenticated users can create comments"
-  on public.comments for insert
-  with check (auth.uid() = author_id);
-
-create policy "Authors can update own comments"
-  on public.comments for update
-  using (auth.uid() = author_id);
-
-create policy "Authors can delete own comments"
-  on public.comments for delete
-  using (auth.uid() = author_id);
-
--- =============================================
--- VOTES
--- =============================================
+-- 6. VOTES (depends on: profiles, posts, comments)
 create table public.votes (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -234,31 +120,7 @@ create table public.votes (
   check ((post_id is not null and comment_id is null) or (post_id is null and comment_id is not null))
 );
 
-alter table public.votes enable row level security;
-
-create index idx_votes_post on public.votes(post_id);
-create index idx_votes_comment on public.votes(comment_id);
-create index idx_votes_user on public.votes(user_id);
-
-create policy "Votes are viewable by everyone"
-  on public.votes for select
-  using (true);
-
-create policy "Authenticated users can vote"
-  on public.votes for insert
-  with check (auth.uid() = user_id);
-
-create policy "Users can update own votes"
-  on public.votes for update
-  using (auth.uid() = user_id);
-
-create policy "Users can delete own votes"
-  on public.votes for delete
-  using (auth.uid() = user_id);
-
--- =============================================
--- SAVED POSTS
--- =============================================
+-- 7. SAVED_POSTS (depends on: profiles, posts)
 create table public.saved_posts (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -267,23 +129,7 @@ create table public.saved_posts (
   unique(user_id, post_id)
 );
 
-alter table public.saved_posts enable row level security;
-
-create policy "Users can view own saved posts"
-  on public.saved_posts for select
-  using (auth.uid() = user_id);
-
-create policy "Users can save posts"
-  on public.saved_posts for insert
-  with check (auth.uid() = user_id);
-
-create policy "Users can unsave posts"
-  on public.saved_posts for delete
-  using (auth.uid() = user_id);
-
--- =============================================
--- REPORTS
--- =============================================
+-- 8. REPORTS (depends on: profiles, posts, comments)
 create table public.reports (
   id uuid primary key default uuid_generate_v4(),
   reporter_id uuid not null references public.profiles(id) on delete cascade,
@@ -302,33 +148,7 @@ create table public.reports (
   check ((post_id is not null and comment_id is null) or (post_id is null and comment_id is not null))
 );
 
-alter table public.reports enable row level security;
-
-create policy "Reporters can view own reports"
-  on public.reports for select
-  using (auth.uid() = reporter_id);
-
-create policy "Moderators can view all reports"
-  on public.reports for select
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('moderator', 'admin')
-  ));
-
-create policy "Authenticated users can create reports"
-  on public.reports for insert
-  with check (auth.uid() = reporter_id);
-
-create policy "Moderators can update reports"
-  on public.reports for update
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('moderator', 'admin')
-  ));
-
--- =============================================
--- MODERATION LOGS
--- =============================================
+-- 9. MODERATION_LOGS (depends on: profiles)
 create table public.moderation_logs (
   id uuid primary key default uuid_generate_v4(),
   moderator_id uuid not null references public.profiles(id) on delete cascade,
@@ -340,29 +160,7 @@ create table public.moderation_logs (
   created_at timestamptz default now()
 );
 
-alter table public.moderation_logs enable row level security;
-
-create index idx_mod_logs_moderator on public.moderation_logs(moderator_id);
-create index idx_mod_logs_target on public.moderation_logs(target_type, target_id);
-create index idx_mod_logs_created on public.moderation_logs(created_at desc);
-
-create policy "Moderators can view moderation logs"
-  on public.moderation_logs for select
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('moderator', 'admin')
-  ));
-
-create policy "Moderators can create moderation logs"
-  on public.moderation_logs for insert
-  with check (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('moderator', 'admin')
-  ));
-
--- =============================================
--- NOTIFICATIONS (basic foundation)
--- =============================================
+-- 10. NOTIFICATIONS (depends on: profiles)
 create table public.notifications (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -374,27 +172,195 @@ create table public.notifications (
   created_at timestamptz default now()
 );
 
-alter table public.notifications enable row level security;
+-- =============================================
+-- INDEXES
+-- =============================================
+
+create index idx_communities_slug on public.communities(slug);
+create index idx_communities_category on public.communities(category);
+create index idx_communities_name_trgm on public.communities using gin (name gin_trgm_ops);
+
+create index idx_community_members_user on public.community_members(user_id);
+create index idx_community_members_community on public.community_members(community_id);
+
+create index idx_posts_author on public.posts(author_id);
+create index idx_posts_community on public.posts(community_id);
+create index idx_posts_created_at on public.posts(created_at desc);
+create index idx_posts_score on public.posts((upvotes - downvotes) desc);
+
+create index idx_comments_post on public.comments(post_id);
+create index idx_comments_author on public.comments(author_id);
+create index idx_comments_parent on public.comments(parent_id);
+create index idx_comments_created on public.comments(created_at desc);
+
+create index idx_votes_post on public.votes(post_id);
+create index idx_votes_comment on public.votes(comment_id);
+create index idx_votes_user on public.votes(user_id);
+
+create index idx_mod_logs_moderator on public.moderation_logs(moderator_id);
+create index idx_mod_logs_target on public.moderation_logs(target_type, target_id);
+create index idx_mod_logs_created on public.moderation_logs(created_at desc);
 
 create index idx_notifications_user on public.notifications(user_id, is_read, created_at desc);
 
+-- =============================================
+-- ROW LEVEL SECURITY (enable all, policies after)
+-- =============================================
+
+alter table public.profiles enable row level security;
+alter table public.communities enable row level security;
+alter table public.community_members enable row level security;
+alter table public.posts enable row level security;
+alter table public.comments enable row level security;
+alter table public.votes enable row level security;
+alter table public.saved_posts enable row level security;
+alter table public.reports enable row level security;
+alter table public.moderation_logs enable row level security;
+alter table public.notifications enable row level security;
+
+-- =============================================
+-- POLICIES
+-- =============================================
+
+-- PROFILES
+create policy "Public profiles are viewable by everyone"
+  on public.profiles for select using (true);
+create policy "Users can update own profile"
+  on public.profiles for update using (auth.uid() = id);
+create policy "Users can insert own profile"
+  on public.profiles for insert with check (auth.uid() = id);
+
+-- COMMUNITIES
+create policy "Communities are viewable by everyone"
+  on public.communities for select
+  using (not is_private or exists (
+    select 1 from public.community_members
+    where community_id = id and user_id = auth.uid()
+  ));
+create policy "Authenticated users can create communities"
+  on public.communities for insert with check (auth.uid() is not null);
+create policy "Community creators and moderators can update"
+  on public.communities for update
+  using (
+    created_by = auth.uid()
+    or exists (
+      select 1 from public.community_members
+      where community_id = id and user_id = auth.uid()
+      and role in ('moderator', 'admin')
+    )
+  );
+
+-- COMMUNITY_MEMBERS
+create policy "Community members are viewable by everyone"
+  on public.community_members for select using (true);
+create policy "Authenticated users can join communities"
+  on public.community_members for insert with check (auth.uid() = user_id);
+create policy "Users can leave communities"
+  on public.community_members for delete using (auth.uid() = user_id);
+
+-- POSTS
+create policy "Posts are viewable by everyone"
+  on public.posts for select using (not is_removed);
+create policy "Authenticated users can create posts"
+  on public.posts for insert with check (auth.uid() = author_id);
+create policy "Authors can update own posts"
+  on public.posts for update using (auth.uid() = author_id);
+create policy "Authors can delete own posts"
+  on public.posts for delete using (auth.uid() = author_id);
+
+-- COMMENTS
+create policy "Comments are viewable by everyone"
+  on public.comments for select using (not is_removed);
+create policy "Authenticated users can create comments"
+  on public.comments for insert with check (auth.uid() = author_id);
+create policy "Authors can update own comments"
+  on public.comments for update using (auth.uid() = author_id);
+create policy "Authors can delete own comments"
+  on public.comments for delete using (auth.uid() = author_id);
+
+-- VOTES
+create policy "Votes are viewable by everyone"
+  on public.votes for select using (true);
+create policy "Authenticated users can vote"
+  on public.votes for insert with check (auth.uid() = user_id);
+create policy "Users can update own votes"
+  on public.votes for update using (auth.uid() = user_id);
+create policy "Users can delete own votes"
+  on public.votes for delete using (auth.uid() = user_id);
+
+-- SAVED_POSTS
+create policy "Users can view own saved posts"
+  on public.saved_posts for select using (auth.uid() = user_id);
+create policy "Users can save posts"
+  on public.saved_posts for insert with check (auth.uid() = user_id);
+create policy "Users can unsave posts"
+  on public.saved_posts for delete using (auth.uid() = user_id);
+
+-- REPORTS
+create policy "Reporters can view own reports"
+  on public.reports for select using (auth.uid() = reporter_id);
+create policy "Moderators can view all reports"
+  on public.reports for select
+  using (exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('moderator', 'admin')
+  ));
+create policy "Authenticated users can create reports"
+  on public.reports for insert with check (auth.uid() = reporter_id);
+create policy "Moderators can update reports"
+  on public.reports for update
+  using (exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('moderator', 'admin')
+  ));
+
+-- MODERATION_LOGS
+create policy "Moderators can view moderation logs"
+  on public.moderation_logs for select
+  using (exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('moderator', 'admin')
+  ));
+create policy "Moderators can create moderation logs"
+  on public.moderation_logs for insert
+  with check (exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('moderator', 'admin')
+  ));
+
+-- NOTIFICATIONS
 create policy "Users can view own notifications"
-  on public.notifications for select
-  using (auth.uid() = user_id);
-
+  on public.notifications for select using (auth.uid() = user_id);
 create policy "System can create notifications"
-  on public.notifications for insert
-  with check (true);
-
+  on public.notifications for insert with check (true);
 create policy "Users can update own notifications"
-  on public.notifications for update
-  using (auth.uid() = user_id);
+  on public.notifications for update using (auth.uid() = user_id);
 
 -- =============================================
--- FUNCTIONS
+-- FUNCTIONS & TRIGGERS
 -- =============================================
 
--- Function to update vote counts on posts
+-- Auto-create profile on signup
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, username, display_name, avatar_url)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'username', split_part(new.email, '@', 1)),
+    coalesce(new.raw_user_meta_data ->> 'full_name', split_part(new.email, '@', 1)),
+    coalesce(new.raw_user_meta_data ->> 'avatar_url', null)
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row
+  execute function public.handle_new_user();
+
+-- Update post vote counts
 create or replace function public.handle_post_vote()
 returns trigger as $$
 begin
@@ -434,7 +400,7 @@ create trigger on_post_vote
   when (NEW.post_id is not null or OLD.post_id is not null)
   execute function public.handle_post_vote();
 
--- Function to update vote counts on comments
+-- Update comment vote counts
 create or replace function public.handle_comment_vote()
 returns trigger as $$
 begin
@@ -474,7 +440,7 @@ create trigger on_comment_vote
   when (NEW.comment_id is not null or OLD.comment_id is not null)
   execute function public.handle_comment_vote();
 
--- Function to update post comment count
+-- Update post comment count
 create or replace function public.handle_comment_count()
 returns trigger as $$
 begin
@@ -493,7 +459,7 @@ create trigger on_comment_count
   for each row
   execute function public.handle_comment_count();
 
--- Function to update community member count
+-- Update community member count
 create or replace function public.handle_community_member_count()
 returns trigger as $$
 begin
@@ -512,7 +478,7 @@ create trigger on_community_member_count
   for each row
   execute function public.handle_community_member_count();
 
--- Function to update post count
+-- Update community post count
 create or replace function public.handle_post_count()
 returns trigger as $$
 begin
@@ -531,23 +497,3 @@ create trigger on_post_count
   after insert or delete on public.posts
   for each row
   execute function public.handle_post_count();
-
--- Function to auto-create profile on signup
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, username, display_name, avatar_url)
-  values (
-    new.id,
-    coalesce(new.raw_user_meta_data ->> 'username', split_part(new.email, '@', 1)),
-    coalesce(new.raw_user_meta_data ->> 'full_name', split_part(new.email, '@', 1)),
-    coalesce(new.raw_user_meta_data ->> 'avatar_url', null)
-  );
-  return new;
-end;
-$$ language plpgsql security definer;
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row
-  execute function public.handle_new_user();
