@@ -5,6 +5,7 @@
 
 -- Enable required extensions
 create extension if not exists "uuid-ossp";
+create extension if not exists pg_trgm;
 
 -- =============================================
 -- PROFILES
@@ -550,6 +551,3 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row
   execute function public.handle_new_user();
-
--- Enable pg_trgm for search
-create extension if not exists pg_trgm;
