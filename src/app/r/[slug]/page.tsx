@@ -51,7 +51,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
           .order('created_at', { ascending: false }).limit(20);
 
         if (postData) {
-          setPosts(postData.map(p => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
+          setPosts((postData as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
         }
       }
     } catch { /* not found */ } finally { setLoading(false); }

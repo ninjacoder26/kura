@@ -11,6 +11,32 @@ import Button from '@/components/ui/Button';
 import Link from 'next/link';
 import { TrendingUp, Sparkles, Plus, Users, ArrowRight } from 'lucide-react';
 
+function FeedSkeleton() {
+  return (
+    <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="flex gap-3 p-4 border-b border-[var(--border)] last:border-b-0">
+          <div className="hidden sm:flex flex-col items-center gap-1 px-1">
+            <div className="h-6 w-6 rounded skeleton" />
+            <div className="h-3 w-5 rounded skeleton" />
+            <div className="h-6 w-6 rounded skeleton" />
+          </div>
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-32 rounded skeleton" />
+            <div className="h-4 w-full rounded skeleton" />
+            <div className="h-3 w-3/4 rounded skeleton" />
+            <div className="flex gap-3 mt-2">
+              <div className="h-3 w-16 rounded skeleton" />
+              <div className="h-3 w-12 rounded skeleton" />
+              <div className="h-3 w-12 rounded skeleton" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +53,7 @@ export default function HomePage() {
           .limit(20);
 
         if (data) {
-          setPosts(data.map(p => ({
+          setPosts((data as any[]).map((p: any) => ({
             ...p,
             author: p.author || { username: 'unknown' },
             community: p.community || undefined,
@@ -78,11 +104,15 @@ export default function HomePage() {
           )}
 
           {/* Feed */}
-          <PostList
-            posts={posts}
-            emptyTitle="No posts in your feed"
-            emptyDescription="Join some communities or create a post to get started."
-          />
+          {loading ? (
+            <FeedSkeleton />
+          ) : (
+            <PostList
+              posts={posts}
+              emptyTitle="No posts in your feed"
+              emptyDescription="Join some communities or create a post to get started."
+            />
+          )}
         </main>
 
         {/* Right sidebar — hidden on small screens */}

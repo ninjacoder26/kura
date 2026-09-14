@@ -27,7 +27,7 @@ export default function SignupPage() {
     if (password.length < 6) { setError('Password must be at least 6 characters'); setLoading(false); return; }
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signUp({
+    const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { username, full_name: username } },
@@ -37,6 +37,16 @@ export default function SignupPage() {
       setError(authError.message);
       setLoading(false);
       return;
+    }
+
+    // Create profile row if user was created
+    if (data.user) {
+      await supabase.from('profiles').insert({
+        id: data.user.id,
+        username,
+        display_name: username,
+        email,
+      });
     }
 
     setSuccess(true); setLoading(false);

@@ -138,6 +138,9 @@ input, textarea, select, button { font-family: inherit; }
 
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
 .prose { line-height: 1.75; }
 .prose p { margin-bottom: .75em; }
 .prose p:last-child { margin-bottom: 0; }

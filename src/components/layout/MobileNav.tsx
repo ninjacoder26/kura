@@ -4,24 +4,30 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Compass, Plus, Users, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/components/providers/AuthProvider';
 
-const NAV = [
+const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/communities', label: 'Communities', icon: Users },
   { href: '/submit', label: 'Post', icon: Plus, accent: true },
   { href: '/search', label: 'Explore', icon: Compass },
-  { href: '/profile', label: 'Profile', icon: User },
 ];
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const navItems = [
+    ...NAV_ITEMS,
+    { href: user ? `/profile/${user.username}` : '/login', label: 'Profile', icon: User },
+  ];
 
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-xl safe-bottom">
       <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-2">
-        {NAV.map(item => {
+        {navItems.map(item => {
           const Icon = item.icon;
-          const active = pathname === item.href;
+          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}

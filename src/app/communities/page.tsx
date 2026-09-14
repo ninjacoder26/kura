@@ -27,7 +27,7 @@ export default function CommunitiesPage() {
           .from('communities')
           .select('*')
           .order('member_count', { ascending: false });
-        if (data) setCommunities(data);
+        if (data) setCommunities(data as any[]);
       } catch {
         // Supabase not configured
       } finally {

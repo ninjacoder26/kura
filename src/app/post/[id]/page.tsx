@@ -38,14 +38,27 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         .eq('id', id).single();
       setPost(postData);
 
+      // Load existing vote if user is logged in
+      if (user && postData) {
+        const { data: voteData } = await supabase
+          .from('votes')
+          .select('value')
+          .eq('user_id', user.id)
+          .eq('post_id', id)
+          .single();
+        if (voteData) {
+          setVote(voteData.value === 1 ? 'up' : 'down');
+        }
+      }
+
       const { data: commentData } = await supabase
         .from('comments')
         .select('*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url)')
         .eq('post_id', id).eq('is_removed', false).order('created_at', { ascending: true });
 
       if (commentData) {
-        const flat = commentData.map(c => ({ ...c, author: c.author || { username: 'unknown' }, children: [] as CommentData[] }));
-        const map = new Map(flat.map(c => [c.id, c]));
+        const flat = (commentData as any[]).map((c: any) => ({ ...c, author: c.author || { username: 'unknown' }, children: [] as CommentData[] }));
+        const map = new Map(flat.map((c: any) => [c.id, c]));
         const roots: CommentData[] = [];
         for (const c of flat) {
           if (c.parent_id && map.has(c.parent_id)) {
@@ -57,7 +70,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         setComments(roots);
       }
     } catch { /* not found */ } finally { setLoading(false); }
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => { loadPost(); }, [loadPost]);
 

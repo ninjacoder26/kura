@@ -5,36 +5,56 @@ export function createClient() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key || url === 'your-project-url' || key === 'your-anon-key') {
-    // Return a proxy that gracefully handles all calls when not configured
-    return new Proxy({} as ReturnType<typeof createBrowserClient>, {
-      get(_target, prop) {
-        if (prop === 'auth') {
-          return {
-            getUser: async () => ({ data: { user: null }, error: null }),
-            getSession: async () => ({ data: { session: null }, error: null }),
-            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-            signUp: async () => ({ data: { user: null, session: null }, error: { message: 'Supabase not configured. Set up .env file.' } }),
-            signInWithPassword: async () => ({ data: { user: null, session: null }, error: { message: 'Supabase not configured. Set up .env file.' } }),
-            signOut: async () => ({ error: null }),
-          };
-        }
-        if (prop === 'from') {
-          return () => ({
-            select: () => ({ data: null, error: { message: 'Supabase not configured' } }),
-            insert: () => ({ data: null, error: { message: 'Supabase not configured' } }),
-            update: () => ({ data: null, error: { message: 'Supabase not configured' } }),
-            delete: () => ({ data: null, error: { message: 'Supabase not configured' } }),
-            eq: function() { return this; },
-            single: function() { return this; },
-            order: function() { return this; },
-            limit: function() { return this; },
-            ilike: function() { return this; },
-            or: function() { return this; },
-          });
-        }
-        return () => {};
+    const errResult = { data: null, error: { message: 'Supabase not configured. Set up .env file.' } };
+    const emptyResult = { data: null, error: null };
+
+    function makeQueryBuilder() {
+      const builder: Record<string, any> = {
+        select: () => makeResult(),
+        insert: () => makeResult(),
+        update: () => makeResult(),
+        upsert: () => makeResult(),
+        delete: () => makeResult(),
+        eq: () => builder,
+        neq: () => builder,
+        gt: () => builder,
+        gte: () => builder,
+        lt: () => builder,
+        lte: () => builder,
+        like: () => builder,
+        ilike: () => builder,
+        is: () => builder,
+        in: () => builder,
+        contains: () => builder,
+        containedBy: () => builder,
+        or: () => builder,
+        and: () => builder,
+        not: () => builder,
+        order: () => builder,
+        limit: () => builder,
+        range: () => builder,
+        single: () => makeResult(),
+        maybeSingle: () => makeResult(),
+        then: (resolve: any) => resolve(makeResult()),
+      };
+      return builder;
+    }
+
+    function makeResult() {
+      return { data: null, error: null, count: null };
+    }
+
+    return {
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signUp: async () => ({ data: { user: null, session: null }, error: { message: 'Supabase not configured. Set up .env file.' } }),
+        signInWithPassword: async () => ({ data: { user: null, session: null }, error: { message: 'Supabase not configured. Set up .env file.' } }),
+        signOut: async () => ({ error: null }),
       },
-    });
+      from: () => makeQueryBuilder(),
+    } as any;
   }
 
   return createBrowserClient(url, key);

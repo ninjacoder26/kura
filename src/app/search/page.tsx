@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
 import PostList from '@/components/post/PostList';
@@ -22,9 +22,9 @@ export default function SearchPage() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [communities, setCommunities] = useState<CommunityData[]>([]);
   const [searching, setSearching] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  async function handleSearch(q: string) {
-    setQuery(q);
+  const doSearch = useCallback(async (q: string) => {
     if (q.length < 2) { setPosts([]); setCommunities([]); return; }
     setSearching(true);
     try {
@@ -38,9 +38,16 @@ export default function SearchPage() {
           .or(`name.ilike.%${q}%,slug.ilike.%${q}%`)
           .order('member_count', { ascending: false }).limit(10),
       ]);
-      if (postRes.data) setPosts(postRes.data.map(p => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
+      if (postRes.data) setPosts((postRes.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
       if (commRes.data) setCommunities(commRes.data);
     } catch { /* not configured */ } finally { setSearching(false); }
+  }, []);
+
+  function handleSearch(q: string) {
+    setQuery(q);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (q.length < 2) { setPosts([]); setCommunities([]); return; }
+    debounceRef.current = setTimeout(() => doSearch(q), 300);
   }
 
   return (

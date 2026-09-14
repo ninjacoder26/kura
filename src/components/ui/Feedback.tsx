@@ -57,6 +57,29 @@ export function CommunitySkeleton() {
   );
 }
 
+export function PostSkeleton() {
+  return (
+    <div className="flex gap-3 p-4 border-b border-[var(--border)]">
+      <div className="hidden sm:flex flex-col items-center gap-1.5 pt-1">
+        <Skeleton className="h-6 w-6 rounded-[var(--r-xs)]" />
+        <Skeleton className="h-4 w-8" />
+        <Skeleton className="h-6 w-6 rounded-[var(--r-xs)]" />
+      </div>
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-3 w-40" />
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-2/3" />
+        <div className="flex gap-3 pt-1">
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-6 w-16" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const dims = { sm: 'h-5 w-5', md: 'h-8 w-8', lg: 'h-12 w-12' };
   return (

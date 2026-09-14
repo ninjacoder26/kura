@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Header from '@/components/layout/Header';
@@ -27,6 +27,7 @@ function SubmitForm() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const preselectedCommunity = searchParams.get('community') || '';
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [type, setType] = useState('text');
   const [title, setTitle] = useState('');
@@ -44,15 +45,28 @@ function SubmitForm() {
     }
   }, [user, authLoading, router]);
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClick);
+      return () => document.removeEventListener('mousedown', handleClick);
+    }
+  }, [showDropdown]);
+
   useEffect(() => {
     async function load() {
       try {
         const supabase = createClient();
         const { data } = await supabase.from('communities').select('id, slug, name').order('name');
         if (data) {
-          setCommunities(data);
+          setCommunities(data as any[]);
           if (preselectedCommunity) {
-            const match = data.find(c => c.slug === preselectedCommunity);
+            const match = (data as any[]).find((c: any) => c.slug === preselectedCommunity);
             if (match) setCommunityId(match.id);
           }
         }
@@ -116,7 +130,7 @@ function SubmitForm() {
         </div>
 
         {/* Community selector */}
-        <div className="mb-4 anim-fade-up" style={{ animationDelay: '50ms' }}>
+        <div className="mb-4 anim-fade-up" style={{ animationDelay: '50ms' }} ref={dropdownRef}>
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
@@ -127,7 +141,7 @@ function SubmitForm() {
               ) : (
                 <span className="text-[var(--fg4)]">Choose a community (optional)</span>
               )}
-              <ChevronDown className="h-4 w-4 text-[var(--fg4)] shrink-0" />
+              <ChevronDown className={cn('h-4 w-4 text-[var(--fg4)] shrink-0 transition-transform', showDropdown && 'rotate-180')} />
             </button>
             {showDropdown && (
               <div className="absolute top-full left-0 right-0 mt-1 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] z-20 anim-slide-down">

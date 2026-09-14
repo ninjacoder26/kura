@@ -184,7 +184,7 @@ export default function SetupPage() {
                   <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[var(--brand-100)] dark:bg-[color-mix(in_srgb,var(--brand-600)_20%,transparent)] text-[var(--brand-600)] flex items-center justify-center text-xs font-bold">{i + 1}</span>
                   <div>
                     {href ? (
-                      <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--fg)] hover:text-[var(--brand-600)] hover:underline">{text.split('at')[0]}<span className="text-[var(--brand-600)]">at supabase.com</span></a>
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--fg)] hover:text-[var(--brand-600)] hover:underline">{text} <span className="text-[var(--brand-600)]">(supabase.com)</span></a>
                     ) : (
                       <span className="font-medium text-[var(--fg)]">{text}</span>
                     )}

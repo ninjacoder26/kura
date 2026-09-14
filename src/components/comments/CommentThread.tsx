@@ -18,6 +18,7 @@ interface CommentAuthor {
 export interface CommentData {
   id: string;
   body: string;
+  post_id: string;
   author: CommentAuthor;
   upvotes: number;
   downvotes: number;
@@ -52,13 +53,14 @@ function CommentItem({ comment }: { comment: CommentData }) {
     setSubmittingReply(true);
     try {
       const supabase = createClient();
-      await supabase.from('comments').insert({
+      const { error } = await supabase.from('comments').insert({
         body: replyBody.trim(),
         author_id: user.id,
-        post_id: (comment as any).post_id,
+        post_id: comment.post_id,
         parent_id: comment.id,
         depth: comment.depth + 1,
       });
+      if (error) throw error;
       toast('success', 'Reply added');
       setShowReply(false);
       setReplyBody('');

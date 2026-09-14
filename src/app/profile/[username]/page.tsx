@@ -9,13 +9,23 @@ import type { PostData } from '@/components/post/PostCard';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare } from 'lucide-react';
+import Link from 'next/link';
+
+interface UserComment {
+  id: string;
+  body: string;
+  post_id: string;
+  post_title?: string;
+  created_at: string;
+}
 
 export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const [username, setUsername] = useState('');
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<PostData[]>([]);
+  const [comments, setComments] = useState<UserComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
 
@@ -39,7 +49,26 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             .limit(20);
 
           if (postData) {
-            setPosts(postData.map(p => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
+            setPosts((postData as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
+          }
+
+          // Load user's comments
+          const { data: commentData } = await supabase
+            .from('comments')
+            .select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)')
+            .eq('author_id', prof.id)
+            .eq('is_removed', false)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+          if (commentData) {
+            setComments((commentData as any[]).map((c: any) => ({
+              id: c.id,
+              body: c.body,
+              post_id: c.post_id,
+              post_title: c.posts?.title,
+              created_at: c.created_at,
+            })));
           }
         }
       } catch {
@@ -127,7 +156,25 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
         <div className="pb-20 lg:pb-8">
           {activeTab === 'posts' && <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." />}
-          {activeTab === 'comments' && <EmptyState title="Comments coming soon" />}
+          {activeTab === 'comments' && (
+            comments.length === 0 ? (
+              <EmptyState title="No comments yet" description="This user hasn't commented on anything yet." />
+            ) : (
+              <div className="space-y-3">
+                {comments.map(c => (
+                  <div key={c.id} className="rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4 anim-fade-up">
+                    {c.post_title && (
+                      <Link href={`/post/${c.post_id}`} className="text-xs text-[var(--fg4)] hover:text-[var(--brand-600)] transition-colors">
+                        in: {c.post_title}
+                      </Link>
+                    )}
+                    <p className="text-sm text-[var(--fg)] mt-1 leading-relaxed">{c.body}</p>
+                    <p className="text-[11px] text-[var(--fg4)] mt-1.5">{formatDate(c.created_at)}</p>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
         </div>
       </div>
       <MobileNav />
