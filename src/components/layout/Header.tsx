@@ -31,8 +31,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-[var(--surface)] border-b border-[var(--border)]">
-      <div className="h-[48px] flex items-center px-4 gap-4 max-w-[1400px] mx-auto">
-        {/* Logo */}
+      <div className="h-[48px] flex items-center px-4 gap-4">
         <Link href="/" className="flex items-center gap-2 shrink-0 mr-2">
           <div className="h-8 w-8 rounded-full bg-[var(--brand-600)] flex items-center justify-center">
             <span className="text-white font-bold text-sm">K</span>
@@ -40,7 +39,6 @@ export default function Header() {
           <span className="font-bold text-lg tracking-tight hidden md:block text-[var(--fg)]">kura</span>
         </Link>
 
-        {/* Search */}
         <div className="flex-1 max-w-[690px] hidden sm:block">
           <Link href="/search">
             <div className="flex items-center h-10 px-4 rounded-full bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface)] transition-all cursor-text">
@@ -50,8 +48,7 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
           <Link href="/submit" className="hidden sm:block">
             <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-1.5 px-4">
               <Plus className="h-4 w-4" /> Create
@@ -61,11 +58,7 @@ export default function Header() {
             <button className="vote-btn"><Plus className="h-5 w-5" /></button>
           </Link>
 
-          <button
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="vote-btn"
-            aria-label="Toggle theme"
-          >
+          <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="vote-btn" aria-label="Toggle theme">
             {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
 
@@ -73,10 +66,7 @@ export default function Header() {
             <div className="h-8 w-8 rounded bg-[var(--bg-raised)] animate-pulse" />
           ) : user ? (
             <div ref={menuRef} className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-1.5 p-1 rounded hover:bg-[var(--surface-hover)] transition-colors"
-              >
+              <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-1.5 p-1 rounded hover:bg-[var(--surface-hover)] transition-colors">
                 <div className="h-8 w-8 rounded bg-[var(--bg-raised)] flex items-center justify-center overflow-hidden border border-[var(--border)]">
                   {user.avatar_url ? (
                     <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
@@ -93,21 +83,10 @@ export default function Header() {
                     <p className="text-[11px] text-[var(--fg4)]">Logged in as</p>
                     <p className="text-sm font-medium text-[var(--fg)] truncate">{user.username}</p>
                   </div>
-                  <Link
-                    href={`/profile/${user.username}`}
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"
-                  >
+                  <Link href={`/profile/${user.username}`} onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors">
                     <User className="h-4 w-4" /> Profile
                   </Link>
-                  <button
-                    onClick={async () => {
-                      setUserMenuOpen(false);
-                      await signOut();
-                      router.push('/');
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"
-                  >
+                  <button onClick={async () => { setUserMenuOpen(false); await signOut(); router.push('/'); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors">
                     <LogOut className="h-4 w-4" /> Log Out
                   </button>
                 </div>
@@ -116,14 +95,10 @@ export default function Header() {
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/login">
-                <button className="reddit-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm py-1.5 px-4">
-                  Log In
-                </button>
+                <button className="reddit-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm py-1.5 px-4">Log In</button>
               </Link>
               <Link href="/signup" className="hidden sm:block">
-                <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-1.5 px-4">
-                  Sign Up
-                </button>
+                <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-1.5 px-4">Sign Up</button>
               </Link>
             </div>
           )}

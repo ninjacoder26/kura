@@ -59,7 +59,6 @@ export default function HomePage() {
           })));
         }
       } catch {
-        // Supabase not configured
       } finally {
         setLoading(false);
       }
@@ -70,24 +69,20 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-[1400px] px-4 py-3 flex gap-5">
-        {/* Left sidebar */}
+      <div className="flex px-4 py-3 gap-5">
         <aside className="hidden lg:block w-[228px] shrink-0">
           <div className="sticky top-[60px]">
             <Sidebar />
           </div>
         </aside>
 
-        {/* Main feed */}
-        <main className="flex-1 min-w-0 max-w-[740px]">
-          {/* Sort bar */}
+        <main className="flex-1 min-w-0">
           <div className="post-card flex items-center gap-1 px-3 py-2 mb-3">
             <button className="text-sm font-bold text-[var(--fg)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)]">Best</button>
             <button className="text-sm font-bold text-[var(--fg4)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)]">New</button>
             <button className="text-sm font-bold text-[var(--fg4)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)]">Top</button>
           </div>
 
-          {/* Hero — only when empty */}
           {!loading && posts.length === 0 && (
             <div className="post-card p-5 mb-3 anim-fade-up">
               <div className="flex items-start gap-4">
@@ -96,9 +91,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-medium text-[var(--fg)]">Home</h2>
-                  <p className="text-sm text-[var(--fg3)] mt-1">
-                    Your personal Kura frontpage. Come here to check in with your favorite communities.
-                  </p>
+                  <p className="text-sm text-[var(--fg3)] mt-1">Your personal Kura frontpage.</p>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Link href="/communities">
                       <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2 px-5">
@@ -116,22 +109,15 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Feed */}
           {loading ? <FeedSkeleton /> : (
-            <PostList
-              posts={posts}
-              emptyTitle="No posts in your feed"
-              emptyDescription="Join some communities or create a post to get started."
-            />
+            <PostList posts={posts} emptyTitle="No posts in your feed" emptyDescription="Join some communities or create a post to get started." />
           )}
 
           <div className="pb-20 lg:pb-6" />
         </main>
 
-        {/* Right sidebar */}
-        <aside className="hidden lg:block w-[312px] shrink-0">
+        <aside className="hidden xl:block w-[312px] shrink-0">
           <div className="sticky top-[60px] space-y-4">
-            {/* Home widget */}
             <div className="sidebar-widget">
               <div className="bg-gradient-to-b from-[var(--brand-500)] to-[var(--brand-700)] h-8" />
               <div className="p-3">
@@ -141,25 +127,18 @@ export default function HomePage() {
                   </div>
                 </div>
                 <p className="text-sm font-medium text-[var(--fg)]">Home</p>
-                <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">
-                  Your personal Kura frontpage. Come here to check in with your favorite communities.
-                </p>
+                <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">Your personal Kura frontpage.</p>
                 <div className="mt-3 space-y-2">
                   <Link href="/submit">
-                    <button className="reddit-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">
-                      Create Post
-                    </button>
+                    <button className="reddit-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">Create Post</button>
                   </Link>
                   <Link href="/communities">
-                    <button className="reddit-btn w-full border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2">
-                      Create Community
-                    </button>
+                    <button className="reddit-btn w-full border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2">Create Community</button>
                   </Link>
                 </div>
               </div>
             </div>
 
-            {/* Popular Communities */}
             <div className="sidebar-widget">
               <div className="sidebar-widget-header">Popular Communities</div>
               <div className="p-2">
@@ -170,11 +149,7 @@ export default function HomePage() {
                   { name: 'gaming', members: '31.4k' },
                   { name: 'culture', members: '8.7k' },
                 ].map((c, i) => (
-                  <Link
-                    key={c.name}
-                    href={`/r/${c.name}`}
-                    className="flex items-center gap-2.5 px-2 py-1.5 rounded text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"
-                  >
+                  <Link key={c.name} href={`/r/${c.name}`} className="flex items-center gap-2.5 px-2 py-1.5 rounded text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors">
                     <span className="text-xs font-bold text-[var(--fg4)] w-4 text-right">{i + 1}</span>
                     <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[var(--brand-400)] to-[var(--brand-700)] flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                       {c.name[0].toUpperCase()}
@@ -183,13 +158,10 @@ export default function HomePage() {
                     <span className="text-[11px] text-[var(--fg4)]">{c.members}</span>
                   </Link>
                 ))}
-                <Link href="/communities" className="block px-2 py-1.5 text-xs font-bold text-[var(--brand-600)] hover:underline">
-                  See more
-                </Link>
+                <Link href="/communities" className="block px-2 py-1.5 text-xs font-bold text-[var(--brand-600)] hover:underline">See more</Link>
               </div>
             </div>
 
-            {/* Footer */}
             <div className="text-[11px] text-[var(--fg4)] space-y-1 px-1">
               <div className="flex flex-wrap gap-x-2 gap-y-0.5">
                 <Link href="/" className="hover:underline">Home</Link>

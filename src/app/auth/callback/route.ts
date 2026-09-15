@@ -12,12 +12,7 @@ export async function GET(request: Request) {
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: existing } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', user.id)
-          .single();
-
+        const { data: existing } = await supabase.from('profiles').select('id').eq('id', user.id).single();
         if (!existing) {
           await supabase.from('profiles').insert({
             id: user.id,
@@ -31,5 +26,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=verification_failed`);
+  return NextResponse.redirect(`${origin}/login?error=Could+not+verify+email`);
 }
