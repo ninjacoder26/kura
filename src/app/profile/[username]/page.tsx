@@ -83,7 +83,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     return (
       <div className="min-h-screen">
         <Header />
-        <div className="mx-auto max-w-[640px] px-4 py-8">
+        <div className="mx-auto max-w-[740px] px-4 py-8">
           <EmptyState title="User not found" description="This profile doesn't exist." />
         </div>
       </div>
@@ -95,7 +95,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       <Header />
       <div className="h-24 sm:h-32 bg-gradient-to-r from-[var(--brand-400)] to-[var(--brand-600)]" />
       <div className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-[1200px] px-4">
+        <div className="mx-auto max-w-[1400px] px-4">
           <div className="flex items-end gap-3 -mt-5 pb-3">
             <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-[var(--brand-600)] border-4 border-[var(--surface)] flex items-center justify-center text-white font-bold text-xl shrink-0">
               {profile.avatar_url ? (
@@ -112,8 +112,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1200px] px-4 py-4 flex gap-6">
-        <main className="flex-1 min-w-0 max-w-[640px]">
+      <div className="mx-auto max-w-[1400px] px-4 py-4 flex gap-5">
+        <main className="flex-1 min-w-0 max-w-[740px]">
           <div className="flex items-center gap-0 border-b border-[var(--border)] mb-3">
             {[
               { key: 'posts' as const, label: 'Posts', icon: ArrowBigUp },

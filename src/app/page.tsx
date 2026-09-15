@@ -70,7 +70,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-[1200px] px-4 py-3 flex gap-6">
+      <div className="mx-auto max-w-[1400px] px-4 py-3 flex gap-5">
         {/* Left sidebar */}
         <aside className="hidden lg:block w-[228px] shrink-0">
           <div className="sticky top-[60px]">
@@ -79,7 +79,7 @@ export default function HomePage() {
         </aside>
 
         {/* Main feed */}
-        <main className="flex-1 min-w-0 max-w-[640px]">
+        <main className="flex-1 min-w-0 max-w-[740px]">
           {/* Sort bar */}
           <div className="post-card flex items-center gap-1 px-3 py-2 mb-3">
             <button className="text-sm font-bold text-[var(--fg)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)]">Best</button>
@@ -129,7 +129,7 @@ export default function HomePage() {
         </main>
 
         {/* Right sidebar */}
-        <aside className="hidden xl:block w-[312px] shrink-0">
+        <aside className="hidden lg:block w-[312px] shrink-0">
           <div className="sticky top-[60px] space-y-4">
             {/* Home widget */}
             <div className="sidebar-widget">

@@ -53,7 +53,7 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-[640px] px-4 py-3">
+      <div className="mx-auto max-w-[740px] px-4 py-3">
         <div className="relative mb-3">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)]" />
           <input

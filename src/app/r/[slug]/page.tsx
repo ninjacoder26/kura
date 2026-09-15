@@ -84,7 +84,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
     return (
       <div className="min-h-screen">
         <Header />
-        <div className="mx-auto max-w-[1200px] px-4 py-8">
+        <div className="mx-auto max-w-[740px] px-4 py-8">
           <EmptyState title="Community not found" description="This community doesn't exist yet." action={<Link href="/communities"><button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">Browse communities</button></Link>} />
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       <Header />
       <div className="h-20 sm:h-24" style={{ backgroundColor: community.color }} />
       <div className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-[1200px] px-4">
+        <div className="mx-auto max-w-[1400px] px-4">
           <div className="flex items-end gap-3 -mt-4 pb-3">
             <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-[var(--surface)] shrink-0" style={{ backgroundColor: community.color }}>
               {community.icon_url ? <img src={community.icon_url} alt={community.name} className="h-full w-full rounded-full object-cover" /> : community.name.charAt(0)}
@@ -114,8 +114,8 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1200px] px-4 py-3 flex gap-6">
-        <main className="flex-1 min-w-0 max-w-[640px]">
+      <div className="mx-auto max-w-[1400px] px-4 py-3 flex gap-5">
+        <main className="flex-1 min-w-0 max-w-[740px]">
           <Link href={`/submit?community=${community.slug}`} className="block mb-3">
             <div className="post-card flex items-center gap-3 p-3">
               <div className="h-9 w-9 rounded-full bg-[var(--bg-raised)] flex items-center justify-center text-[var(--fg4)] text-sm border border-[var(--border)]">?</div>

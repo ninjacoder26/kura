@@ -44,14 +44,14 @@ export default function CommunitiesPage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-[1200px] px-4 py-3 flex gap-6">
+      <div className="mx-auto max-w-[1400px] px-4 py-3 flex gap-5">
         <aside className="hidden lg:block w-[228px] shrink-0">
           <div className="sticky top-[60px]">
             <Sidebar />
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 max-w-[640px]">
+        <main className="flex-1 min-w-0 max-w-[740px]">
           <h1 className="text-lg font-medium text-[var(--fg)] mb-3">Browse Communities</h1>
 
           <input

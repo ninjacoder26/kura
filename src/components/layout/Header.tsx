@@ -31,7 +31,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-[var(--surface)] border-b border-[var(--border)]">
-      <div className="h-[48px] flex items-center px-4 gap-4 max-w-[1200px] mx-auto">
+      <div className="h-[48px] flex items-center px-4 gap-4 max-w-[1400px] mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0 mr-2">
           <div className="h-8 w-8 rounded-full bg-[var(--brand-600)] flex items-center justify-center">

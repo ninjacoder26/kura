@@ -120,7 +120,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-[640px] px-4 py-3">
+      <div className="mx-auto max-w-[740px] px-4 py-3">
         <Link href={post.community ? `/r/${post.community.slug}` : '/'} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--fg4)] hover:text-[var(--fg)] mb-3 transition-colors">
           <ArrowLeft className="h-4 w-4" />
           Back to r/{post.community?.slug || 'home'}

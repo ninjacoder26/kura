@@ -118,7 +118,7 @@ function SubmitForm() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-[640px] px-4 py-4">
+      <div className="mx-auto max-w-[740px] px-4 py-3">
         <h1 className="text-lg font-medium text-[var(--fg)] mb-4 anim-fade-up">Create a post</h1>
 
         <div className="mb-4 anim-fade-up" ref={dropdownRef}>
