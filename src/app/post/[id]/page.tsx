@@ -8,21 +8,24 @@ import MobileNav from '@/components/layout/MobileNav';
 import CommentThread, { type CommentData } from '@/components/comments/CommentThread';
 import CommentForm from '@/components/comments/CommentForm';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, ArrowLeft, MoreHorizontal } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, ArrowLeft, Trash2, Pencil } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useRouter } from 'next/navigation';
 
 export default function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [id, setId] = useState('');
   const [post, setPost] = useState<any>(null);
   const [comments, setComments] = useState<CommentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [vote, setVote] = useState<'up' | 'down' | null>(null);
-  const [optimisticScore, setOptimisticScore] = useState(0);
+  const [score, setScore] = useState(0);
+  const [saved, setSaved] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
 
   useEffect(() => { params.then(p => setId(p.id)); }, [params]);
@@ -34,11 +37,18 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       const { data: postData, error: postErr } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('id', id).single();
       if (postErr) throw postErr;
       setPost(postData);
-      if (postData) setOptimisticScore(postData.upvotes - postData.downvotes);
+      if (postData) setScore(postData.upvotes - postData.downvotes);
+
       if (user && postData) {
         const { data: voteData } = await supabase.from('votes').select('value').eq('user_id', user.id).eq('post_id', id).single();
-        if (voteData) setVote(voteData.value === 1 ? 'up' : 'down');
+        if (voteData) {
+          setVote(voteData.value === 1 ? 'up' : 'down');
+          setScore(postData.upvotes - postData.downvotes + (voteData.value === 1 ? 1 : -1));
+        }
+        const { data: savedData } = await supabase.from('saved_posts').select('id').eq('user_id', user.id).eq('post_id', id).single();
+        if (savedData) setSaved(true);
       }
+
       const { data: commentData } = await supabase.from('comments').select('*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url)').eq('post_id', id).eq('is_removed', false).order('created_at', { ascending: true });
       if (commentData) {
         const flat = (commentData as any[]).map((c: any) => ({ ...c, author: c.author || { username: 'unknown' }, children: [] as CommentData[] }));
@@ -54,12 +64,41 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
 
   async function handleVote(value: 'up' | 'down') {
     if (!user) { toast('info', 'Log in to vote'); return; }
+    const oldValue = vote;
     const newValue = vote === value ? null : value;
     setVote(newValue);
-    setOptimisticScore(newValue ? post.upvotes - post.downvotes + (newValue === 'up' ? 1 : -1) : post.upvotes - post.downvotes);
+    let delta = 0;
+    if (oldValue === 'up') delta -= 1;
+    else if (oldValue === 'down') delta += 1;
+    if (newValue === 'up') delta += 1;
+    else if (newValue === 'down') delta -= 1;
+    setScore(score + delta);
     const supabase = createClient();
     if (newValue) { await supabase.from('votes').upsert({ user_id: user.id, post_id: id, value: newValue === 'up' ? 1 : -1 }); }
     else { await supabase.from('votes').delete().eq('user_id', user.id).eq('post_id', id); }
+  }
+
+  async function handleSave() {
+    if (!user) { toast('info', 'Log in to save posts'); return; }
+    const supabase = createClient();
+    if (saved) {
+      await supabase.from('saved_posts').delete().eq('user_id', user.id).eq('post_id', id);
+      setSaved(false); toast('success', 'Post unsaved');
+    } else {
+      await supabase.from('saved_posts').insert({ user_id: user.id, post_id: id });
+      setSaved(true); toast('success', 'Post saved');
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('posts').update({ is_removed: true }).eq('id', id);
+      if (error) throw error;
+      toast('success', 'Post deleted');
+      router.push('/');
+    } catch (err: any) { toast('error', err.message || 'Failed to delete'); }
   }
 
   async function handleComment(body: string) {
@@ -76,18 +115,12 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
 
   function handleShare() {
     const url = `${window.location.origin}/post/${id}`;
-    if (navigator.share) {
-      navigator.share({ title: post.title, url });
-    } else {
-      navigator.clipboard.writeText(url);
-      toast('success', 'Link copied to clipboard');
-    }
+    if (navigator.share) { navigator.share({ title: post.title, url }); }
+    else { navigator.clipboard.writeText(url); toast('success', 'Link copied to clipboard'); }
   }
 
   if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
   if (error || !post) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title={error || 'Post not found'} action={<Link href="/" className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">Go home</Link>} /></div></div>;
-
-  const score = optimisticScore + (vote === 'up' ? 1 : vote === 'down' ? -1 : 0);
 
   return (
     <div className="min-h-screen">
@@ -109,12 +142,21 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
               <span>by</span> <Link href={`/profile/${post.author.username}`} className="hover:underline">@{post.author.username}</Link><span>·</span><time>{formatDate(post.created_at)}</time>
             </div>
             <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
+            {post.type === 'link' && post.url && <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--brand-600)] hover:underline break-all mt-2 block">{post.url}</a>}
+            {post.type === 'image' && post.image_url && <div className="mt-2"><img src={post.image_url} alt={post.title} className="max-h-[512px] rounded object-contain" /></div>}
             {post.body && <div className="mt-3 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap">{post.body}</div>}
             <div className="flex items-center gap-1 mt-3 -ml-1">
               <span className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-bold text-[var(--fg4)]"><MessageSquare className="h-5 w-5" /> {formatNumber(post.comment_count)} Comments</span>
               <button onClick={handleShare} className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Share2 className="h-5 w-5" /> Share</button>
-              <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Bookmark className="h-5 w-5" /> Save</button>
-              <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><MoreHorizontal className="h-5 w-5" /></button>
+              <button onClick={handleSave} className={cn('flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold hover:bg-[var(--surface-hover)] transition-colors', saved ? 'text-[var(--brand-600)]' : 'text-[var(--fg4)]')}>
+                {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />} {saved ? 'Saved' : 'Save'}
+              </button>
+              {user && user.id === post.author_id && (
+                <>
+                  <Link href={`/post/${id}/edit`} className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Pencil className="h-5 w-5" /> Edit</Link>
+                  <button onClick={handleDelete} className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 className="h-5 w-5" /> Delete</button>
+                </>
+              )}
             </div>
           </div>
         </article>
@@ -132,7 +174,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           )}
         </div>
 
-        <div className="pb-20 lg:pb-8"><CommentThread comments={comments} /></div>
+        <div className="pb-20 lg:pb-8"><CommentThread comments={comments} onCommentChange={loadPost} /></div>
       </div>
       <MobileNav />
     </div>

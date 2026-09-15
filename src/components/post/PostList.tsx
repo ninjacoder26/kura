@@ -8,9 +8,10 @@ interface PostListProps {
   emptyTitle?: string;
   emptyDescription?: string;
   showCommunity?: boolean;
+  onDelete?: (id: string) => void;
 }
 
-export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDescription = 'Be the first to share something.', showCommunity = true }: PostListProps) {
+export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDescription = 'Be the first to share something.', showCommunity = true, onDelete }: PostListProps) {
   if (posts.length === 0) {
     return (
       <div className="py-12">
@@ -31,7 +32,7 @@ export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDesc
   return (
     <div className="space-y-2">
       {posts.map(post => (
-        <PostCard key={post.id} post={post} showCommunity={showCommunity} />
+        <PostCard key={post.id} post={post} showCommunity={showCommunity} onDelete={onDelete} />
       ))}
     </div>
   );

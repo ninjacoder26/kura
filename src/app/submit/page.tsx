@@ -7,7 +7,7 @@ import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
-import { FileText, Link2, Image as ImageIcon, ChevronDown } from 'lucide-react';
+import { FileText, Link2, Image as ImageIcon, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -26,6 +26,7 @@ function SubmitForm() {
   const { toast } = useToast();
   const preselectedCommunity = searchParams.get('community') || '';
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [type, setType] = useState('text');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -35,6 +36,9 @@ function SubmitForm() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [communities, setCommunities] = useState<{ id: string; slug: string; name: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => { if (!authLoading && !user) router.replace('/login?redirect=/submit'); }, [user, authLoading, router]);
 
@@ -57,13 +61,50 @@ function SubmitForm() {
   const filtered = communities.filter(c => c.name.toLowerCase().includes(communitySearch.toLowerCase()) || c.slug.includes(communitySearch.toLowerCase()));
   const selectedCommunity = communities.find(c => c.id === communityId);
 
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) { toast('error', 'Image must be under 20MB'); return; }
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadImage(): Promise<string | null> {
+    if (!imageFile || !user) return null;
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const ext = imageFile.name.split('.').pop();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('post-images').upload(path, imageFile);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('post-images').getPublicUrl(path);
+      return urlData.publicUrl;
+    } catch (err: any) { toast('error', err.message || 'Image upload failed'); return null; } finally { setUploading(false); }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !user) return;
     setSubmitting(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.from('posts').insert({ title: title.trim(), body: body.trim(), type, url: type === 'link' ? url : null, author_id: user.id, community_id: communityId || null });
+      let imageUrl: string | null = null;
+      if (type === 'image' && imageFile) {
+        imageUrl = await uploadImage();
+        if (type === 'image' && !imageUrl) { setSubmitting(false); return; }
+      }
+      const { error } = await supabase.from('posts').insert({
+        title: title.trim(),
+        body: body.trim() || null,
+        type,
+        url: type === 'link' ? url : null,
+        image_url: imageUrl,
+        author_id: user.id,
+        community_id: communityId || null,
+      });
       if (error) throw error;
       toast('success', 'Post created!');
       router.push(selectedCommunity ? `/k/${selectedCommunity.slug}` : '/');
@@ -118,18 +159,32 @@ function SubmitForm() {
             {type === 'text' && <Textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Text (optional)" className="min-h-[150px]" />}
             {type === 'link' && <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="Url" type="url" />}
             {type === 'image' && (
-              <div className="border-2 border-dashed border-[var(--border)] rounded p-10 text-center hover:border-[var(--brand-500)] transition-colors cursor-pointer">
-                <ImageIcon className="h-8 w-8 mx-auto text-[var(--fg4)] mb-2" />
-                <p className="text-sm text-[var(--fg4)]">Drag and drop or click to browse</p>
-                <p className="text-xs text-[var(--fg4)] mt-1">PNG, JPG, GIF up to 20MB</p>
+              <div>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+                {imagePreview ? (
+                  <div className="relative">
+                    <img src={imagePreview} alt="Preview" className="max-h-[400px] rounded object-contain w-full" />
+                    <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                      className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => fileInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-[var(--border)] rounded p-10 text-center hover:border-[var(--brand-500)] transition-colors cursor-pointer">
+                    <ImageIcon className="h-8 w-8 mx-auto text-[var(--fg4)] mb-2" />
+                    <p className="text-sm text-[var(--fg4)]">Click to upload an image</p>
+                    <p className="text-xs text-[var(--fg4)] mt-1">PNG, JPG, GIF up to 20MB</p>
+                  </button>
+                )}
               </div>
             )}
           </form>
         </div>
         <div className="flex items-center justify-end gap-2 mt-3">
           <Link href="/"><button className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">Cancel</button></Link>
-          <button onClick={handleSubmit} disabled={!title.trim() || submitting} className={cn('kura-btn text-sm', title.trim() && !submitting ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
-            {submitting ? 'Posting...' : 'Post'}
+          <button onClick={handleSubmit} disabled={!title.trim() || submitting || uploading} className={cn('kura-btn text-sm', title.trim() && !submitting && !uploading ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
+            {uploading ? 'Uploading...' : submitting ? 'Posting...' : 'Post'}
           </button>
         </div>
       </div>

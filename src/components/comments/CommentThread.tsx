@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowBigUp, ArrowBigDown, Reply, MoreHorizontal } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, Reply, Trash2 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import Avatar from '@/components/ui/Avatar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
@@ -19,6 +19,7 @@ export interface CommentData {
   id: string;
   body: string;
   post_id: string;
+  author_id?: string;
   author: CommentAuthor;
   upvotes: number;
   downvotes: number;
@@ -27,20 +28,41 @@ export interface CommentData {
   children?: CommentData[];
 }
 
-function CommentItem({ comment }: { comment: CommentData }) {
+interface CommentItemProps {
+  comment: CommentData;
+  onReplyAdded?: () => void;
+}
+
+function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [vote, setVote] = useState<'up' | 'down' | null>(null);
+  const [score, setScore] = useState(comment.upvotes - comment.downvotes);
   const [showReply, setShowReply] = useState(false);
   const [replyBody, setReplyBody] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
-  const score = comment.upvotes - comment.downvotes + (vote === 'up' ? 1 : vote === 'down' ? -1 : 0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const supabase = createClient();
+    supabase.from('votes').select('value').eq('user_id', user.id).eq('comment_id', comment.id).single().then((res: any) => {
+      if (res.data) setVote(res.data.value === 1 ? 'up' : 'down');
+    });
+  }, [user, comment.id]);
 
   async function handleVote(value: 'up' | 'down') {
     if (!user) { toast('info', 'Log in to vote'); return; }
-    const supabase = createClient();
+    const oldValue = vote;
     const newValue = vote === value ? null : value;
     setVote(newValue);
+    let delta = 0;
+    if (oldValue === 'up') delta -= 1;
+    else if (oldValue === 'down') delta += 1;
+    if (newValue === 'up') delta += 1;
+    else if (newValue === 'down') delta -= 1;
+    setScore(score + delta);
+    const supabase = createClient();
     if (newValue) {
       await supabase.from('votes').upsert({ user_id: user.id, comment_id: comment.id, value: newValue === 'up' ? 1 : -1 });
     } else {
@@ -64,6 +86,7 @@ function CommentItem({ comment }: { comment: CommentData }) {
       toast('success', 'Reply added');
       setShowReply(false);
       setReplyBody('');
+      onReplyAdded?.();
     } catch (err: any) {
       toast('error', err.message || 'Failed');
     } finally {
@@ -71,12 +94,24 @@ function CommentItem({ comment }: { comment: CommentData }) {
     }
   }
 
+  async function handleDelete() {
+    if (!confirm('Delete this comment?')) return;
+    setDeleting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('comments').update({ is_removed: true, body: '[deleted]' }).eq('id', comment.id);
+      if (error) throw error;
+      toast('success', 'Comment deleted');
+      onReplyAdded?.();
+    } catch (err: any) { toast('error', err.message || 'Failed'); } finally { setDeleting(false); }
+  }
+
   return (
     <div className={cn('py-2', comment.depth > 0 && 'ml-4 border-l-2 border-[var(--border)] pl-3')}>
       <div className="flex items-center gap-1.5 mb-1">
         <Avatar name={comment.author.display_name || comment.author.username} src={comment.author.avatar_url} size="xs" />
         <Link href={`/profile/${comment.author.username}`} className="text-xs font-bold text-[var(--fg)] hover:underline">
-          {comment.author.username}
+          @{comment.author.username}
         </Link>
         <span className="text-[var(--fg4)]">·</span>
         <time className="text-[11px] text-[var(--fg4)]">{formatDate(comment.created_at)}</time>
@@ -97,6 +132,11 @@ function CommentItem({ comment }: { comment: CommentData }) {
         <button onClick={() => user ? setShowReply(!showReply) : toast('info', 'Log in to reply')} className="flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] rounded transition-colors ml-1">
           <Reply className="h-3.5 w-3.5" /> Reply
         </button>
+        {user && user.id === comment.author_id && (
+          <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">
+            <Trash2 className="h-3.5 w-3.5" /> Delete
+          </button>
+        )}
       </div>
 
       {showReply && (
@@ -119,16 +159,16 @@ function CommentItem({ comment }: { comment: CommentData }) {
 
       {comment.children && comment.children.length > 0 && (
         <div>
-          {comment.children.map(child => <CommentItem key={child.id} comment={child} />)}
+          {comment.children.map(child => <CommentItem key={child.id} comment={child} onReplyAdded={onReplyAdded} />)}
         </div>
       )}
     </div>
   );
 }
 
-export default function CommentThread({ comments }: { comments: CommentData[] }) {
+export default function CommentThread({ comments, onCommentChange }: { comments: CommentData[]; onCommentChange?: () => void }) {
   if (comments.length === 0) {
     return <div className="py-8 text-center"><p className="text-xs text-[var(--fg4)]">No comments yet. Be the first to share what you think!</p></div>;
   }
-  return <div>{comments.map(comment => <CommentItem key={comment.id} comment={comment} />)}</div>;
+  return <div>{comments.map(comment => <CommentItem key={comment.id} comment={comment} onReplyAdded={onCommentChange} />)}</div>;
 }

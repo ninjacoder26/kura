@@ -38,7 +38,7 @@ function LoginForm() {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
     });
   }
 
@@ -72,7 +72,10 @@ function LoginForm() {
               className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
           </div>
           <div>
-            <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Password</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-[var(--fg2)] uppercase tracking-wide">Password</label>
+              <Link href="/forgot-password" className="text-xs text-[var(--brand-600)] font-bold hover:underline">Forgot?</Link>
+            </div>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required autoComplete="current-password"
               className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
           </div>
