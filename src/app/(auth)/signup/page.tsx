@@ -30,7 +30,10 @@ export default function SignupPage() {
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { username, full_name: username } },
+      options: {
+        data: { username, full_name: username },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (authError) {
@@ -39,17 +42,7 @@ export default function SignupPage() {
       return;
     }
 
-    if (data.user) {
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        username,
-        display_name: username,
-        email,
-      });
-    }
-
     setSuccess(true); setLoading(false);
-    toast('success', 'Account created! Check your email to confirm.');
   }
 
   if (success) {

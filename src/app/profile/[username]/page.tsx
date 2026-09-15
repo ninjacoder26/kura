@@ -83,7 +83,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     return (
       <div className="min-h-screen">
         <Header />
-        <div className="max-w-[840px] mx-auto px-4 py-8">
+        <div className="mx-auto max-w-[640px] px-4 py-8">
           <EmptyState title="User not found" description="This profile doesn't exist." />
         </div>
       </div>
@@ -93,12 +93,10 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   return (
     <div className="min-h-screen">
       <Header />
-      {/* Banner */}
-      <div className="h-20 sm:h-28 bg-gradient-to-r from-[var(--brand-400)] to-[var(--brand-600)]" />
-      {/* Profile header */}
+      <div className="h-24 sm:h-32 bg-gradient-to-r from-[var(--brand-400)] to-[var(--brand-600)]" />
       <div className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="max-w-[1200px] mx-auto px-4">
-          <div className="flex items-end gap-3 -mt-4 pb-3">
+        <div className="mx-auto max-w-[1200px] px-4">
+          <div className="flex items-end gap-3 -mt-5 pb-3">
             <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-[var(--brand-600)] border-4 border-[var(--surface)] flex items-center justify-center text-white font-bold text-xl shrink-0">
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
@@ -114,10 +112,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-4 py-4 flex gap-6">
-        {/* Main content */}
-        <main className="flex-1 min-w-0 max-w-[740px]">
-          {/* Tabs */}
+      <div className="mx-auto max-w-[1200px] px-4 py-4 flex gap-6">
+        <main className="flex-1 min-w-0 max-w-[640px]">
           <div className="flex items-center gap-0 border-b border-[var(--border)] mb-3">
             {[
               { key: 'posts' as const, label: 'Posts', icon: ArrowBigUp },
@@ -144,16 +140,16 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               comments.length === 0 ? (
                 <EmptyState title="No comments yet" description="This user hasn't commented on anything yet." />
               ) : (
-                <div className="space-2">
+                <div className="space-y-2">
                   {comments.map(c => (
                     <div key={c.id} className="post-card p-3 anim-fade-up">
                       {c.post_title && (
-                        <Link href={`/post/${c.post_id}`} className="text-[11px] text-[var(--fg4)] hover:text-[var(--brand-600)] transition-colors font-bold">
+                        <Link href={`/post/${c.post_id}`} className="text-xs text-[var(--fg4)] hover:text-[var(--brand-600)] transition-colors font-bold">
                           {c.post_title}
                         </Link>
                       )}
                       <p className="text-sm text-[var(--fg2)] mt-1 leading-relaxed">{c.body}</p>
-                      <p className="text-[11px] text-[var(--fg4)] mt-1.5">{formatDate(c.created_at)}</p>
+                      <p className="text-xs text-[var(--fg4)] mt-1.5">{formatDate(c.created_at)}</p>
                     </div>
                   ))}
                 </div>
@@ -162,25 +158,24 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           </div>
         </main>
 
-        {/* Sidebar */}
         <aside className="hidden lg:block w-[312px] shrink-0">
-          <div className="sticky top-[calc(var(--header-h)+12px)] pb-8">
+          <div className="sticky top-[60px] pb-8">
             <div className="sidebar-widget">
               <div className="sidebar-widget-header">About</div>
               <div className="p-3 space-y-3">
                 {profile.bio && <p className="text-sm text-[var(--fg2)] leading-relaxed">{profile.bio}</p>}
-                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[11px] text-[var(--fg4)]">
-                  {profile.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {profile.location}</span>}
+                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--fg4)]">
+                  {profile.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span>}
                   {profile.website && (
                     <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[var(--brand-600)]">
-                      <LinkIcon className="h-3 w-3" /> {profile.website.replace(/https?:\/\//, '')}
+                      <LinkIcon className="h-3.5 w-3.5" /> {profile.website.replace(/https?:\/\//, '')}
                     </a>
                   )}
                   <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" /> Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    <Calendar className="h-3.5 w-3.5" /> Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 pt-3 border-t border-[var(--border)] text-sm">
+                <div className="flex items-center gap-5 pt-3 border-t border-[var(--border)] text-sm">
                   <div>
                     <p className="font-bold text-[var(--fg)]">{profile.post_count}</p>
                     <p className="text-[11px] text-[var(--fg4)]">Posts</p>

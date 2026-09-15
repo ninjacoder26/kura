@@ -30,31 +30,31 @@ export default function Header() {
     : '?';
 
   return (
-    <header className="sticky top-0 z-50 h-[var(--header-h)] bg-[var(--surface)] border-b border-[var(--border)]">
-      <div className="flex items-center h-full px-3 gap-3">
+    <header className="sticky top-0 z-50 bg-[var(--surface)] border-b border-[var(--border)]">
+      <div className="h-[48px] flex items-center px-4 gap-4 max-w-[1200px] mx-auto">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+        <Link href="/" className="flex items-center gap-2 shrink-0 mr-2">
           <div className="h-8 w-8 rounded-full bg-[var(--brand-600)] flex items-center justify-center">
             <span className="text-white font-bold text-sm">K</span>
           </div>
-          <span className="font-bold text-base tracking-tight hidden md:block text-[var(--fg)]">kura</span>
+          <span className="font-bold text-lg tracking-tight hidden md:block text-[var(--fg)]">kura</span>
         </Link>
 
         {/* Search */}
-        <div className="flex-1 max-w-[580px] mx-auto hidden sm:block">
+        <div className="flex-1 max-w-[690px] hidden sm:block">
           <Link href="/search">
-            <div className="flex items-center h-9 px-3 rounded-full bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface)] transition-all cursor-text">
-              <Search className="h-3.5 w-3.5 mr-2 text-[var(--fg4)] shrink-0" />
-              <span className="text-[13px] text-[var(--fg4)]">Search Kura</span>
+            <div className="flex items-center h-10 px-4 rounded-full bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface)] transition-all cursor-text">
+              <Search className="h-4 w-4 mr-2 text-[var(--fg4)] shrink-0" />
+              <span className="text-sm text-[var(--fg4)]">Search Kura</span>
             </div>
           </Link>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <Link href="/submit" className="hidden sm:block">
-            <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-xs py-1.5 px-3">
-              <Plus className="h-3.5 w-3.5" /> Create
+            <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-1.5 px-4">
+              <Plus className="h-4 w-4" /> Create
             </button>
           </Link>
           <Link href="/submit" className="sm:hidden">
@@ -66,39 +66,39 @@ export default function Header() {
             className="vote-btn"
             aria-label="Toggle theme"
           >
-            {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
 
           {loading ? (
-            <div className="h-7 w-7 rounded bg-[var(--bg-raised)] animate-pulse" />
+            <div className="h-8 w-8 rounded bg-[var(--bg-raised)] animate-pulse" />
           ) : user ? (
             <div ref={menuRef} className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-1.5 p-1 rounded hover:bg-[var(--surface-hover)] transition-colors"
               >
-                <div className="h-6 w-6 rounded bg-[var(--bg-raised)] flex items-center justify-center overflow-hidden border border-[var(--border)]">
+                <div className="h-8 w-8 rounded bg-[var(--bg-raised)] flex items-center justify-center overflow-hidden border border-[var(--border)]">
                   {user.avatar_url ? (
                     <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-[9px] font-bold text-[var(--fg3)]">{initials}</span>
+                    <span className="text-[10px] font-bold text-[var(--fg3)]">{initials}</span>
                   )}
                 </div>
-                <ChevronDown className={cn('h-3 w-3 text-[var(--fg4)] transition-transform hidden sm:block', userMenuOpen && 'rotate-180')} />
+                <ChevronDown className={cn('h-4 w-4 text-[var(--fg4)] transition-transform hidden sm:block', userMenuOpen && 'rotate-180')} />
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-48 rounded border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] z-50 py-1 anim-scale-in">
-                  <div className="px-2.5 py-1.5 border-b border-[var(--border)]">
+                <div className="absolute right-0 top-full mt-1 w-52 rounded border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] z-50 py-1 anim-scale-in">
+                  <div className="px-3 py-2 border-b border-[var(--border)]">
                     <p className="text-[11px] text-[var(--fg4)]">Logged in as</p>
-                    <p className="text-xs font-medium text-[var(--fg)] truncate">{user.username}</p>
+                    <p className="text-sm font-medium text-[var(--fg)] truncate">{user.username}</p>
                   </div>
                   <Link
                     href={`/profile/${user.username}`}
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"
                   >
-                    <User className="h-3.5 w-3.5" /> Profile
+                    <User className="h-4 w-4" /> Profile
                   </Link>
                   <button
                     onClick={async () => {
@@ -106,22 +106,22 @@ export default function Header() {
                       await signOut();
                       router.push('/');
                     }}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"
                   >
-                    <LogOut className="h-3.5 w-3.5" /> Log Out
+                    <LogOut className="h-4 w-4" /> Log Out
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Link href="/login">
-                <button className="reddit-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-xs py-1.5 px-3">
+                <button className="reddit-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm py-1.5 px-4">
                   Log In
                 </button>
               </Link>
               <Link href="/signup" className="hidden sm:block">
-                <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-xs py-1.5 px-3">
+                <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-1.5 px-4">
                   Sign Up
                 </button>
               </Link>
@@ -129,7 +129,7 @@ export default function Header() {
           )}
 
           <Link href="/search" className="sm:hidden">
-            <button className="vote-btn"><Search className="h-4 w-4" /></button>
+            <button className="vote-btn"><Search className="h-5 w-5" /></button>
           </Link>
         </div>
       </div>

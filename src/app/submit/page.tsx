@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
-import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
-import { FileText, Link2, Image as ImageIcon, ChevronDown, ArrowLeft } from 'lucide-react';
+import { FileText, Link2, Image as ImageIcon, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { Suspense } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 
@@ -112,7 +110,7 @@ function SubmitForm() {
   }
 
   if (authLoading) {
-    return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><LoadingSpinner /></div></div>;
+    return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-600)] border-t-transparent" /></div></div>;
   }
 
   if (!user) return null;
@@ -120,17 +118,14 @@ function SubmitForm() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="max-w-[740px] mx-auto px-4 py-4">
-        <div className="flex items-center gap-3 mb-4 anim-fade-up">
-          <h1 className="text-lg font-medium text-[var(--fg)]">Create a post</h1>
-        </div>
+      <div className="mx-auto max-w-[640px] px-4 py-4">
+        <h1 className="text-lg font-medium text-[var(--fg)] mb-4 anim-fade-up">Create a post</h1>
 
-        {/* Community selector */}
-        <div className="mb-3 anim-fade-up" ref={dropdownRef}>
+        <div className="mb-4 anim-fade-up" ref={dropdownRef}>
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center justify-between w-64 h-9 px-3 text-sm rounded border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-colors text-left"
+              className="flex items-center justify-between w-72 h-10 px-3 text-sm rounded border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] transition-colors text-left"
             >
               {selectedCommunity ? (
                 <span className="text-[var(--fg)] font-medium">{selectedCommunity.name}</span>
@@ -140,12 +135,12 @@ function SubmitForm() {
               <ChevronDown className={cn('h-4 w-4 text-[var(--fg4)] shrink-0 transition-transform', showDropdown && 'rotate-180')} />
             </button>
             {showDropdown && (
-              <div className="absolute top-full left-0 w-72 mt-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] z-20 anim-slide-down">
+              <div className="absolute top-full left-0 w-80 mt-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] z-20 anim-slide-down">
                 <div className="p-2 border-b border-[var(--border)]">
                   <input
                     type="text" placeholder="Search communities" value={communitySearch}
                     onChange={e => setCommunitySearch(e.target.value)}
-                    className="w-full h-8 px-2.5 text-sm bg-[var(--bg)] border border-[var(--border)] rounded outline-none focus:border-[var(--brand-600)]"
+                    className="w-full h-9 px-3 text-sm bg-[var(--bg)] border border-[var(--border)] rounded outline-none focus:border-[var(--brand-600)]"
                     autoFocus
                   />
                 </div>
@@ -155,7 +150,7 @@ function SubmitForm() {
                       key={c.id}
                       onClick={() => { setCommunityId(c.id); setShowDropdown(false); setCommunitySearch(''); }}
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-1.5 text-sm rounded text-left transition-colors',
+                        'w-full flex items-center gap-2 px-3 py-2 text-sm rounded text-left transition-colors',
                         communityId === c.id ? 'bg-[var(--surface-hover)] text-[var(--brand-600)]' : 'text-[var(--fg)] hover:bg-[var(--surface-hover)]'
                       )}
                     >
@@ -170,7 +165,6 @@ function SubmitForm() {
           </div>
         </div>
 
-        {/* Type tabs */}
         <div className="border border-[var(--border)] rounded-t anim-fade-up">
           <div className="flex border-b border-[var(--border)]">
             {TYPES.map(t => {
@@ -193,7 +187,6 @@ function SubmitForm() {
             })}
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="p-3 space-y-3 bg-[var(--surface)]">
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title" maxLength={300} required />
             {type === 'text' && (
@@ -203,34 +196,23 @@ function SubmitForm() {
               <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="Url" type="url" />
             )}
             {type === 'image' && (
-              <div className="border-2 border-dashed border-[var(--border)] rounded p-8 text-center hover:border-[var(--brand-500)] transition-colors cursor-pointer">
+              <div className="border-2 border-dashed border-[var(--border)] rounded p-10 text-center hover:border-[var(--brand-500)] transition-colors cursor-pointer">
                 <ImageIcon className="h-8 w-8 mx-auto text-[var(--fg4)] mb-2" />
-                <p className="text-xs text-[var(--fg4)]">Drag and drop or click to browse</p>
-                <p className="text-[10px] text-[var(--fg4)] mt-1">PNG, JPG, GIF up to 20MB</p>
+                <p className="text-sm text-[var(--fg4)]">Drag and drop or click to browse</p>
+                <p className="text-xs text-[var(--fg4)] mt-1">PNG, JPG, GIF up to 20MB</p>
               </div>
             )}
           </form>
         </div>
 
         <div className="flex items-center justify-end gap-2 mt-3">
-          <Link href="/"><button className="reddit-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-xs">Cancel</button></Link>
-          <button onClick={handleSubmit} disabled={!title.trim() || submitting} className={cn('reddit-btn text-xs', title.trim() && !submitting ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
+          <Link href="/"><button className="reddit-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">Cancel</button></Link>
+          <button onClick={handleSubmit} disabled={!title.trim() || submitting} className={cn('reddit-btn text-sm', title.trim() && !submitting ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
             {submitting ? 'Posting...' : 'Post'}
           </button>
         </div>
       </div>
       <MobileNav />
-    </div>
-  );
-}
-
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center justify-center py-12">
-      <svg className="animate-spin h-8 w-8 text-[var(--brand-600)]" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
     </div>
   );
 }

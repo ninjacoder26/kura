@@ -39,8 +39,6 @@
   --r-full: 9999px;
 
   --header-h: 48px;
-  --left-sidebar-w: 200px;
-  --right-sidebar-w: 312px;
 }
 
 .dark {
@@ -144,7 +142,6 @@ input, textarea, select, button { font-family: inherit; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-/* Reddit-style post card */
 .post-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -155,7 +152,6 @@ input, textarea, select, button { font-family: inherit; }
   border-color: var(--border-strong);
 }
 
-/* Vote buttons */
 .vote-btn {
   display: flex;
   align-items: center;
@@ -176,7 +172,6 @@ input, textarea, select, button { font-family: inherit; }
   color: #7193ff;
 }
 
-/* Reddit-style pill button */
 .reddit-btn {
   display: inline-flex;
   align-items: center;
@@ -193,7 +188,6 @@ input, textarea, select, button { font-family: inherit; }
   white-space: nowrap;
 }
 
-/* Sidebar widget */
 .sidebar-widget {
   background: var(--surface);
   border: 1px solid var(--border);

@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Users } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 
 export interface CommunityData {
@@ -18,7 +17,7 @@ export default function CommunityCard({ community }: { community: CommunityData 
     <Link href={`/r/${community.slug}`} className="block">
       <div className="post-card flex items-center gap-3 p-3 hover:border-[var(--border-strong)] transition-colors">
         <div
-          className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+          className="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-base shrink-0"
           style={{ backgroundColor: community.color }}
         >
           {community.icon_url ? (
@@ -28,8 +27,9 @@ export default function CommunityCard({ community }: { community: CommunityData 
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-medium text-sm text-[var(--fg)] truncate">r/{community.slug}</h3>
-          <div className="flex items-center gap-2 text-[11px] text-[var(--fg4)]">
+          <h3 className="font-medium text-sm text-[var(--fg)]">r/{community.slug}</h3>
+          <p className="text-xs text-[var(--fg4)] mt-0.5 line-clamp-1">{community.description}</p>
+          <div className="flex items-center gap-2 text-xs text-[var(--fg4)] mt-1">
             <span>{formatNumber(community.member_count)} members</span>
             <span>·</span>
             <span>{formatNumber(community.post_count)} posts</span>

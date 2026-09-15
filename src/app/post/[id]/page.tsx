@@ -74,11 +74,10 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     if (!user) { toast('info', 'Log in to vote'); return; }
     const newValue = vote === value ? null : value;
     setVote(newValue);
-    if (newValue) {
-      setOptimisticScore(post.upvotes - post.downvotes + (newValue === 'up' ? 1 : -1));
-    } else {
-      setOptimisticScore(post.upvotes - post.downvotes);
-    }
+    setOptimisticScore(newValue
+      ? post.upvotes - post.downvotes + (newValue === 'up' ? 1 : -1)
+      : post.upvotes - post.downvotes
+    );
     const supabase = createClient();
     if (newValue) {
       await supabase.from('votes').upsert({ user_id: user.id, post_id: id, value: newValue === 'up' ? 1 : -1 });
@@ -109,8 +108,8 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     return (
       <div className="min-h-screen">
         <Header />
-        <div className="max-w-[840px] mx-auto px-4 py-8">
-          <EmptyState title="Post not found" action={<Link href="/" className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-xs">Go home</Link>} />
+        <div className="mx-auto max-w-[640px] px-4 py-8">
+          <EmptyState title="Post not found" action={<Link href="/" className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">Go home</Link>} />
         </div>
       </div>
     );
@@ -121,27 +120,27 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="max-w-[740px] mx-auto px-3 py-3">
-        <Link href={post.community ? `/r/${post.community.slug}` : '/'} className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--fg4)] hover:text-[var(--fg)] mb-2 transition-colors">
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back
+      <div className="mx-auto max-w-[640px] px-4 py-3">
+        <Link href={post.community ? `/r/${post.community.slug}` : '/'} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--fg4)] hover:text-[var(--fg)] mb-3 transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+          Back to r/{post.community?.slug || 'home'}
         </Link>
 
         <article className="post-card flex">
-          <div className="flex flex-col items-center gap-0.5 px-1 py-2 bg-[var(--bg-raised)] rounded-l w-9">
+          <div className="flex flex-col items-center gap-0.5 px-2 py-3 bg-[var(--bg-raised)] rounded-l w-10">
             <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')}>
-              <ArrowBigUp className="h-5 w-5" fill={vote === 'up' ? 'currentColor' : 'none'} />
+              <ArrowBigUp className="h-6 w-6" fill={vote === 'up' ? 'currentColor' : 'none'} />
             </button>
-            <span className={cn('text-[11px] font-bold tabular-nums leading-none', vote === 'up' && 'text-[#ff4500]', vote === 'down' && 'text-[#7193ff]')}>
+            <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[#ff4500]', vote === 'down' && 'text-[#7193ff]')}>
               {formatNumber(score)}
             </span>
             <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')}>
-              <ArrowBigDown className="h-5 w-5" fill={vote === 'down' ? 'currentColor' : 'none'} />
+              <ArrowBigDown className="h-6 w-6" fill={vote === 'down' ? 'currentColor' : 'none'} />
             </button>
           </div>
 
-          <div className="flex-1 min-w-0 p-2">
-            <div className="flex items-center flex-wrap gap-x-1 text-[11px] text-[var(--fg4)]">
+          <div className="flex-1 min-w-0 p-3">
+            <div className="flex items-center flex-wrap gap-x-1 text-xs text-[var(--fg4)]">
               {post.community && (
                 <>
                   <Link href={`/r/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">r/{post.community.slug}</Link>
@@ -154,39 +153,38 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
               <time>{formatDate(post.created_at)}</time>
             </div>
 
-            <h1 className="text-lg font-medium text-[var(--fg)] leading-snug mt-1">{post.title}</h1>
+            <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
 
             {post.body && (
-              <div className="mt-2 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap">{post.body}</div>
+              <div className="mt-3 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap">{post.body}</div>
             )}
 
-            <div className="flex items-center gap-0.5 mt-2 -ml-0.5">
-              <span className="flex items-center gap-1 px-1.5 py-1 text-[11px] font-bold text-[var(--fg4)]">
-                <MessageSquare className="h-4 w-4" /> {formatNumber(post.comment_count)} Comments
+            <div className="flex items-center gap-1 mt-3 -ml-1">
+              <span className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-bold text-[var(--fg4)]">
+                <MessageSquare className="h-5 w-5" /> {formatNumber(post.comment_count)} Comments
               </span>
-              <button className="flex items-center gap-1 px-1.5 py-1 rounded text-[11px] font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
-                <Share2 className="h-4 w-4" /> Share
+              <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                <Share2 className="h-5 w-5" /> Share
               </button>
-              <button className="flex items-center gap-1 px-1.5 py-1 rounded text-[11px] font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
-                <Bookmark className="h-4 w-4" /> Save
+              <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                <Bookmark className="h-5 w-5" /> Save
               </button>
-              <button className="flex items-center gap-1 px-1.5 py-1 rounded text-[11px] font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
-                <MoreHorizontal className="h-4 w-4" />
+              <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                <MoreHorizontal className="h-5 w-5" />
               </button>
             </div>
           </div>
         </article>
 
-        {/* Comment input */}
-        <div className="mt-2 mb-3">
+        <div className="mt-3 mb-4">
           {user ? (
-            <div className="post-card p-2">
-              <p className="text-[11px] text-[var(--fg4)] mb-1.5">Comment as <span className="text-[var(--brand-600)] font-bold">{user.username}</span></p>
+            <div className="post-card p-3">
+              <p className="text-xs text-[var(--fg4)] mb-2">Comment as <span className="text-[var(--brand-600)] font-bold">{user.username}</span></p>
               <CommentForm onSubmit={handleComment} loading={submittingComment} />
             </div>
           ) : (
-            <div className="post-card p-3 text-center">
-              <p className="text-xs text-[var(--fg3)]">
+            <div className="post-card p-4 text-center">
+              <p className="text-sm text-[var(--fg3)]">
                 <Link href="/login" className="text-[var(--brand-600)] font-bold hover:underline">Log in</Link> or{' '}
                 <Link href="/signup" className="text-[var(--brand-600)] font-bold hover:underline">sign up</Link> to leave a comment
               </p>
@@ -194,7 +192,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           )}
         </div>
 
-        <div className="pb-16 lg:pb-6">
+        <div className="pb-20 lg:pb-8">
           <CommentThread comments={comments} />
         </div>
       </div>
