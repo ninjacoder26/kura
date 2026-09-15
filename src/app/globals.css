@@ -3,16 +3,16 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --brand-50: #fff4e6;
-  --brand-100: #ffe8cc;
-  --brand-200: #ffd8a8;
-  --brand-300: #ffc078;
-  --brand-400: #ffa94d;
-  --brand-500: #ff8c42;
-  --brand-600: #ff6b1a;
-  --brand-700: #f25c05;
-  --brand-800: #d94d02;
-  --brand-900: #b84003;
+  --brand-50: #fce4ec;
+  --brand-100: #f8bbd0;
+  --brand-200: #f48fb1;
+  --brand-300: #f06292;
+  --brand-400: #ec407a;
+  --brand-500: #dc143c;
+  --brand-600: #c41230;
+  --brand-700: #a31028;
+  --brand-800: #820d20;
+  --brand-900: #610a18;
 
   --bg: #dae0e6;
   --bg-alt: #ffffff;
@@ -166,10 +166,10 @@ input, textarea, select, button { font-family: inherit; }
   background: var(--bg-raised);
 }
 .vote-btn.upvoted {
-  color: #ff4500;
+  color: #dc143c;
 }
 .vote-btn.downvoted {
-  color: #7193ff;
+  color: #003893;
 }
 
 .reddit-btn {

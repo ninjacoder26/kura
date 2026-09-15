@@ -78,8 +78,8 @@ export default function Sidebar() {
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
           <Link href="/setup" className="hover:underline">Help</Link>
           <Link href="/setup" className="hover:underline">Blog</Link>
-          <Link href="/setup" className="hover:underline">Terms</Link>
-          <Link href="/setup" className="hover:underline">Privacy</Link>
+          <Link href="/terms" className="hover:underline">Terms</Link>
+          <Link href="/privacy" className="hover:underline">Privacy</Link>
         </div>
         <p>Kura Inc. 2026. All rights reserved.</p>
       </div>
