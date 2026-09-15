@@ -35,7 +35,7 @@ export default function SearchPage() {
       ]);
       if (postRes.data) setPosts((postRes.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
       if (commRes.data) setCommunities(commRes.data as any[]);
-    } catch {} finally { setSearching(false); }
+    } catch { } finally { setSearching(false); }
   }, []);
 
   function handleSearch(q: string) {

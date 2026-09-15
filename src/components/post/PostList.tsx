@@ -19,7 +19,7 @@ export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDesc
           title={emptyTitle}
           description={emptyDescription}
           action={
-            <Link href="/submit" className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]">
+            <Link href="/submit" className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]">
               Create a post
             </Link>
           }
@@ -29,7 +29,7 @@ export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDesc
   }
 
   return (
-    <div className="space-2">
+    <div className="space-y-2">
       {posts.map(post => (
         <PostCard key={post.id} post={post} showCommunity={showCommunity} />
       ))}

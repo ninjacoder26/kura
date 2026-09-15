@@ -50,7 +50,7 @@ export default function Header() {
 
         <div className="flex items-center gap-2 shrink-0 ml-auto">
           <Link href="/submit" className="hidden sm:block">
-            <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-1.5 px-4">
+            <button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-1.5 px-4">
               <Plus className="h-4 w-4" /> Create
             </button>
           </Link>
@@ -95,10 +95,10 @@ export default function Header() {
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/login">
-                <button className="reddit-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm py-1.5 px-4">Log In</button>
+                <button className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm py-1.5 px-4">Log In</button>
               </Link>
               <Link href="/signup" className="hidden sm:block">
-                <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-1.5 px-4">Sign Up</button>
+                <button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-1.5 px-4">Sign Up</button>
               </Link>
             </div>
           )}

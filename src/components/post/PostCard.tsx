@@ -62,6 +62,16 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
     }
   }
 
+  function handleShare() {
+    const url = `${window.location.origin}/post/${post.id}`;
+    if (navigator.share) {
+      navigator.share({ title: post.title, url });
+    } else {
+      navigator.clipboard.writeText(url);
+      toast('success', 'Link copied to clipboard');
+    }
+  }
+
   return (
     <div className="post-card flex">
       {/* Vote column */}
@@ -69,7 +79,7 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
         <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')} aria-label="Upvote">
           <ArrowBigUp className="h-6 w-6" fill={vote === 'up' ? 'currentColor' : 'none'} />
         </button>
-        <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[#ff4500]', vote === 'down' && 'text-[#7193ff]')}>
+        <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--brand-600)]', vote === 'down' && 'text-[#003893]')}>
           {formatNumber(score)}
         </span>
         <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')} aria-label="Downvote">
@@ -83,12 +93,12 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
         <div className="flex items-center flex-wrap gap-x-1 text-[12px] text-[var(--fg4)]">
           {showCommunity && post.community && (
             <>
-              <Link href={`/r/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">r/{post.community.slug}</Link>
+              <Link href={`/k/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">k/{post.community.slug}</Link>
               <span>·</span>
             </>
           )}
-          <span>Posted by</span>
-          <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link>
+          <span>by</span>
+          <Link href={`/profile/${post.author.username}`} className="hover:underline">@{post.author.username}</Link>
           <span>·</span>
           <time>{formatDate(post.created_at)}</time>
         </div>
@@ -111,7 +121,7 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
             <MessageSquare className="h-5 w-5" />
             {formatNumber(post.comment_count)} Comments
           </Link>
-          <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+          <button onClick={handleShare} className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
             <Share2 className="h-5 w-5" /> Share
           </button>
           <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">

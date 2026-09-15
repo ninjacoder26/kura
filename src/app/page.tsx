@@ -39,18 +39,20 @@ function FeedSkeleton() {
 export default function HomePage() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function load() {
       try {
         const supabase = createClient();
-        const { data } = await supabase
+        const { data, error: fetchErr } = await supabase
           .from('posts')
           .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)')
           .eq('is_removed', false)
           .order('created_at', { ascending: false })
           .limit(20);
 
+        if (fetchErr) throw fetchErr;
         if (data) {
           setPosts((data as any[]).map((p: any) => ({
             ...p,
@@ -58,10 +60,7 @@ export default function HomePage() {
             community: p.community || undefined,
           })));
         }
-      } catch {
-      } finally {
-        setLoading(false);
-      }
+      } catch (err: any) { setError(err.message || 'Failed to load feed'); } finally { setLoading(false); }
     }
     load();
   }, []);
@@ -77,13 +76,7 @@ export default function HomePage() {
         </aside>
 
         <main className="flex-1 min-w-0">
-          <div className="post-card flex items-center gap-1 px-3 py-2 mb-3">
-            <button className="text-sm font-bold text-[var(--fg)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)]">Best</button>
-            <button className="text-sm font-bold text-[var(--fg4)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)]">New</button>
-            <button className="text-sm font-bold text-[var(--fg4)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)]">Top</button>
-          </div>
-
-          {!loading && posts.length === 0 && (
+          {!loading && posts.length === 0 && !error && (
             <div className="post-card p-5 mb-3 anim-fade-up">
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] flex items-center justify-center shrink-0">
@@ -94,18 +87,25 @@ export default function HomePage() {
                   <p className="text-sm text-[var(--fg3)] mt-1">Your personal Kura frontpage.</p>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Link href="/communities">
-                      <button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2 px-5">
+                      <button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2 px-5">
                         <Users className="h-4 w-4" /> Browse
                       </button>
                     </Link>
                     <Link href="/submit">
-                      <button className="reddit-btn border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2 px-5">
+                      <button className="kura-btn border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2 px-5">
                         <Plus className="h-4 w-4" /> Post
                       </button>
                     </Link>
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="post-card p-5 mb-3 text-center">
+              <p className="text-sm text-red-500">{error}</p>
+              <button onClick={() => window.location.reload()} className="kura-btn mt-2 bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-xs">Retry</button>
             </div>
           )}
 
@@ -130,35 +130,12 @@ export default function HomePage() {
                 <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">Your personal Kura frontpage.</p>
                 <div className="mt-3 space-y-2">
                   <Link href="/submit">
-                    <button className="reddit-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">Create Post</button>
+                    <button className="kura-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">Create Post</button>
                   </Link>
                   <Link href="/communities">
-                    <button className="reddit-btn w-full border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2">Create Community</button>
+                    <button className="kura-btn w-full border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2">Browse Communities</button>
                   </Link>
                 </div>
-              </div>
-            </div>
-
-            <div className="sidebar-widget">
-              <div className="sidebar-widget-header">Popular Communities</div>
-              <div className="p-2">
-                {[
-                  { name: 'kathmandu', members: '24.5k' },
-                  { name: 'nepal', members: '89.2k' },
-                  { name: 'technology', members: '12.8k' },
-                  { name: 'gaming', members: '31.4k' },
-                  { name: 'culture', members: '8.7k' },
-                ].map((c, i) => (
-                  <Link key={c.name} href={`/r/${c.name}`} className="flex items-center gap-2.5 px-2 py-1.5 rounded text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors">
-                    <span className="text-xs font-bold text-[var(--fg4)] w-4 text-right">{i + 1}</span>
-                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[var(--brand-400)] to-[var(--brand-700)] flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                      {c.name[0].toUpperCase()}
-                    </div>
-                    <span className="text-xs font-medium text-[var(--fg)] truncate flex-1">r/{c.name}</span>
-                    <span className="text-[11px] text-[var(--fg4)]">{c.members}</span>
-                  </Link>
-                ))}
-                <Link href="/communities" className="block px-2 py-1.5 text-xs font-bold text-[var(--brand-600)] hover:underline">See more</Link>
               </div>
             </div>
 
@@ -166,14 +143,10 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-x-2 gap-y-0.5">
                 <Link href="/" className="hover:underline">Home</Link>
                 <Link href="/communities" className="hover:underline">About</Link>
-                <Link href="/setup" className="hover:underline">Careers</Link>
-                <Link href="/setup" className="hover:underline">Press</Link>
               </div>
               <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-                <Link href="/setup" className="hover:underline">Help</Link>
-                <Link href="/setup" className="hover:underline">Blog</Link>
-                <Link href="/setup" className="hover:underline">Terms</Link>
-                <Link href="/setup" className="hover:underline">Privacy</Link>
+                <Link href="/terms" className="hover:underline">Terms</Link>
+                <Link href="/privacy" className="hover:underline">Privacy</Link>
               </div>
               <p>Kura Inc. 2026. All rights reserved.</p>
             </div>

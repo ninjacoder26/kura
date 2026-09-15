@@ -67,7 +67,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">7. Communities and Voting</h2>
-            <p>Kura allows users to create and participate in communities (subreddits). Community moderators are responsible for enforcing community-specific rules. The voting system is used to surface quality content and is not a measure of truth or factuality.</p>
+            <p>Kura allows users to create and participate in communities. Community moderators are responsible for enforcing community-specific rules. The voting system is used to surface quality content and is not a measure of truth or factuality.</p>
           </section>
 
           <section>

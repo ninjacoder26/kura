@@ -172,7 +172,7 @@ input, textarea, select, button { font-family: inherit; }
   color: #003893;
 }
 
-.reddit-btn {
+.kura-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -20,6 +20,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   const [post, setPost] = useState<any>(null);
   const [comments, setComments] = useState<CommentData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [vote, setVote] = useState<'up' | 'down' | null>(null);
   const [optimisticScore, setOptimisticScore] = useState(0);
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -30,7 +31,8 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     if (!id) return;
     try {
       const supabase = createClient();
-      const { data: postData } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('id', id).single();
+      const { data: postData, error: postErr } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('id', id).single();
+      if (postErr) throw postErr;
       setPost(postData);
       if (postData) setOptimisticScore(postData.upvotes - postData.downvotes);
       if (user && postData) {
@@ -45,7 +47,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         for (const c of flat) { if (c.parent_id && map.has(c.parent_id)) { map.get(c.parent_id)!.children!.push(c); } else { roots.push(c); } }
         setComments(roots);
       }
-    } catch {} finally { setLoading(false); }
+    } catch (err: any) { setError(err.message || 'Failed to load post'); } finally { setLoading(false); }
   }, [id, user]);
 
   useEffect(() => { loadPost(); }, [loadPost]);
@@ -72,8 +74,18 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     } catch (err: any) { toast('error', err.message || 'Failed to add comment'); } finally { setSubmittingComment(false); }
   }
 
+  function handleShare() {
+    const url = `${window.location.origin}/post/${id}`;
+    if (navigator.share) {
+      navigator.share({ title: post.title, url });
+    } else {
+      navigator.clipboard.writeText(url);
+      toast('success', 'Link copied to clipboard');
+    }
+  }
+
   if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
-  if (!post) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title="Post not found" action={<Link href="/" className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">Go home</Link>} /></div></div>;
+  if (error || !post) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title={error || 'Post not found'} action={<Link href="/" className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">Go home</Link>} /></div></div>;
 
   const score = optimisticScore + (vote === 'up' ? 1 : vote === 'down' ? -1 : 0);
 
@@ -81,26 +93,26 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     <div className="min-h-screen">
       <Header />
       <div className="px-4 py-3 max-w-[740px] mx-auto">
-        <Link href={post.community ? `/r/${post.community.slug}` : '/'} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--fg4)] hover:text-[var(--fg)] mb-3 transition-colors">
-          <ArrowLeft className="h-4 w-4" /> Back to r/{post.community?.slug || 'home'}
+        <Link href={post.community ? `/k/${post.community.slug}` : '/'} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--fg4)] hover:text-[var(--fg)] mb-3 transition-colors">
+          <ArrowLeft className="h-4 w-4" /> Back to {post.community ? `k/${post.community.slug}` : 'home'}
         </Link>
 
         <article className="post-card flex">
           <div className="flex flex-col items-center gap-0.5 px-2 py-3 bg-[var(--bg-raised)] rounded-l w-10">
             <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')}><ArrowBigUp className="h-6 w-6" fill={vote === 'up' ? 'currentColor' : 'none'} /></button>
-            <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[#ff4500]', vote === 'down' && 'text-[#7193ff]')}>{formatNumber(score)}</span>
+            <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--brand-600)]', vote === 'down' && 'text-[#003893]')}>{formatNumber(score)}</span>
             <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')}><ArrowBigDown className="h-6 w-6" fill={vote === 'down' ? 'currentColor' : 'none'} /></button>
           </div>
           <div className="flex-1 min-w-0 p-3">
             <div className="flex items-center flex-wrap gap-x-1 text-xs text-[var(--fg4)]">
-              {post.community && <><Link href={`/r/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">r/{post.community.slug}</Link><span>·</span></>}
-              <span>Posted by</span> <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link><span>·</span><time>{formatDate(post.created_at)}</time>
+              {post.community && <><Link href={`/k/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">k/{post.community.slug}</Link><span>·</span></>}
+              <span>by</span> <Link href={`/profile/${post.author.username}`} className="hover:underline">@{post.author.username}</Link><span>·</span><time>{formatDate(post.created_at)}</time>
             </div>
             <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
             {post.body && <div className="mt-3 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap">{post.body}</div>}
             <div className="flex items-center gap-1 mt-3 -ml-1">
               <span className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-bold text-[var(--fg4)]"><MessageSquare className="h-5 w-5" /> {formatNumber(post.comment_count)} Comments</span>
-              <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Share2 className="h-5 w-5" /> Share</button>
+              <button onClick={handleShare} className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Share2 className="h-5 w-5" /> Share</button>
               <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Bookmark className="h-5 w-5" /> Save</button>
               <button className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><MoreHorizontal className="h-5 w-5" /></button>
             </div>

@@ -18,7 +18,6 @@ export async function GET(request: Request) {
             id: user.id,
             username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
             display_name: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
-            email: user.email,
           });
         }
       }

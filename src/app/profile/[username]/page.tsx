@@ -19,6 +19,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [posts, setPosts] = useState<PostData[]>([]);
   const [comments, setComments] = useState<UserComment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
 
   useEffect(() => { params.then(p => setUsername(p.username)); }, [params]);
@@ -28,7 +29,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     async function load() {
       try {
         const supabase = createClient();
-        const { data: prof } = await supabase.from('profiles').select('*').eq('username', username).single();
+        const { data: prof, error: profErr } = await supabase.from('profiles').select('*').eq('username', username).single();
+        if (profErr) throw profErr;
         setProfile(prof);
         if (prof) {
           const { data: postData } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20);
@@ -36,13 +38,13 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           const { data: commentData } = await supabase.from('comments').select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20);
           if (commentData) setComments((commentData as any[]).map((c: any) => ({ id: c.id, body: c.body, post_id: c.post_id, post_title: c.posts?.title, created_at: c.created_at })));
         }
-      } catch {} finally { setLoading(false); }
+      } catch (err: any) { setError(err.message || 'Failed to load profile'); } finally { setLoading(false); }
     }
     load();
   }, [username]);
 
   if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
-  if (!profile) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title="User not found" description="This profile doesn't exist." /></div></div>;
+  if (error || !profile) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title={error || 'User not found'} description="This profile doesn't exist." /></div></div>;
 
   return (
     <div className="min-h-screen">
@@ -56,7 +58,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             </div>
             <div className="flex-1 min-w-0 pb-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-[var(--fg)]">{profile.display_name || profile.username}</h1>
-              <p className="text-sm text-[var(--fg4)]">u/{profile.username}</p>
+              <p className="text-sm text-[var(--fg4)]">@{profile.username}</p>
             </div>
           </div>
         </div>
@@ -100,9 +102,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                   <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                 </div>
                 <div className="flex items-center gap-5 pt-3 border-t border-[var(--border)] text-sm">
-                  <div><p className="font-bold text-[var(--fg)]">{profile.post_count}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
-                  <div><p className="font-bold text-[var(--fg)]">{profile.comment_count}</p><p className="text-[11px] text-[var(--fg4)]">Comments</p></div>
-                  <div><p className="font-bold text-[var(--brand-600)]">{(profile.reputation || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Karma</p></div>
+                  <div><p className="font-bold text-[var(--fg)]">{(profile.post_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
+                  <div><p className="font-bold text-[var(--fg)]">{(profile.comment_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Comments</p></div>
+                  <div><p className="font-bold text-[var(--brand-600)]">{(profile.reputation || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Reputation</p></div>
                 </div>
               </div>
             </div>

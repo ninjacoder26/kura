@@ -5,9 +5,6 @@ export function createClient() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key || url === 'your-project-url' || key === 'your-anon-key') {
-    const errResult = { data: null, error: { message: 'Supabase not configured. Set up .env file.' } };
-    const emptyResult = { data: null, error: null };
-
     function makeQueryBuilder() {
       const builder: Record<string, any> = {
         select: () => makeResult(),

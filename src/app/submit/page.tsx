@@ -66,7 +66,7 @@ function SubmitForm() {
       const { error } = await supabase.from('posts').insert({ title: title.trim(), body: body.trim(), type, url: type === 'link' ? url : null, author_id: user.id, community_id: communityId || null });
       if (error) throw error;
       toast('success', 'Post created!');
-      router.push(selectedCommunity ? `/r/${selectedCommunity.slug}` : '/');
+      router.push(selectedCommunity ? `/k/${selectedCommunity.slug}` : '/');
     } catch (err: any) { toast('error', err.message || 'Failed to create post'); } finally { setSubmitting(false); }
   }
 
@@ -127,8 +127,8 @@ function SubmitForm() {
           </form>
         </div>
         <div className="flex items-center justify-end gap-2 mt-3">
-          <Link href="/"><button className="reddit-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">Cancel</button></Link>
-          <button onClick={handleSubmit} disabled={!title.trim() || submitting} className={cn('reddit-btn text-sm', title.trim() && !submitting ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
+          <Link href="/"><button className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">Cancel</button></Link>
+          <button onClick={handleSubmit} disabled={!title.trim() || submitting} className={cn('kura-btn text-sm', title.trim() && !submitting ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
             {submitting ? 'Posting...' : 'Post'}
           </button>
         </div>

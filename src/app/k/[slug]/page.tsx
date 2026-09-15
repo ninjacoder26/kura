@@ -19,6 +19,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   const [community, setCommunity] = useState<any>(null);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [isMember, setIsMember] = useState(false);
   const [joining, setJoining] = useState(false);
 
@@ -28,7 +29,8 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
     if (!slug) return;
     try {
       const supabase = createClient();
-      const { data: comm } = await supabase.from('communities').select('*').eq('slug', slug).single();
+      const { data: comm, error: commErr } = await supabase.from('communities').select('*').eq('slug', slug).single();
+      if (commErr) throw commErr;
       setCommunity(comm);
       if (comm) {
         if (user) {
@@ -42,7 +44,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
           .order('created_at', { ascending: false }).limit(20);
         if (postData) setPosts((postData as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
       }
-    } catch {} finally { setLoading(false); }
+    } catch (err: any) { setError(err.message || 'Failed to load community'); } finally { setLoading(false); }
   }, [slug, user]);
 
   useEffect(() => { load(); }, [load]);
@@ -64,12 +66,12 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
 
   if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
 
-  if (!community) {
+  if (error || !community) {
     return (
       <div className="min-h-screen">
         <Header />
         <div className="px-4 py-8">
-          <EmptyState title="Community not found" action={<Link href="/communities"><button className="reddit-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">Browse communities</button></Link>} />
+          <EmptyState title={error || 'Community not found'} action={<Link href="/communities"><button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">Browse communities</button></Link>} />
         </div>
       </div>
     );
@@ -88,11 +90,11 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
             <div className="flex-1 min-w-0 pb-1">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-bold text-[var(--fg)]">{community.name}</h1>
-                <button onClick={toggleJoin} disabled={joining} className={`reddit-btn text-sm py-1.5 px-5 ${isMember ? 'border border-[var(--border)] text-[var(--fg2)] bg-transparent hover:border-[var(--border-strong)]' : 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]'}`}>
+                <button onClick={toggleJoin} disabled={joining} className={`kura-btn text-sm py-1.5 px-5 ${isMember ? 'border border-[var(--border)] text-[var(--fg2)] bg-transparent hover:border-[var(--border-strong)]' : 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]'}`}>
                   {isMember ? 'Joined' : 'Join'}
                 </button>
               </div>
-              <p className="text-sm text-[var(--fg4)]">r/{community.slug}</p>
+              <p className="text-sm text-[var(--fg4)]">k/{community.slug}</p>
             </div>
           </div>
         </div>
@@ -125,7 +127,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
                   {new Date(community.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
                 <Link href={`/submit?community=${community.slug}`} className="block mt-3">
-                  <button className="reddit-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">Create Post</button>
+                  <button className="kura-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">Create Post</button>
                 </Link>
               </div>
             </div>

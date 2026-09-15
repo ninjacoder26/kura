@@ -23,7 +23,7 @@ export default function CommunitiesPage() {
         const supabase = createClient();
         const { data } = await supabase.from('communities').select('*').order('member_count', { ascending: false });
         if (data) setCommunities(data as any[]);
-      } catch {} finally { setLoading(false); }
+      } catch { } finally { setLoading(false); }
     }
     load();
   }, []);
