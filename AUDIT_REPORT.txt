@@ -1,0 +1,539 @@
+================================================================================
+                    KURA CODEBASE AUDIT REPORT
+                    Generated: 2026-09-15
+================================================================================
+
+Total findings: 66
+  Critical:  2
+  High:     11
+  Medium:   31
+  Low:      22
+
+================================================================================
+  1. SECURITY VULNERABILITIES (10)
+================================================================================
+
+#1  [Security/Critical] Exposed Supabase credentials in .env file
+    File: .env, lines 2-3
+    The .env file contains real Supabase URL and anon key values. While
+    .gitignore lists .env, the file exists locally with real credentials.
+    If this was ever committed, the project URL is exposed.
+    Severity: Critical
+
+#2  [Security/High] JavaScript URI XSS via user-submitted post links
+    File: src/components/post/PostCard.tsx, line 163
+    File: src/app/post/[id]/page.tsx, line 145
+    Post URLs are rendered as <a href={post.url}> directly from user input.
+    A user could submit javascript:alert(document.cookie) as a URL. React
+    does NOT sanitize href attributes on <a> tags against javascript: URIs.
+    Severity: High
+
+#3  [Security/High] Open redirect potential in auth callback
+    File: src/app/auth/callback/route.ts, lines 7, 24
+    The next search parameter is used to construct a redirect URL without
+    validation. A crafted next value with special characters or newlines
+    could potentially manipulate the redirect. Should validate as relative
+    path starting with /.
+    Severity: High
+
+#4  [Security/Medium] Missing authorization re-verification on post edit
+    File: src/app/post/[id]/edit/page.tsx, lines 35, 44-54
+    The ownership check is only done on page load. The form submission does
+    not re-verify ownership. While Supabase RLS should prevent unauthorized
+    updates, the frontend has a TOCTOU gap.
+    Severity: Medium
+
+#5  [Security/Medium] Image upload lacks MIME type validation
+    File: src/app/submit/page.tsx, lines 64-72
+    Only file size is validated (20MB). No MIME type or file extension
+    validation. A user could upload malicious SVG files or non-image files.
+    The HTML accept="image/*" is just a browser hint, not enforced.
+    Severity: Medium
+
+#6  [Security/Medium] No rate limiting on authentication endpoints
+    Files: Login, signup, forgot-password pages
+    No client-side or server-side rate limiting on login attempts, signup
+    attempts, or password reset requests. Vulnerable to brute-force attacks.
+    Severity: Medium
+
+#7  [Security/Medium] Post deletion allows hard-delete via API
+    File: supabase/migrations/001_initial_schema.sql, line 269
+    File: src/components/post/PostCard.tsx, line 107
+    The RLS policy allows DELETE operations, but the UI only soft-deletes.
+    A user could bypass the UI and hard-delete posts via the API.
+    Severity: Medium
+
+#8  [Security/Medium] No is_locked enforcement on comment creation
+    File: src/app/post/[id]/page.tsx, lines 104-113
+    Posts have an is_locked boolean field, but the comment form and backend
+    don't check it before allowing comments. Locked posts can still receive
+    comments.
+    Severity: Medium
+
+#9  [Security/Low] Missing username uniqueness validation during OAuth signup
+    File: src/app/auth/callback/route.ts, line 19
+    When creating a profile for OAuth users, the username is derived from
+    the email prefix. If two users have the same email prefix, the database
+    insert will fail with a constraint violation, but the error is not
+    handled, potentially leaving the user without a profile.
+    Severity: Low
+
+#10 [Security/Low] Search ilike filter treats user input as LIKE pattern
+    File: src/app/search/page.tsx, line 34
+    The or filter uses ilike with user input wrapped in %. Characters like
+    % and _ in the search query would be treated as SQL LIKE wildcards,
+    potentially returning unintended results.
+    Severity: Low
+
+================================================================================
+  2. BUGS (10)
+================================================================================
+
+#11 [Bug/Critical] Score double-counted in post detail page
+    File: src/app/post/[id]/page.tsx, lines 40-47
+    Line 40 sets setScore(postData.upvotes - postData.downvotes). The
+    database triggers already include the user's vote in these counts.
+    Then line 46 adds +1 or -1 again. This double-counts the user's own
+    vote, showing an incorrect score.
+    Severity: Critical
+
+#12 [Bug/High] "Hot" sort is identical to "Top" sort
+    File: src/app/page.tsx, lines 54-56
+    Both sort === 'top' and the else (hot) branch use
+    query.order('upvotes', { ascending: false }). The "Hot" sort should
+    factor in both votes and recency (time-decay), but it behaves
+    identically to "Top".
+    Severity: High
+
+#13 [Bug/High] Comment count not decremented on soft-delete
+    File: supabase/migrations/001_initial_schema.sql, lines 468-484
+    The handle_comment_count trigger only fires on INSERT and DELETE (hard
+    delete). Since comments are soft-deleted (is_removed = true), the
+    comment_count on posts never decrements when comments are removed.
+    Severity: High
+
+#14 [Bug/High] Profile post_count and comment_count never updated
+    File: supabase/migrations/001_initial_schema.sql
+    The profiles table has post_count and comment_count columns, but there
+    are no database triggers to increment/decrement these when users create
+    or delete posts/comments. The counts will always remain at 0.
+    Severity: High
+
+#15 [Bug/Medium] Post submit button is outside <form> element
+    File: src/app/submit/page.tsx, lines 157-188
+    The submit button (line 186) is outside the <form> element. While the
+    button has onClick={handleSubmit}, pressing Enter in form fields
+    triggers the form's onSubmit but the button's disabled state isn't
+    reflected.
+    Severity: Medium
+
+#16 [Bug/Medium] OAuth callback profile creation may fail silently
+    File: src/app/auth/callback/route.ts, lines 16-22
+    If the database trigger handle_new_user already created the profile,
+    the callback's insert will fail due to the unique constraint. The
+    error is not caught or handled, potentially leaving the user stuck.
+    Severity: Medium
+
+#17 [Bug/Medium] No updated_at auto-update trigger
+    File: supabase/migrations/001_initial_schema.sql
+    Multiple tables have updated_at columns but there is no trigger to
+    automatically update the timestamp when rows are modified. The
+    updated_at value will remain at the initial creation time.
+    Severity: Medium
+
+#18 [Bug/Medium] Theme flash on page load
+    File: src/components/providers/ThemeProvider.tsx, lines 19-22
+    Theme is read from localStorage in a useEffect (client-side only),
+    meaning the initial server render always uses the light theme. Users
+    will see a flash of light theme before dark theme is applied.
+    Severity: Medium
+
+#19 [Bug/Low] Voting race condition with optimistic updates
+    Files: PostCard.tsx, post/[id]/page.tsx, CommentThread.tsx
+    Vote handlers update local state optimistically before the API call
+    completes. If the API call fails, the UI state is already changed
+    and there is no rollback mechanism.
+    Severity: Low
+
+#20 [Bug/Low] clipboard.writeText failure not handled
+    Files: PostCard.tsx line 119, post/[id]/page.tsx line 119
+    navigator.clipboard.writeText(url) can fail in insecure contexts
+    (HTTP) or when clipboard permission is denied. No error handling
+    or fallback is provided.
+    Severity: Low
+
+================================================================================
+  3. UI ISSUES (10)
+================================================================================
+
+#21 [UI/High] Auth layout height mismatch
+    File: src/app/(auth)/layout.tsx, line 5
+    Uses calc(100vh-56px) but the header height is 48px (defined as
+    --header-h: 48px in globals.css). This causes a 8px height
+    discrepancy on auth pages.
+    Severity: High
+
+#22 [UI/Medium] Inter font loaded but never applied
+    File: src/app/layout.tsx, lines 29-31
+    File: src/app/globals.css, line 75
+    The layout loads Inter font from Google Fonts, but the body CSS uses
+    a system font stack. Inter is never referenced in any CSS rule, so
+    it's loaded but unused, wasting bandwidth.
+    Severity: Medium
+
+#23 [UI/Medium] Inconsistent active state detection
+    File: Sidebar.tsx line 44 vs MobileNav.tsx line 30
+    Sidebar uses strict equality while MobileNav uses startsWith for
+    non-home routes. Active state could differ between desktop and mobile.
+    Severity: Medium
+
+#24 [UI/Medium] Duplicate Skeleton components
+    File: src/components/ui/Skeleton.tsx and Feedback.tsx line 40
+    Both files export a Skeleton component doing the same thing. The one
+    in Skeleton.tsx is never imported anywhere.
+    Severity: Medium
+
+#25 [UI/Medium] Post create prompt shows "?" instead of user avatar
+    File: src/app/k/[slug]/page.tsx, line 107
+    The "Create a post in..." prompt shows a hardcoded "?" instead of
+    the user's avatar or initials.
+    Severity: Medium
+
+#26 [UI/Medium] Missing keyboard navigation in community dropdown
+    File: src/app/submit/page.tsx, lines 122-146
+    The community dropdown doesn't support arrow key navigation, Enter
+    to select, or Escape to close. Accessibility problem.
+    Severity: Medium
+
+#27 [UI/Low] No loading skeleton when "Load More" is clicked
+    File: src/app/page.tsx, lines 135-142
+    When clicking "Load More", the button shows "Loading..." text but
+    there's no skeleton or visual indication that new posts are loading.
+    Severity: Low
+
+#28 [UI/Low] Comment vote buttons missing aria-label
+    File: src/components/comments/CommentThread.tsx, lines 123, 129
+    Comment vote buttons don't have aria-label attributes, unlike PostCard.
+    Screen readers won't identify the button purpose.
+    Severity: Low
+
+#29 [UI/Low] No unsaved changes warning on edit pages
+    Files: src/app/post/[id]/edit/page.tsx, src/app/settings/page.tsx
+    Neither page warns users about unsaved changes when navigating away.
+    Severity: Low
+
+#30 [UI/Low] Settings page has no Cancel/Back button
+    File: src/app/settings/page.tsx
+    No way to go back or cancel without using browser back button.
+    Severity: Low
+
+================================================================================
+  4. INCONSISTENCIES (6)
+================================================================================
+
+#31 [Inconsistency/Medium] Inconsistent input styling across pages
+    Files: login, signup, forgot-password, settings use raw <input> with
+    inline Tailwind classes, while submit and create-community use the
+    Input component from @/components/ui/Input.
+    Severity: Medium
+
+#32 [Inconsistency/Medium] Inconsistent loading spinner implementations
+    Some pages use <LoadingSpinner /> from Feedback.tsx, others use inline
+    animate-spin divs. No consistent pattern.
+    Severity: Medium
+
+#33 [Inconsistency/Medium] Inconsistent error handling patterns
+    Some pages show errors inline, others use toasts, some silently swallow
+    errors with empty catch {} blocks.
+    Severity: Medium
+
+#34 [Inconsistency/Low] Inconsistent date formatting
+    formatDate returns compact relative time, but some pages use inline
+    new Date(...).toLocaleDateString(...).
+    Severity: Low
+
+#35 [Inconsistency/Low] Inconsistent vote handling code duplication
+    Vote logic is duplicated in PostCard.tsx, post/[id]/page.tsx, and
+    CommentThread.tsx with nearly identical handleVote functions.
+    Severity: Low
+
+#36 [Inconsistency/Low] Inconsistent save handling code duplication
+    Save/unsave logic is duplicated in PostCard.tsx and post/[id]/page.tsx.
+    Severity: Low
+
+================================================================================
+  5. TYPESCRIPT ISSUES (4)
+================================================================================
+
+#37 [TypeScript/High] Pervasive use of any type defeats TypeScript
+    Files affected (non-exhaustive):
+    - src/app/page.tsx: (data as any[]), catch (err: any)
+    - src/app/k/[slug]/page.tsx: useState<any>(null)
+    - src/app/profile/[username]/page.tsx: useState<any>(null)
+    - src/app/post/[id]/page.tsx: useState<any>(null)
+    - src/lib/supabase/client.ts: Record<string, any>, as any
+    - src/lib/supabase/server.ts: same
+    - src/components/providers/AuthProvider.tsx: ({ data: { session }}: any)
+    - PostCard.tsx, CommentThread.tsx: (res: any)
+    The Database types in types.ts are defined but never used.
+    Severity: High
+
+#38 [TypeScript/Medium] Unused import in post edit page
+    File: src/app/post/[id]/edit/page.tsx, line 4
+    useSearchParams is imported from next/navigation but never used.
+    Severity: Medium
+
+#39 [TypeScript/Medium] Unused import in auth layout
+    File: src/app/(auth)/layout.tsx, line 1
+    Link is imported from next/link but never used.
+    Severity: Medium
+
+#40 [TypeScript/Medium] formatNumber doesn't handle negative numbers
+    File: src/lib/utils.ts, lines 24-28
+    If n is negative and its absolute value >= 1000, the formatting would
+    produce results like -1.5k.
+    Severity: Medium
+
+================================================================================
+  6. PERFORMANCE ISSUES (6)
+================================================================================
+
+#41 [Performance/High] N+1 query pattern on PostCard mount
+    File: src/components/post/PostCard.tsx, lines 56-64
+    Each PostCard makes 2 separate Supabase queries on mount (one for vote
+    state, one for saved state). With 20 posts per page, this results in
+    40 additional queries per page load.
+    Severity: High
+
+#42 [Performance/Medium] Missing pagination on communities page
+    File: src/app/communities/page.tsx, line 24
+    Loads ALL communities at once with no .limit(). Will be problematic
+    as the number of communities grows.
+    Severity: Medium
+
+#43 [Performance/Medium] Sidebar queries on every mount including mobile
+    File: src/components/layout/Sidebar.tsx, lines 27-36
+    The Sidebar makes a Supabase query on every mount, even when hidden
+    on mobile (hidden lg:block).
+    Severity: Medium
+
+#44 [Performance/Medium] New Supabase client created on every query
+    Files: Throughout the codebase, createClient() is called inside
+    individual components rather than being shared.
+    Severity: Medium
+
+#45 [Performance/Low] Missing React.memo on PostCard
+    File: src/components/post/PostCard.tsx
+    PostCard is not wrapped in React.memo, causing unnecessary re-renders
+    when parent state changes.
+    Severity: Low
+
+#46 [Performance/Low] Inter font loaded but unused
+    File: src/app/layout.tsx, lines 26-31
+    Inter font is loaded from Google Fonts (3 weights: 400-800) but never
+    applied in CSS, wasting ~150KB of network resources.
+    Severity: Low
+
+================================================================================
+  7. MISSING FEATURES (7)
+================================================================================
+
+#47 [Missing/High] No notifications UI
+    The database has a notifications table with RLS policies, but there is
+    no page, dropdown, or component to view or manage notifications.
+    Severity: High
+
+#48 [Missing/High] No moderation panel/UI
+    Database has reports, moderation_logs tables and RLS policies for
+    moderators, but there is no moderation dashboard for reviewing reports,
+    removing content, or managing users.
+    Severity: High
+
+#49 [Missing/Medium] No account deletion or password change
+    File: src/app/settings/page.tsx
+    Settings page only allows editing display name, bio, location, website.
+    No option to delete account or change password.
+    Severity: Medium
+
+#50 [Missing/Medium] No username availability check on signup
+    File: src/app/(auth)/signup/page.tsx
+    Unlike community creation, signup doesn't check username availability
+    before submission. Users get a cryptic database constraint error.
+    Severity: Medium
+
+#51 [Missing/Medium] No comment depth limit
+    Files: CommentThread.tsx line 83, database schema
+    Comments can nest indefinitely. No depth limit is enforced, which
+    could break the UI layout on deeply nested threads.
+    Severity: Medium
+
+#52 [Missing/Low] No password strength indicator
+    File: src/app/(auth)/signup/page.tsx
+    Password validation only checks minimum length (6 chars). No strength
+    indicator or requirements for complexity.
+    Severity: Low
+
+#53 [Missing/Low] No image compression before upload
+    File: src/app/submit/page.tsx
+    Images up to 20MB are uploaded raw without client-side compression,
+    leading to slow uploads and large storage usage.
+    Severity: Low
+
+================================================================================
+  8. EDGE CASES (4)
+================================================================================
+
+#54 [Edge Case/Medium] Race condition on community slug availability
+    File: src/app/k/create/page.tsx, lines 27-35
+    The slug availability check has a 500ms debounce. Two users creating
+    communities with the same name simultaneously could both see the slug
+    as "available" and then one would fail at the database level.
+    Severity: Medium
+
+#55 [Edge Case/Medium] slugify strips all non-ASCII characters
+    File: src/lib/utils.ts, line 31
+    text.toLowerCase().replace(/[^a-z0-9]+/, '-') strips all Unicode
+    characters. For Nepali text like "नेपाल", this returns an empty string,
+    which would fail the slug length validation.
+    Severity: Medium
+
+#56 [Edge Case/Low] Long community names may overflow in UI
+    Files: Community creation allows up to 21 characters, but display in
+    sidebar, header, and other compact areas may overflow.
+    Severity: Low
+
+#57 [Edge Case/Low] Empty body post submission
+    File: src/app/submit/page.tsx, line 101
+    body: body.trim() || null - a post of type "text" with no body would
+    have body: null. The UI handles this gracefully, but it means text
+    posts can have no content.
+    Severity: Low
+
+================================================================================
+  9. CODE QUALITY (5)
+================================================================================
+
+#58 [Code Quality/Medium] Dead code: Unused Skeleton component
+    File: src/components/ui/Skeleton.tsx
+    This entire file is never imported anywhere. The Skeleton component
+    in Feedback.tsx is used instead.
+    Severity: Medium
+
+#59 [Code Quality/Medium] Misleading "Markdown supported" text
+    File: src/components/comments/CommentForm.tsx, line 35
+    Displays "Markdown supported" but comments are rendered as plain text
+    with whitespace-pre-wrap. No markdown parsing is implemented.
+    Severity: Medium
+
+#60 [Code Quality/Medium] Silent error swallowing with empty catch blocks
+    Files:
+    - src/app/communities/page.tsx, line 26
+    - src/components/layout/Sidebar.tsx, line 33
+    - src/app/submit/page.tsx, line 56
+    - src/app/search/page.tsx, line 38
+    Errors are silently ignored with no logging or user feedback.
+    Severity: Medium
+
+#61 [Code Quality/Medium] No error rollback on failed optimistic updates
+    Files: PostCard.tsx, post/[id]/page.tsx, CommentThread.tsx
+    Vote handlers optimistically update UI state but don't roll back
+    if the API call fails.
+    Severity: Medium
+
+#62 [Code Quality/Low] Mock Supabase client returns silently null
+    Files: src/lib/supabase/client.ts, server.ts
+    When Supabase isn't configured, a mock client is returned that
+    silently returns null data. The app appears to work but shows empty
+    content with no error messages.
+    Severity: Low
+
+================================================================================
+  10. UX ISSUES (7)
+================================================================================
+
+#63 [UX/Medium] No loading state for "Load More" posts
+    File: src/app/page.tsx, lines 135-142
+    When clicking "Load More", only the button text changes. No skeleton
+    loading indicator appears below existing posts.
+    Severity: Medium
+
+#64 [UX/Medium] Password reset redirect doesn't show success message
+    File: src/app/(auth)/forgot-password/page.tsx, line 21
+    After requesting a password reset, the user sees "Check your email"
+    but after clicking the link and resetting, they're redirected to
+    /login without any confirmation that the password was changed.
+    Severity: Medium
+
+#65 [UX/Medium] No toast notification after password reset completion
+    File: src/app/(auth)/forgot-password/page.tsx, line 21
+    The redirectTo for password reset is set to /login without any query
+    parameter to indicate success. The login page has no way to know
+    a password was just reset.
+    Severity: Medium
+
+#66 [UX/Low] No Cmd+K or keyboard shortcut for search
+    No keyboard shortcut to quickly focus the search bar or navigate
+    to search.
+    Severity: Low
+
+#67 [UX/Low] Community dropdown shows generic avatar
+    File: src/app/submit/page.tsx, line 138
+    The community dropdown shows a fixed brand-color circle with the
+    first letter instead of using each community's actual color/icon.
+    Severity: Low
+
+#68 [UX/Low] No profile editing for avatar or cover image
+    File: src/app/settings/page.tsx
+    Users cannot change their avatar or cover image from settings,
+    despite the database supporting these fields.
+    Severity: Low
+
+#69 [UX/Low] Toast auto-dismisses too quickly for errors
+    File: src/components/providers/ToastProvider.tsx, line 28
+    All toasts auto-dismiss after 4 seconds regardless of type. Error
+    toasts might disappear before the user finishes reading them.
+    Severity: Low
+
+#70 [UX/Low] No ban status displayed on user profiles
+    File: src/app/profile/[username]/page.tsx
+    The profiles table has is_banned and ban_reason fields, but banned
+    users' profiles appear normal with no indication.
+    Severity: Low
+
+================================================================================
+  SUMMARY
+================================================================================
+
+| Category        | Critical | High | Medium | Low | Total |
+|-----------------|----------|------|--------|-----|-------|
+| Security        |    1     |  3   |   4    |  2  |  10   |
+| Bug             |    1     |  3   |   4    |  2  |  10   |
+| UI              |    0     |  1   |   5    |  4  |  10   |
+| Inconsistency   |    0     |  0   |   3    |  3  |   6   |
+| TypeScript      |    0     |  1   |   3    |  0  |   4   |
+| Performance     |    0     |  1   |   3    |  2  |   6   |
+| Missing Feature |    0     |  2   |   3    |  2  |   7   |
+| Edge Case       |    0     |  0   |   2    |  2  |   4   |
+| Code Quality    |    0     |  0   |   4    |  1  |   5   |
+| UX              |    0     |  0   |   3    |  4  |   7   |
+|-----------------|----------|------|--------|-----|-------|
+| TOTAL           |    2     | 11   |  31    | 22  |  66   |
+
+================================================================================
+  TOP PRIORITY FIXES
+================================================================================
+
+1. #11 - Score double-counting bug (Critical user-facing bug)
+2. #12 - Hot sort is identical to Top sort (broken feature)
+3. #13-14 - Comment/profile counts never updated (data integrity)
+4. #1 - Ensure .env with credentials was never committed to git history
+5. #2 - Sanitize/validate post URLs against javascript: URIs
+6. #47-48 - Notifications and moderation UI are core missing features
+7. #37 - Replace any types with proper Database types
+8. #41 - Fix N+1 query pattern on PostCard mount
+9. #3 - Validate auth callback redirect parameter
+10. #17 - Add updated_at auto-update trigger
+
+================================================================================
+                          END OF REPORT
+================================================================================
