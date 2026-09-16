@@ -26,7 +26,7 @@ function ForgotPasswordForm() {
 
   if (sent) {
     return (
-      <div className="min-h-[calc(100vh-48px)] flex items-center justify-center px-4 py-8">
+      <div className="min-h-screen flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-sm text-center anim-fade-up">
           <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
             <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -42,7 +42,7 @@ function ForgotPasswordForm() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-48px)] flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm anim-fade-up">
         <div className="text-center mb-6">
           <h1 className="text-lg font-medium text-[var(--fg)]">Reset Password</h1>
@@ -68,7 +68,7 @@ function ForgotPasswordForm() {
 
 export default function ForgotPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-[calc(100vh-48px)] flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" /></div>}>
       <ForgotPasswordForm />
     </Suspense>
   );

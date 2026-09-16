@@ -2,12 +2,16 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { Check, X, Loader2 } from 'lucide-react';
 
 export default function SignupPage() {
+  const router = useRouter();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -15,6 +19,13 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/');
+    }
+  }, [user, authLoading, router]);
 
   // (#50): Debounced username availability check
   const checkUsername = useCallback(async (value: string) => {
@@ -75,7 +86,7 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-[calc(100vh-48px)] flex items-center justify-center px-4 py-8">
+      <div className="min-h-screen flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-sm text-center anim-fade-up">
           <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
             <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -91,7 +102,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-48px)] flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm anim-fade-up">
         <div className="text-center mb-6">
           <div className="h-10 w-10 rounded-full bg-[var(--brand-500)] flex items-center justify-center mx-auto mb-3">

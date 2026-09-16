@@ -50,7 +50,7 @@ export default function CommunitiesPage() {
       <Header />
       <div className="flex px-4 py-3 gap-5">
         <aside className="hidden lg:block w-[228px] shrink-0">
-          <div className="sticky top-[60px]"><Sidebar /></div>
+          <div className="sticky top-12"><Sidebar /></div>
         </aside>
         <main className="flex-1 min-w-0">
           <h1 className="text-lg font-medium text-[var(--fg)] mb-3">Browse Communities</h1>

@@ -32,13 +32,13 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-[var(--surface)] border-b border-[var(--border)] shadow-[var(--shadow-xs)]">
-      <div className="h-[48px] flex items-center px-4 gap-3 max-w-[1200px] mx-auto">
+      <div className="h-12 flex items-center px-4 gap-4 max-w-[1400px] mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0 mr-2">
-          <div className="h-8 w-8 rounded-full bg-[var(--brand-500)] flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-sm">K</span>
+          <div className="h-9 w-9 rounded-full bg-[var(--brand-500)] flex items-center justify-center shadow-sm">
+            <span className="text-white font-bold text-base">K</span>
           </div>
-          <span className="font-bold text-lg tracking-tight hidden md:block text-[var(--fg)]">kura</span>
+          <span className="font-bold text-xl tracking-tight hidden md:block text-[var(--fg)]">kura</span>
         </Link>
 
         {/* Search */}

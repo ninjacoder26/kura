@@ -154,7 +154,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         </main>
 
         <aside className="hidden lg:block w-[312px] shrink-0">
-          <div className="sticky top-[60px] space-y-4">
+          <div className="sticky top-12 space-y-4">
             <div className="sidebar-widget">
               <div className="sidebar-widget-header">About Community</div>
               <div className="p-3">

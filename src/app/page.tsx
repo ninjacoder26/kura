@@ -200,7 +200,7 @@ export default function HomePage() {
       <Header />
       <div className="flex px-4 py-3 gap-5">
         <aside className="hidden lg:block w-[228px] shrink-0">
-          <div className="sticky top-[60px]">
+          <div className="sticky top-12">
             <Sidebar />
           </div>
         </aside>
@@ -297,7 +297,7 @@ export default function HomePage() {
         </main>
 
         <aside className="hidden xl:block w-[312px] shrink-0">
-          <div className="sticky top-[60px] space-y-4">
+          <div className="sticky top-12 space-y-4">
             {/* Community card */}
             <div className="sidebar-widget">
               <div className="bg-gradient-to-b from-[var(--brand-500)] to-[var(--brand-700)] h-8" />

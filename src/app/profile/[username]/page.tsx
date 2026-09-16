@@ -168,7 +168,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-[312px] shrink-0">
-            <div className="sticky top-[60px] pb-8">
+            <div className="sticky top-12 pb-8">
               <div className="sidebar-widget">
                 <div className="sidebar-widget-header" style={{ borderBottomColor: profileColor }}>About</div>
                 <div className="p-3 space-y-3">
