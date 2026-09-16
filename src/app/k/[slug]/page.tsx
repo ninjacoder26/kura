@@ -93,7 +93,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
     } catch (err: any) { toast('error', err.message || 'Failed'); } finally { setJoining(false); }
   }
 
-  if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
+  if (loading && !community) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
 
   if (error || !community) {
     return (

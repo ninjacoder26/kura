@@ -55,7 +55,12 @@ export default function CommunitiesPage() {
           <div className="sticky top-12"><Sidebar /></div>
         </aside>
         <main className="flex-1 min-w-0">
-          <h1 className="text-lg font-medium text-[var(--fg)] mb-3">Browse Communities</h1>
+          <div className="flex items-center gap-2 mb-3">
+            <h1 className="text-lg font-medium text-[var(--fg)]">Browse Communities</h1>
+            {loading && filtered.length > 0 && (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" />
+            )}
+          </div>
           <input type="text" placeholder="Filter communities" value={search} onChange={e => setSearch(e.target.value)}
             className="w-full h-10 px-4 text-sm rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-colors mb-3" />
           <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide">
@@ -66,7 +71,7 @@ export default function CommunitiesPage() {
               </button>
             ))}
           </div>
-          {loading ? (
+          {loading && filtered.length === 0 ? (
             <div className="space-y-2">{[1, 2, 3, 4, 5, 6].map(i => <CommunitySkeleton key={i} />)}</div>
           ) : filtered.length === 0 ? (
             <EmptyState icon={<Users className="h-5 w-5" />} title={search || category !== 'all' ? 'No communities found' : 'No communities yet'} description={search || category !== 'all' ? 'Try a different search or filter.' : 'Be the first to create a community.'} />

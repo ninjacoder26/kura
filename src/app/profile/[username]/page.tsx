@@ -49,7 +49,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     load();
   }, [username]);
 
-  if (loading) return (
+  if (loading && !profile) return (
     <div className="min-h-screen bg-[var(--bg)]">
       <Header />
       <div className="h-32 sm:h-40 bg-[var(--surface)] animate-pulse" />

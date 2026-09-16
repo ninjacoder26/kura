@@ -163,7 +163,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     }
   }
 
-  if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
+  if (loading && !post) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
   if (error || !post) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title={error || 'Post not found'} action={<Link href="/" className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm">Go home</Link>} /></div></div>;
 
   return (

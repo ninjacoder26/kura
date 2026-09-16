@@ -160,7 +160,7 @@ export default function HomePage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  useEffect(() => { setPage(0); setPosts([]); setHasMore(true); }, [sort]);
+  useEffect(() => { setPage(0); setHasMore(true); }, [sort]);
 
   useEffect(() => {
     async function load() {
@@ -217,6 +217,9 @@ export default function HomePage() {
                 {label}
               </button>
             ))}
+            {loading && posts.length > 0 && (
+              <div className="ml-auto h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" />
+            )}
           </div>
 
           {/* Empty state for logged-in users */}
@@ -278,7 +281,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {loading && page === 0 ? <FeedSkeleton /> : (
+          {loading && posts.length === 0 ? <FeedSkeleton /> : (
             <>
               <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="Be the first to post something!" onDelete={handlePostDelete} />
               {loadingMore && <div className="mt-3"><FeedSkeleton /></div>}
