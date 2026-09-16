@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 
 interface CommentFormProps {
-  onSubmit: (body: string) => void;
+  onSubmit: (body: string) => void | Promise<void>;
   placeholder?: string;
   loading?: boolean;
 }

@@ -33,10 +33,13 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         if (profErr) throw profErr;
         setProfile(prof);
         if (prof) {
-          const { data: postData } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20);
-          if (postData) setPosts((postData as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
-          const { data: commentData } = await supabase.from('comments').select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20);
-          if (commentData) setComments((commentData as any[]).map((c: any) => ({ id: c.id, body: c.body, post_id: c.post_id, post_title: c.posts?.title, created_at: c.created_at })));
+          // Parallel queries for posts and comments
+          const [postsResult, commentsResult] = await Promise.all([
+            supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20),
+            supabase.from('comments').select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20)
+          ]);
+          if (postsResult.data) setPosts((postsResult.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
+          if (commentsResult.data) setComments((commentsResult.data as any[]).map((c: any) => ({ id: c.id, body: c.body, post_id: c.post_id, post_title: c.posts?.title, created_at: c.created_at })));
         }
       } catch (err: any) { setError(err.message || 'Failed to load profile'); } finally { setLoading(false); }
     }

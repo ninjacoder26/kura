@@ -8,10 +8,9 @@ import MobileNav from '@/components/layout/MobileNav';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import Link from 'next/link';
-import { Sparkles, Plus, Users, TrendingUp, Shield, MessageCircle, ArrowRight, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Sparkles, Plus, Users, TrendingUp, Shield, MessageCircle, ChevronRight } from 'lucide-react';
+import { cn, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { formatNumber } from '@/lib/utils';
 
 type SortType = 'new' | 'top' | 'hot';
 

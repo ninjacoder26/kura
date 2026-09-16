@@ -119,7 +119,7 @@ export default function CreateCommunityPage() {
         slug,
         description: description.trim() || null,
         category,
-        creator_id: user.id,
+        created_by: user.id,
         banner_url: bannerUrl,
         icon_url: iconUrl,
       }).select('slug').single();

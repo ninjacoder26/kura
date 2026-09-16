@@ -19,35 +19,64 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   const [community, setCommunity] = useState<any>(null);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [isMember, setIsMember] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => { params.then(p => setSlug(p.slug)); }, [params]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (pageNum: number = 0) => {
     if (!slug) return;
+    if (pageNum === 0) setLoading(true);
+    else setLoadingMore(true);
+
     try {
       const supabase = createClient();
-      const { data: comm, error: commErr } = await supabase.from('communities').select('*').eq('slug', slug).single();
-      if (commErr) throw commErr;
-      setCommunity(comm);
-      if (comm) {
+
+      // Parallel: community info + membership + posts
+      const commQuery = supabase.from('communities').select('*').eq('slug', slug).single();
+      const postsQuery = supabase
+        .from('posts')
+        .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)')
+        .eq('is_removed', false)
+        .order('created_at', { ascending: false })
+        .range(pageNum * 20, (pageNum + 1) * 20 - 1);
+
+      const [commResult, postsResult] = await Promise.all([commQuery, postsQuery]);
+
+      if (commResult.error) throw commResult.error;
+      setCommunity(commResult.data);
+
+      if (commResult.data) {
+        // Check membership
         if (user) {
-          const { data: member } = await supabase.from('community_members').select('id').eq('community_id', comm.id).eq('user_id', user.id).single();
+          const { data: member } = await supabase.from('community_members').select('id').eq('community_id', commResult.data.id).eq('user_id', user.id).single();
           setIsMember(!!member);
         }
-        const { data: postData } = await supabase
-          .from('posts')
-          .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)')
-          .eq('community_id', comm.id).eq('is_removed', false)
-          .order('created_at', { ascending: false }).limit(20);
-        if (postData) setPosts((postData as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
+
+        // Filter posts to this community
+        if (postsResult.data) {
+          const communityPosts = (postsResult.data as any[])
+            .filter((p: any) => p.community_id === commResult.data.id)
+            .map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined }));
+
+          setPosts(prev => pageNum === 0 ? communityPosts : [...prev, ...communityPosts]);
+          setHasMore(communityPosts.length === 20);
+        }
       }
-    } catch (err: any) { setError(err.message || 'Failed to load community'); } finally { setLoading(false); }
+    } catch (err: any) { setError(err.message || 'Failed to load community'); } finally { setLoading(false); setLoadingMore(false); }
   }, [slug, user]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(0); setPage(0); }, [load]);
+
+  function loadMore() {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    load(nextPage);
+  }
 
   async function toggleJoin() {
     if (!user) { toast('info', 'Log in to join communities'); return; }
@@ -71,18 +100,18 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       <div className="min-h-screen">
         <Header />
         <div className="px-4 py-8">
-          <EmptyState title={error || 'Community not found'} action={<Link href="/communities"><button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-500)] text-sm">Browse communities</button></Link>} />
+          <EmptyState title={error || 'Community not found'} action={<Link href="/communities"><button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm">Browse communities</button></Link>} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[var(--bg)]">
       <Header />
       <div className="h-20 sm:h-24" style={{ backgroundColor: community.color }} />
       <div className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="px-4">
+        <div className="px-4 max-w-[1200px] mx-auto">
           <div className="flex items-end gap-3 -mt-4 pb-3">
             <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-[var(--surface)] shrink-0" style={{ backgroundColor: community.color }}>
               {community.icon_url ? <img src={community.icon_url} alt={community.name} className="h-full w-full rounded-full object-cover" /> : community.name.charAt(0)}
@@ -90,7 +119,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
             <div className="flex-1 min-w-0 pb-1">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-bold text-[var(--fg)]">{community.name}</h1>
-                <button onClick={toggleJoin} disabled={joining} className={`kura-btn text-sm py-1.5 px-5 ${isMember ? 'border border-[var(--border)] text-[var(--fg2)] bg-transparent hover:border-[var(--border-strong)]' : 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-500)]'}`}>
+                <button onClick={toggleJoin} disabled={joining} className={`kura-btn text-sm py-1.5 px-5 ${isMember ? 'border border-[var(--border)] text-[var(--fg2)] bg-transparent hover:border-[var(--border-strong)]' : 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)]'}`}>
                   {isMember ? 'Joined' : 'Join'}
                 </button>
               </div>
@@ -100,7 +129,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         </div>
       </div>
 
-      <div className="flex px-4 py-3 gap-5">
+      <div className="flex px-4 py-4 gap-5 max-w-[1200px] mx-auto">
         <main className="flex-1 min-w-0">
           <Link href={`/submit?community=${community.slug}`} className="block mb-3">
             <div className="post-card flex items-center gap-3 p-3">
@@ -108,7 +137,19 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
               <span className="text-sm text-[var(--fg4)]">Create a post in {community.name}...</span>
             </div>
           </Link>
+
           <PostList posts={posts} showCommunity={false} />
+
+          {loadingMore && <div className="mt-3"><LoadingSpinner /></div>}
+
+          {hasMore && posts.length > 0 && !loadingMore && (
+            <div className="flex justify-center mt-4">
+              <button onClick={loadMore} className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">
+                Load More
+              </button>
+            </div>
+          )}
+
           <div className="pb-20 lg:pb-6" />
         </main>
 
@@ -127,7 +168,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
                   {new Date(community.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
                 <Link href={`/submit?community=${community.slug}`} className="block mt-3">
-                  <button className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-500)] text-sm py-2">Create Post</button>
+                  <button className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2">Create Post</button>
                 </Link>
               </div>
             </div>

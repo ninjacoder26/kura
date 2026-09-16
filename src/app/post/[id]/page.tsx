@@ -42,22 +42,36 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       setPost(postData);
       if (postData) setScore(postData.upvotes - postData.downvotes);
 
-      if (user && postData) {
-        const { data: voteData } = await supabase.from('votes').select('value').eq('user_id', user.id).eq('post_id', id).single();
-        if (voteData) {
-          setVote(voteData.value === 1 ? 'up' : 'down');
-        }
-        const { data: savedData } = await supabase.from('saved_posts').select('id').eq('user_id', user.id).eq('post_id', id).single();
-        if (savedData) setSaved(true);
+      // Parallel queries for vote, save, and comments
+      const queries: Promise<any>[] = [
+        supabase.from('comments').select('*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url)').eq('post_id', id).eq('is_removed', false).order('created_at', { ascending: true })
+      ];
+
+      if (user) {
+        queries.push(
+          supabase.from('votes').select('value').eq('user_id', user.id).eq('post_id', id).single(),
+          supabase.from('saved_posts').select('id').eq('user_id', user.id).eq('post_id', id).single()
+        );
       }
 
-      const { data: commentData } = await supabase.from('comments').select('*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url)').eq('post_id', id).eq('is_removed', false).order('created_at', { ascending: true });
-      if (commentData) {
-        const flat = (commentData as any[]).map((c: any) => ({ ...c, author: c.author || { username: 'unknown' }, children: [] as CommentData[] }));
+      const results = await Promise.all(queries);
+
+      // Process comments (first result)
+      const commentResult = results[0];
+      if (commentResult.data) {
+        const flat = (commentResult.data as any[]).map((c: any) => ({ ...c, author: c.author || { username: 'unknown' }, children: [] as CommentData[] }));
         const map = new Map(flat.map((c: any) => [c.id, c]));
         const roots: CommentData[] = [];
         for (const c of flat) { if (c.parent_id && map.has(c.parent_id)) { map.get(c.parent_id)!.children!.push(c); } else { roots.push(c); } }
         setComments(roots);
+      }
+
+      // Process vote and save (if logged in)
+      if (user && results.length === 3) {
+        const voteData = results[1].data;
+        const savedData = results[2].data;
+        if (voteData) setVote(voteData.value === 1 ? 'up' : 'down');
+        if (savedData) setSaved(true);
       }
     } catch (err: any) { setError(err.message || 'Failed to load post'); } finally { setLoading(false); }
   }, [id, user]);
