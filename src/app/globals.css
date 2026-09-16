@@ -152,6 +152,50 @@ input, textarea, select, button { font-family: inherit; }
   border-color: var(--border-strong);
 }
 
+/* Responsive mobile styles */
+@media (max-width: 640px) {
+  .post-card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}
+
+/* Image loading skeleton */
+.image-loading {
+  background: linear-gradient(90deg, var(--bg-raised) 25%, var(--border) 50%, var(--bg-raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--r-sm);
+  min-height: 200px;
+}
+
+/* Smooth image load */
+img {
+  transition: opacity 0.3s ease;
+}
+
+/* Better mobile touch targets */
+@media (max-width: 640px) {
+  .vote-btn {
+    width: 32px;
+    height: 32px;
+  }
+  button, a[role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .vote-btn {
   display: flex;
   align-items: center;

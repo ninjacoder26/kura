@@ -8,7 +8,8 @@ import MobileNav from '@/components/layout/MobileNav';
 import CommentThread, { type CommentData } from '@/components/comments/CommentThread';
 import CommentForm from '@/components/comments/CommentForm';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, ArrowLeft, Trash2, Pencil } from 'lucide-react';
+import ImageLightbox from '@/components/ui/ImageLightbox';
+import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, ArrowLeft, Trash2, Pencil, ExternalLink, Maximize2 } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -27,6 +28,8 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   const [score, setScore] = useState(0);
   const [saved, setSaved] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => { params.then(p => setId(p.id)); }, [params]);
 
@@ -169,10 +172,33 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
               <span>by</span> <Link href={`/profile/${post.author.username}`} className="hover:underline">@{post.author.username}</Link><span>·</span><time>{formatDate(post.created_at)}</time>
             </div>
             <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
-            {post.type === 'link' && post.url && <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--brand-600)] hover:underline break-all mt-2 block">{post.url}</a>}
-            {post.type === 'image' && post.image_url && <div className="mt-2"><img src={post.image_url} alt={post.title} className="max-h-[512px] rounded object-contain" /></div>}
+            {post.type === 'link' && post.url && (
+              <a href={post.url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-600)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors">
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span className="truncate max-w-[300px]">{new URL(post.url).hostname}</span>
+              </a>
+            )}
+            {post.type === 'image' && post.image_url && (
+              <div className="mt-2 relative group cursor-pointer" onClick={() => setLightboxOpen(true)}>
+                <div className="relative rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--bg)]">
+                  {!imageLoaded && <div className="w-full h-[300px] skeleton" />}
+                  <img
+                    src={post.image_url}
+                    alt={post.title}
+                    onLoad={() => setImageLoaded(true)}
+                    className={cn('max-h-[600px] w-full object-contain transition-opacity duration-300', imageLoaded ? 'opacity-100' : 'opacity-0 absolute')}
+                  />
+                </div>
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="h-8 w-8 rounded-full bg-black/60 flex items-center justify-center text-white">
+                    <Maximize2 className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+            )}
             {post.body && <div className="mt-3 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap">{post.body}</div>}
-            <div className="flex items-center gap-1 mt-3 -ml-1">
+            <div className="flex items-center gap-1 mt-3 -ml-1 flex-wrap">
               <span className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-bold text-[var(--fg4)]"><MessageSquare className="h-5 w-5" /> {formatNumber(post.comment_count)} Comments</span>
               <button onClick={handleShare} className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Share2 className="h-5 w-5" /> Share</button>
               <button onClick={handleSave} className={cn('flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold hover:bg-[var(--surface-hover)] transition-colors', saved ? 'text-[var(--brand-600)]' : 'text-[var(--fg4)]')}>
@@ -208,6 +234,15 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         <div className="pb-20 lg:pb-8"><CommentThread comments={comments} onCommentChange={loadPost} /></div>
       </div>
       <MobileNav />
+
+      {/* Lightbox */}
+      {lightboxOpen && post.image_url && (
+        <ImageLightbox
+          src={post.image_url}
+          alt={post.title}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }
