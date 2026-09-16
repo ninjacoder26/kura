@@ -8,8 +8,10 @@ import MobileNav from '@/components/layout/MobileNav';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import Link from 'next/link';
-import { Sparkles, Plus, Users } from 'lucide-react';
+import { Sparkles, Plus, Users, TrendingUp, Shield, MessageCircle, ArrowRight, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { formatNumber } from '@/lib/utils';
 
 type SortType = 'new' | 'top' | 'hot';
 
@@ -34,7 +36,123 @@ function FeedSkeleton() {
   );
 }
 
+function HeroBanner() {
+  return (
+    <div className="post-card overflow-hidden mb-3">
+      {/* Gradient banner */}
+      <div className="h-20 sm:h-24 bg-gradient-to-r from-[var(--brand-600)] via-[var(--brand-500)] to-[var(--brand-400)] relative">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjA1Ij48cGF0aCBkPSJNMzYgMzRoLTJ2LTRoMnYtMmgtNHY2aDJ2Mmgydi0yem0wLThoLTJ2MmgyVjI2ek0yNCAyNGgtMnYtMmgydjJ6bTAtNGgtMnYtMmgydjJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
+      </div>
+      <div className="px-4 pb-4 -mt-6 relative">
+        <div className="flex items-end gap-3 mb-3">
+          <div className="h-14 w-14 rounded-full bg-[var(--surface)] border-4 border-[var(--surface)] flex items-center justify-center shadow-md">
+            <span className="text-[var(--brand-600)] font-bold text-xl">T</span>
+          </div>
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold text-[var(--fg)]">Test</h1>
+            <p className="text-xs text-[var(--fg4)]">Nepal&apos;s front page of the internet</p>
+          </div>
+        </div>
+        <p className="text-sm text-[var(--fg3)] mb-4 max-w-lg">
+          Test is a network of communities where people can dive into their interests, hobbies and passions.
+          There&apos;s a Test for almost everything.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/signup">
+            <button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2 px-6">
+              Join Test
+            </button>
+          </Link>
+          <Link href="/communities">
+            <button className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm py-2 px-6">
+              Browse Communities
+            </button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RuleCard() {
+  const rules = [
+    { icon: Shield, title: 'Be respectful', desc: 'Treat others with kindness' },
+    { icon: MessageCircle, title: 'Stay on topic', desc: 'Keep discussions relevant' },
+    { icon: TrendingUp, title: 'Share quality content', desc: 'Post original, valuable stuff' },
+  ];
+
+  return (
+    <div className="post-card p-4 mb-3">
+      <h3 className="text-sm font-bold text-[var(--fg)] mb-3">Test Rules</h3>
+      <div className="space-y-3">
+        {rules.map((rule, i) => {
+          const Icon = rule.icon;
+          return (
+            <div key={i} className="flex items-start gap-3">
+              <div className="h-7 w-7 rounded-full bg-[var(--brand-50)] flex items-center justify-center shrink-0">
+                <Icon className="h-4 w-4 text-[var(--brand-600)]" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[var(--fg)]">{rule.title}</p>
+                <p className="text-[11px] text-[var(--fg4)]">{rule.desc}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TrendingCommunities() {
+  const [communities, setCommunities] = useState<{ name: string; slug: string; member_count: number; description?: string }[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.from('communities').select('name, slug, member_count, description').order('member_count', { ascending: false }).limit(5);
+        if (data) setCommunities(data as any[]);
+      } catch {}
+    }
+    load();
+  }, []);
+
+  if (communities.length === 0) return null;
+
+  return (
+    <div className="post-card overflow-hidden mb-3">
+      <div className="bg-gradient-to-r from-[var(--brand-600)] to-[var(--brand-500)] px-4 py-2.5">
+        <h3 className="text-xs font-bold text-white uppercase tracking-wide">Popular Communities</h3>
+      </div>
+      <div className="p-2">
+        {communities.map((c, i) => (
+          <Link
+            key={c.slug}
+            href={`/k/${c.slug}`}
+            className="flex items-center gap-3 px-2 py-2 rounded hover:bg-[var(--surface-hover)] transition-colors group"
+          >
+            <span className="text-xs font-bold text-[var(--fg4)] w-4 text-right">{i + 1}</span>
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[var(--brand-400)] to-[var(--brand-700)] flex items-center justify-center text-white text-xs font-bold shrink-0">
+              {c.name[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[var(--fg)] group-hover:underline truncate">k/{c.slug}</p>
+              {c.description && <p className="text-[11px] text-[var(--fg4)] truncate">{c.description}</p>}
+            </div>
+            <span className="text-[11px] text-[var(--fg4)] shrink-0">{formatNumber(c.member_count)} members</span>
+          </Link>
+        ))}
+        <Link href="/communities" className="flex items-center justify-center gap-1 px-2 py-2 mt-1 text-xs font-bold text-[var(--brand-600)] hover:bg-[var(--surface-hover)] rounded transition-colors">
+          View All <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
+  const { user } = useAuth();
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -89,6 +207,10 @@ export default function HomePage() {
         </aside>
 
         <main className="flex-1 min-w-0">
+          {/* Hero for logged-out users */}
+          {!user && <HeroBanner />}
+
+          {/* Sort tabs */}
           <div className="post-card flex items-center gap-1 px-3 py-2 mb-3">
             {([['new', 'New'], ['hot', 'Hot'], ['top', 'Top']] as const).map(([key, label]) => (
               <button key={key} onClick={() => setSort(key)}
@@ -98,7 +220,8 @@ export default function HomePage() {
             ))}
           </div>
 
-          {!loading && posts.length === 0 && !error && (
+          {/* Empty state for logged-in users */}
+          {!loading && posts.length === 0 && !error && user && (
             <div className="post-card p-5 mb-3 anim-fade-up">
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] flex items-center justify-center shrink-0">
@@ -124,6 +247,31 @@ export default function HomePage() {
             </div>
           )}
 
+          {/* Empty state for logged-out users */}
+          {!loading && posts.length === 0 && !error && !user && (
+            <div className="post-card p-5 mb-3 anim-fade-up text-center">
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] flex items-center justify-center mx-auto mb-3">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <h2 className="text-lg font-medium text-[var(--fg)] mb-1">Your Test Frontpage</h2>
+              <p className="text-sm text-[var(--fg3)] mb-4 max-w-sm mx-auto">
+                The best posts from your favorite communities will appear here. Join Test to start customizing your frontpage.
+              </p>
+              <div className="flex justify-center gap-2">
+                <Link href="/signup">
+                  <button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2 px-6">
+                    Join Test
+                  </button>
+                </Link>
+                <Link href="/login">
+                  <button className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm py-2 px-6">
+                    Log In
+                  </button>
+                </Link>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="post-card p-5 mb-3 text-center">
               <p className="text-sm text-red-500">{error}</p>
@@ -133,7 +281,7 @@ export default function HomePage() {
 
           {loading && page === 0 ? <FeedSkeleton /> : (
             <>
-              <PostList posts={posts} emptyTitle="No posts in your feed" emptyDescription="Join some communities or create a post to get started." onDelete={handlePostDelete} />
+              <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="Be the first to post something!" onDelete={handlePostDelete} />
               {loadingMore && <div className="mt-3"><FeedSkeleton /></div>}
               {hasMore && posts.length > 0 && (
                 <div className="flex justify-center mt-4">
@@ -151,16 +299,17 @@ export default function HomePage() {
 
         <aside className="hidden xl:block w-[312px] shrink-0">
           <div className="sticky top-[60px] space-y-4">
+            {/* Community card */}
             <div className="sidebar-widget">
               <div className="bg-gradient-to-b from-[var(--brand-500)] to-[var(--brand-700)] h-8" />
               <div className="p-3">
                 <div className="flex items-center gap-2 -mt-5 mb-2">
                   <div className="h-10 w-10 rounded-full bg-[var(--brand-600)] border-2 border-[var(--surface)] flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">K</span>
+                    <span className="text-white font-bold text-sm">T</span>
                   </div>
                 </div>
                 <p className="text-sm font-medium text-[var(--fg)]">Home</p>
-                <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">Your personal Test frontpage.</p>
+                <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">Your personal Test frontpage. Come here to check in with your favorite communities.</p>
                 <div className="mt-3 space-y-2">
                   <Link href="/submit">
                     <button className="kura-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">Create Post</button>
@@ -172,6 +321,13 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* Trending communities - visible to all */}
+            <TrendingCommunities />
+
+            {/* Rules - only for logged-out */}
+            {!user && <RuleCard />}
+
+            {/* Footer links */}
             <div className="text-[11px] text-[var(--fg4)] space-y-1 px-1">
               <div className="flex flex-wrap gap-x-2 gap-y-0.5">
                 <Link href="/" className="hover:underline">Home</Link>
