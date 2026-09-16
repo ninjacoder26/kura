@@ -37,6 +37,7 @@ function FeedSkeleton() {
 export default function HomePage() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [sort, setSort] = useState<SortType>('new');
   const [page, setPage] = useState(0);
@@ -46,14 +47,15 @@ export default function HomePage() {
 
   useEffect(() => {
     async function load() {
-      setLoading(true);
+      if (page === 0) setLoading(true);
+      else setLoadingMore(true);
       try {
         const supabase = createClient();
         let query = supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('is_removed', false);
 
         if (sort === 'new') query = query.order('created_at', { ascending: false });
         else if (sort === 'top') query = query.order('upvotes', { ascending: false });
-        else query = query.order('upvotes', { ascending: false });
+        else query = query.order('upvotes', { ascending: false }).order('downvotes', { ascending: true });
 
         query = query.range(page * 20, (page + 1) * 20 - 1);
         const { data, error: fetchErr } = await query;
@@ -67,7 +69,7 @@ export default function HomePage() {
           setPosts(prev => page === 0 ? mapped : [...prev, ...mapped]);
           setHasMore(data.length === 20);
         }
-      } catch (err: any) { setError(err.message || 'Failed to load feed'); } finally { setLoading(false); }
+      } catch (err: any) { setError(err.message || 'Failed to load feed'); } finally { setLoading(false); setLoadingMore(false); }
     }
     load();
   }, [sort, page]);
@@ -132,11 +134,12 @@ export default function HomePage() {
           {loading && page === 0 ? <FeedSkeleton /> : (
             <>
               <PostList posts={posts} emptyTitle="No posts in your feed" emptyDescription="Join some communities or create a post to get started." onDelete={handlePostDelete} />
+              {loadingMore && <div className="mt-3"><FeedSkeleton /></div>}
               {hasMore && posts.length > 0 && (
                 <div className="flex justify-center mt-4">
-                  <button onClick={() => setPage(p => p + 1)} disabled={loading}
+                  <button onClick={() => setPage(p => p + 1)} disabled={loadingMore}
                     className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">
-                    {loading ? 'Loading...' : 'Load More'}
+                    {loadingMore ? 'Loading...' : 'Load More'}
                   </button>
                 </div>
               )}

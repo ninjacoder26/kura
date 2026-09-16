@@ -46,27 +46,59 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
   useEffect(() => {
     if (!user) return;
     const supabase = createClient();
-    supabase.from('votes').select('value').eq('user_id', user.id).eq('comment_id', comment.id).single().then((res: any) => {
-      if (res.data) setVote(res.data.value === 1 ? 'up' : 'down');
-    });
+    supabase
+      .from('votes')
+      .select('value')
+      .eq('user_id', user.id)
+      .eq('comment_id', comment.id)
+      .single()
+      .then(({ data }: { data: { value: number } | null }) => {
+        if (data) setVote(data.value === 1 ? 'up' : 'down');
+      });
   }, [user, comment.id]);
 
+  // Sync score from props when they change
+  useEffect(() => {
+    setScore(comment.upvotes - comment.downvotes);
+  }, [comment.upvotes, comment.downvotes]);
+
   async function handleVote(value: 'up' | 'down') {
-    if (!user) { toast('info', 'Log in to vote'); return; }
-    const oldValue = vote;
-    const newValue = vote === value ? null : value;
-    setVote(newValue);
-    let delta = 0;
-    if (oldValue === 'up') delta -= 1;
-    else if (oldValue === 'down') delta += 1;
-    if (newValue === 'up') delta += 1;
-    else if (newValue === 'down') delta -= 1;
+    if (!user) {
+      toast('info', 'Log in to vote');
+      return;
+    }
+
+    const oldVote = vote;
+    const newVote = vote === value ? null : value;
+
+    // Optimistic UI update
+    setVote(newVote);
+    const delta =
+      (newVote === 'up' ? 1 : newVote === 'down' ? -1 : 0) -
+      (oldVote === 'up' ? 1 : oldVote === 'down' ? -1 : 0);
     setScore(score + delta);
-    const supabase = createClient();
-    if (newValue) {
-      await supabase.from('votes').upsert({ user_id: user.id, comment_id: comment.id, value: newValue === 'up' ? 1 : -1 });
-    } else {
-      await supabase.from('votes').delete().eq('user_id', user.id).eq('comment_id', comment.id);
+
+    try {
+      const supabase = createClient();
+      let result;
+      if (newVote) {
+        result = await supabase
+          .from('votes')
+          .upsert({ user_id: user.id, comment_id: comment.id, value: newVote === 'up' ? 1 : -1 });
+      } else {
+        result = await supabase
+          .from('votes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('comment_id', comment.id);
+      }
+
+      if (result.error) throw result.error;
+    } catch (err: any) {
+      // Rollback on failure
+      setVote(oldVote);
+      setScore(comment.upvotes - comment.downvotes);
+      toast('error', err.message || 'Failed to vote');
     }
   }
 
@@ -99,11 +131,18 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
     setDeleting(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.from('comments').update({ is_removed: true, body: '[deleted]' }).eq('id', comment.id);
+      const { error } = await supabase
+        .from('comments')
+        .update({ is_removed: true, body: '[deleted]' })
+        .eq('id', comment.id);
       if (error) throw error;
       toast('success', 'Comment deleted');
       onReplyAdded?.();
-    } catch (err: any) { toast('error', err.message || 'Failed'); } finally { setDeleting(false); }
+    } catch (err: any) {
+      toast('error', err.message || 'Failed');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -120,13 +159,13 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
       <p className="text-sm text-[var(--fg2)] leading-relaxed ml-7">{comment.body}</p>
 
       <div className="flex items-center gap-0.5 ml-6 mt-1">
-        <button onClick={() => handleVote('up')} className={cn('vote-btn !h-6 !w-6', vote === 'up' && 'upvoted')}>
+        <button onClick={() => handleVote('up')} className={cn('vote-btn !h-6 !w-6', vote === 'up' && 'upvoted')} aria-label="Upvote comment">
           <ArrowBigUp className="h-4 w-4" fill={vote === 'up' ? 'currentColor' : 'none'} />
         </button>
         <span className={cn('text-[11px] font-bold tabular-nums min-w-[16px] text-center', vote === 'up' && 'text-[var(--brand-600)]', vote === 'down' && 'text-[#003893]')}>
           {score}
         </span>
-        <button onClick={() => handleVote('down')} className={cn('vote-btn !h-6 !w-6', vote === 'down' && 'downvoted')}>
+        <button onClick={() => handleVote('down')} className={cn('vote-btn !h-6 !w-6', vote === 'down' && 'downvoted')} aria-label="Downvote comment">
           <ArrowBigDown className="h-4 w-4" fill={vote === 'down' ? 'currentColor' : 'none'} />
         </button>
         <button onClick={() => user ? setShowReply(!showReply) : toast('info', 'Log in to reply')} className="flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] rounded transition-colors ml-1">

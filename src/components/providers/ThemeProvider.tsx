@@ -12,14 +12,23 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('system');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'system';
+  const stored = localStorage.getItem('kura-theme') as Theme | null;
+  if (stored && ['light', 'dark', 'system'].includes(stored)) return stored;
+  return 'system';
+}
 
-  useEffect(() => {
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const stored = localStorage.getItem('kura-theme') as Theme | null;
-    if (stored) setTheme(stored);
-  }, []);
+    const effective = stored || 'system';
+    const isDark = effective === 'dark' || (effective === 'system' && mediaQuery.matches);
+    return isDark ? 'dark' : 'light';
+  });
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');

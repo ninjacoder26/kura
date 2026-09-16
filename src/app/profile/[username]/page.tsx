@@ -8,7 +8,7 @@ import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
 import { cn, formatDate } from '@/lib/utils';
-import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare } from 'lucide-react';
+import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare, Ban } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserComment { id: string; body: string; post_id: string; post_title?: string; created_at: string; }
@@ -57,12 +57,28 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               {profile.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full rounded-full object-cover" /> : (profile.display_name || profile.username || '?').charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0 pb-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--fg)]">{profile.display_name || profile.username}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--fg)]">
+                {profile.display_name || profile.username}
+                {profile.is_banned && (
+                  <span className="inline-flex items-center gap-1 ml-2 px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 rounded-full">
+                    <Ban className="h-3 w-3" /> Banned
+                  </span>
+                )}
+              </h1>
               <p className="text-sm text-[var(--fg4)]">@{profile.username}</p>
             </div>
           </div>
         </div>
       </div>
+
+      {profile.is_banned && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mx-4 mt-4">
+          <div className="flex items-center gap-2">
+            <Ban className="h-5 w-5 text-red-500" />
+            <p className="text-sm font-medium text-red-700">This account has been banned</p>
+          </div>
+        </div>
+      )}
 
       <div className="flex px-4 py-4 gap-5">
         <main className="flex-1 min-w-0">

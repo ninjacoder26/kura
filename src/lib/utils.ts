@@ -22,15 +22,32 @@ export function formatDate(date: string | Date) {
 }
 
 export function formatNumber(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}m`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}m`;
+  if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(1)}k`;
   return n.toString();
 }
 
 export function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
 }
 
 export function getInitials(name: string): string {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+}
+
+export function sanitizeUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (['javascript:', 'data:', 'vbscript:'].includes(parsed.protocol)) return null;
+    return url;
+  } catch {
+    return null;
+  }
 }

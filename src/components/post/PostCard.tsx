@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, Trash2, Pencil } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
@@ -45,7 +45,19 @@ interface PostCardProps {
   onDelete?: (id: string) => void;
 }
 
-export default function PostCard({ post, showCommunity = true, onDelete }: PostCardProps) {
+function sanitizeUrl(url: string): string | null {
+  const trimmed = url.trim().toLowerCase();
+  if (
+    trimmed.startsWith('javascript:') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('vbscript:')
+  ) {
+    return null;
+  }
+  return url;
+}
+
+const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }: PostCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [vote, setVote] = useState<'up' | 'down' | null>(null);
@@ -53,49 +65,112 @@ export default function PostCard({ post, showCommunity = true, onDelete }: PostC
   const [saved, setSaved] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Combined effect: fetch vote and saved state in parallel
   useEffect(() => {
     if (!user) return;
     const supabase = createClient();
-    supabase.from('votes').select('value').eq('user_id', user.id).eq('post_id', post.id).single().then((res: any) => {
-      if (res.data) setVote(res.data.value === 1 ? 'up' : 'down');
-    });
-    supabase.from('saved_posts').select('id').eq('user_id', user.id).eq('post_id', post.id).single().then((res: any) => {
-      if (res.data) setSaved(true);
+
+    const votePromise = supabase
+      .from('votes')
+      .select('value')
+      .eq('user_id', user.id)
+      .eq('post_id', post.id)
+      .single();
+
+    const savedPromise = supabase
+      .from('saved_posts')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('post_id', post.id)
+      .single();
+
+    Promise.all([votePromise, savedPromise]).then(([voteRes, savedRes]) => {
+      if (voteRes.data) {
+        setVote(voteRes.data.value === 1 ? 'up' : 'down');
+      }
+      if (savedRes.data) {
+        setSaved(true);
+      }
     });
   }, [user, post.id]);
 
-  async function handleVote(value: 'up' | 'down') {
-    if (!user) { toast('info', 'Log in to vote'); return; }
-    const oldValue = vote;
-    const newValue = vote === value ? null : value;
+  // Sync score from props when they change (e.g., after real-time update)
+  useEffect(() => {
+    setScore(post.upvotes - post.downvotes);
+  }, [post.upvotes, post.downvotes]);
 
-    setVote(newValue);
-    let delta = 0;
-    if (oldValue === 'up') delta -= 1;
-    else if (oldValue === 'down') delta += 1;
-    if (newValue === 'up') delta += 1;
-    else if (newValue === 'down') delta -= 1;
+  async function handleVote(value: 'up' | 'down') {
+    if (!user) {
+      toast('info', 'Log in to vote');
+      return;
+    }
+
+    const oldVote = vote;
+    const newVote = vote === value ? null : value;
+
+    // Optimistic UI update
+    setVote(newVote);
+    const delta =
+      (newVote === 'up' ? 1 : newVote === 'down' ? -1 : 0) -
+      (oldVote === 'up' ? 1 : oldVote === 'down' ? -1 : 0);
     setScore(score + delta);
 
-    const supabase = createClient();
-    if (newValue) {
-      await supabase.from('votes').upsert({ user_id: user.id, post_id: post.id, value: newValue === 'up' ? 1 : -1 });
-    } else {
-      await supabase.from('votes').delete().eq('user_id', user.id).eq('post_id', post.id);
+    try {
+      const supabase = createClient();
+      let result;
+      if (newVote) {
+        result = await supabase
+          .from('votes')
+          .upsert({ user_id: user.id, post_id: post.id, value: newVote === 'up' ? 1 : -1 });
+      } else {
+        result = await supabase
+          .from('votes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', post.id);
+      }
+
+      if (result.error) throw result.error;
+    } catch (err: any) {
+      // Rollback on failure
+      setVote(oldVote);
+      setScore(post.upvotes - post.downvotes);
+      toast('error', err.message || 'Failed to vote');
     }
   }
 
   async function handleSave() {
-    if (!user) { toast('info', 'Log in to save posts'); return; }
-    const supabase = createClient();
-    if (saved) {
-      await supabase.from('saved_posts').delete().eq('user_id', user.id).eq('post_id', post.id);
-      setSaved(false);
-      toast('success', 'Post unsaved');
-    } else {
-      await supabase.from('saved_posts').insert({ user_id: user.id, post_id: post.id });
-      setSaved(true);
-      toast('success', 'Post saved');
+    if (!user) {
+      toast('info', 'Log in to save posts');
+      return;
+    }
+
+    const oldSaved = saved;
+
+    // Optimistic UI update
+    setSaved(!oldSaved);
+
+    try {
+      const supabase = createClient();
+      let result;
+      if (oldSaved) {
+        result = await supabase
+          .from('saved_posts')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', post.id);
+      } else {
+        result = await supabase
+          .from('saved_posts')
+          .insert({ user_id: user.id, post_id: post.id });
+      }
+
+      if (result.error) throw result.error;
+      toast('success', oldSaved ? 'Post unsaved' : 'Post saved');
+    } catch (err: any) {
+      // Rollback on failure
+      setSaved(oldSaved);
+      toast('error', err.message || 'Failed to save post');
     }
   }
 
@@ -104,19 +179,44 @@ export default function PostCard({ post, showCommunity = true, onDelete }: PostC
     setDeleting(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.from('posts').update({ is_removed: true }).eq('id', post.id);
+      const { error } = await supabase
+        .from('posts')
+        .update({ is_removed: true })
+        .eq('id', post.id);
       if (error) throw error;
       toast('success', 'Post deleted');
       onDelete?.(post.id);
-    } catch (err: any) { toast('error', err.message || 'Failed to delete'); } finally { setDeleting(false); }
+    } catch (err: any) {
+      toast('error', err.message || 'Failed to delete');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function handleShare() {
     const url = `${window.location.origin}/post/${post.id}`;
     if (navigator.share) {
       navigator.share({ title: post.title, url });
+    } else if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(
+        () => toast('success', 'Link copied to clipboard'),
+        () => {
+          const textarea = document.createElement('textarea');
+          textarea.value = url;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          toast('success', 'Link copied to clipboard');
+        }
+      );
     } else {
-      navigator.clipboard.writeText(url);
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
       toast('success', 'Link copied to clipboard');
     }
   }
@@ -159,8 +259,8 @@ export default function PostCard({ post, showCommunity = true, onDelete }: PostC
         </Link>
 
         {/* Link preview */}
-        {post.type === 'link' && post.url && (
-          <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--brand-600)] hover:underline break-all">{post.url}</a>
+        {post.type === 'link' && post.url && sanitizeUrl(post.url) && (
+          <a href={sanitizeUrl(post.url)!} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--brand-600)] hover:underline break-all">{post.url}</a>
         )}
 
         {/* Image preview */}
@@ -203,4 +303,6 @@ export default function PostCard({ post, showCommunity = true, onDelete }: PostC
       </div>
     </div>
   );
-}
+});
+
+export default PostCard;

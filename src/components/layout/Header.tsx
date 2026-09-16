@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
-import { Search, Plus, Sun, Moon, LogOut, User, ChevronDown } from 'lucide-react';
+import { Search, Plus, Sun, Moon, LogOut, User, ChevronDown, Bell } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { cn } from '@/lib/utils';
@@ -13,12 +13,17 @@ export default function Header() {
   const { resolvedTheme, setTheme } = useTheme();
   const { user, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
@@ -57,6 +62,18 @@ export default function Header() {
           <Link href="/submit" className="sm:hidden">
             <button className="vote-btn"><Plus className="h-5 w-5" /></button>
           </Link>
+
+          <div ref={notifRef} className="relative">
+            <button onClick={() => setNotifOpen(!notifOpen)} className="vote-btn" aria-label="Notifications">
+              <Bell className="h-5 w-5" />
+            </button>
+            {notifOpen && (
+              <div className="absolute right-0 top-full mt-1 w-64 rounded border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] z-50 py-3 px-4 anim-scale-in">
+                <p className="text-sm font-medium text-[var(--fg)] mb-2">Notifications</p>
+                <p className="text-xs text-[var(--fg4)]">No notifications yet</p>
+              </div>
+            )}
+          </div>
 
           <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="vote-btn" aria-label="Toggle theme">
             {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}

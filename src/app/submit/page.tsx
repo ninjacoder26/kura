@@ -64,6 +64,9 @@ function SubmitForm() {
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Security (#5): Validate MIME type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) { toast('error', 'Only JPEG, PNG, GIF, and WebP images are allowed'); return; }
     if (file.size > 20 * 1024 * 1024) { toast('error', 'Image must be under 20MB'); return; }
     setImageFile(file);
     const reader = new FileReader();
@@ -179,13 +182,13 @@ function SubmitForm() {
                 )}
               </div>
             )}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">
+              <Link href="/"><button type="button" className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">Cancel</button></Link>
+              <button type="submit" disabled={!title.trim() || submitting || uploading} className={cn('kura-btn text-sm', title.trim() && !submitting && !uploading ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
+                {uploading ? 'Uploading...' : submitting ? 'Posting...' : 'Post'}
+              </button>
+            </div>
           </form>
-        </div>
-        <div className="flex items-center justify-end gap-2 mt-3">
-          <Link href="/"><button className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">Cancel</button></Link>
-          <button onClick={handleSubmit} disabled={!title.trim() || submitting || uploading} className={cn('kura-btn text-sm', title.trim() && !submitting && !uploading ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
-            {uploading ? 'Uploading...' : submitting ? 'Posting...' : 'Post'}
-          </button>
         </div>
       </div>
       <MobileNav />

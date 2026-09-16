@@ -20,12 +20,19 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  const durations: Record<ToastType, number> = {
+    success: 1500,
+    error: 4000,
+    warning: 3000,
+    info: 3000,
+  };
+
   const addToast = useCallback((type: ToastType, message: string) => {
     const id = Math.random().toString(36).slice(2);
     setToasts(prev => [...prev, { id, type, message }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 4000);
+    }, durations[type]);
   }, []);
 
   const dismiss = useCallback((id: string) => {

@@ -43,7 +43,6 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         const { data: voteData } = await supabase.from('votes').select('value').eq('user_id', user.id).eq('post_id', id).single();
         if (voteData) {
           setVote(voteData.value === 1 ? 'up' : 'down');
-          setScore(postData.upvotes - postData.downvotes + (voteData.value === 1 ? 1 : -1));
         }
         const { data: savedData } = await supabase.from('saved_posts').select('id').eq('user_id', user.id).eq('post_id', id).single();
         if (savedData) setSaved(true);
@@ -66,27 +65,48 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     if (!user) { toast('info', 'Log in to vote'); return; }
     const oldValue = vote;
     const newValue = vote === value ? null : value;
+    const oldScore = score;
     setVote(newValue);
     let delta = 0;
     if (oldValue === 'up') delta -= 1;
     else if (oldValue === 'down') delta += 1;
     if (newValue === 'up') delta += 1;
     else if (newValue === 'down') delta -= 1;
-    setScore(score + delta);
-    const supabase = createClient();
-    if (newValue) { await supabase.from('votes').upsert({ user_id: user.id, post_id: id, value: newValue === 'up' ? 1 : -1 }); }
-    else { await supabase.from('votes').delete().eq('user_id', user.id).eq('post_id', id); }
+    setScore(oldScore + delta);
+    try {
+      const supabase = createClient();
+      if (newValue) {
+        const { error } = await supabase.from('votes').upsert({ user_id: user.id, post_id: id, value: newValue === 'up' ? 1 : -1 });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('votes').delete().eq('user_id', user.id).eq('post_id', id);
+        if (error) throw error;
+      }
+    } catch (err: any) {
+      setVote(oldValue);
+      setScore(oldScore);
+      toast('error', err.message || 'Failed to vote');
+    }
   }
 
   async function handleSave() {
     if (!user) { toast('info', 'Log in to save posts'); return; }
-    const supabase = createClient();
-    if (saved) {
-      await supabase.from('saved_posts').delete().eq('user_id', user.id).eq('post_id', id);
-      setSaved(false); toast('success', 'Post unsaved');
-    } else {
-      await supabase.from('saved_posts').insert({ user_id: user.id, post_id: id });
-      setSaved(true); toast('success', 'Post saved');
+    const oldSaved = saved;
+    setSaved(!saved);
+    try {
+      const supabase = createClient();
+      if (oldSaved) {
+        const { error } = await supabase.from('saved_posts').delete().eq('user_id', user.id).eq('post_id', id);
+        if (error) throw error;
+        toast('success', 'Post unsaved');
+      } else {
+        const { error } = await supabase.from('saved_posts').insert({ user_id: user.id, post_id: id });
+        if (error) throw error;
+        toast('success', 'Post saved');
+      }
+    } catch (err: any) {
+      setSaved(oldSaved);
+      toast('error', err.message || 'Failed to save');
     }
   }
 
@@ -115,8 +135,15 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
 
   function handleShare() {
     const url = `${window.location.origin}/post/${id}`;
-    if (navigator.share) { navigator.share({ title: post.title, url }); }
-    else { navigator.clipboard.writeText(url); toast('success', 'Link copied to clipboard'); }
+    if (navigator.share) { navigator.share({ title: post.title, url }); return; }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(
+        () => toast('success', 'Link copied to clipboard'),
+        () => toast('error', 'Failed to copy link')
+      );
+    } else {
+      toast('error', 'Clipboard not available');
+    }
   }
 
   if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
@@ -162,7 +189,11 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         </article>
 
         <div className="mt-3 mb-4">
-          {user ? (
+          {post.is_locked ? (
+            <div className="post-card p-4 text-center">
+              <p className="text-sm text-[var(--fg3)]">This post is locked</p>
+            </div>
+          ) : user ? (
             <div className="post-card p-3">
               <p className="text-xs text-[var(--fg4)] mb-2">Comment as <span className="text-[var(--brand-600)] font-bold">{user.username}</span></p>
               <CommentForm onSubmit={handleComment} loading={submittingComment} />

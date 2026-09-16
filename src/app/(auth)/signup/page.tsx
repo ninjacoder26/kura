@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/providers/ToastProvider';
+import { Check, X, Loader2 } from 'lucide-react';
 
 export default function SignupPage() {
   const { toast } = useToast();
@@ -13,6 +14,26 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+
+  // (#50): Debounced username availability check
+  const checkUsername = useCallback(async (value: string) => {
+    if (value.length < 3) { setUsernameStatus('idle'); return; }
+    if (!/^[a-zA-Z0-9_]+$/.test(value)) { setUsernameStatus('idle'); return; }
+    setUsernameStatus('checking');
+    try {
+      const supabase = createClient();
+      const { data } = await supabase.from('profiles').select('id').eq('username', value).single();
+      setUsernameStatus(data ? 'taken' : 'available');
+    } catch {
+      setUsernameStatus('available');
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => checkUsername(username), 500);
+    return () => clearTimeout(timer);
+  }, [username, checkUsername]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -20,6 +41,7 @@ export default function SignupPage() {
 
     if (username.length < 3) { setError('Username must be at least 3 characters'); setLoading(false); return; }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) { setError('Letters, numbers, and underscores only'); setLoading(false); return; }
+    if (usernameStatus === 'taken') { setError('Username is already taken'); setLoading(false); return; }
     if (password.length < 6) { setError('Password must be at least 6 characters'); setLoading(false); return; }
 
     const supabase = createClient();
@@ -42,6 +64,13 @@ export default function SignupPage() {
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
+  }
+
+  function getUsernameIcon() {
+    if (usernameStatus === 'checking') return <Loader2 className="h-4 w-4 text-[var(--fg4)] animate-spin" />;
+    if (usernameStatus === 'available') return <Check className="h-4 w-4 text-emerald-500" />;
+    if (usernameStatus === 'taken') return <X className="h-4 w-4 text-red-500" />;
+    return null;
   }
 
   if (success) {
@@ -87,20 +116,24 @@ export default function SignupPage() {
           {error && <div className="p-3 rounded text-xs text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">{error}</div>}
           <div>
             <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Username</label>
-            <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Choose a username" required autoComplete="username"
-              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
+            <div className="relative">
+              <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Choose a username" required autoComplete="username"
+                className="w-full h-11 px-3 pr-10 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">{getUsernameIcon()}</div>
+            </div>
+            {usernameStatus === 'taken' && <p className="text-xs text-red-500 mt-1">This username is already taken</p>}
           </div>
           <div>
             <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required autoComplete="email"
-              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
+              className="w-full h-11 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
           </div>
           <div>
             <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password (min 6 characters)" required minLength={6} autoComplete="new-password"
-              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
+              className="w-full h-11 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
           </div>
-          <button type="submit" disabled={loading} className="kura-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] disabled:opacity-50 py-2.5">
+          <button type="submit" disabled={loading || usernameStatus === 'taken' || usernameStatus === 'checking'} className="kura-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] disabled:opacity-50 py-2.5">
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>

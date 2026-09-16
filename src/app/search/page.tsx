@@ -24,14 +24,19 @@ export default function SearchPage() {
   const [searching, setSearching] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
+  function escapeIlike(str: string) {
+    return str.replace(/%/g, '\\%').replace(/_/g, '\\_');
+  }
+
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 2) { setPosts([]); setCommunities([]); return; }
     setSearching(true);
+    const escaped = escapeIlike(q);
     try {
       const supabase = createClient();
       const [postRes, commRes] = await Promise.all([
-        supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('is_removed', false).ilike('title', `%${q}%`).order('created_at', { ascending: false }).limit(10),
-        supabase.from('communities').select('*').or(`name.ilike.%${q}%,slug.ilike.%${q}%`).order('member_count', { ascending: false }).limit(10),
+        supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('is_removed', false).ilike('title', `%${escaped}%`).order('created_at', { ascending: false }).limit(10),
+        supabase.from('communities').select('*').or(`name.ilike.%${escaped}%,slug.ilike.%${escaped}%`).order('member_count', { ascending: false }).limit(10),
       ]);
       if (postRes.data) setPosts((postRes.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
       if (commRes.data) setCommunities(commRes.data as any[]);
