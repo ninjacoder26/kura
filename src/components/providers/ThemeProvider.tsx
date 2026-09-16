@@ -8,52 +8,64 @@ interface ThemeContextType {
   theme: Theme;
   resolvedTheme: 'light' | 'dark';
   setTheme: (theme: Theme) => void;
+  mounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+function resolveTheme(theme: Theme): 'light' | 'dark' {
+  if (theme === 'dark') return 'dark';
+  if (theme === 'light') return 'light';
+  if (typeof window !== 'undefined') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  return 'light';
+}
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('system');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
 
-  // Read from localStorage only after mount (avoids hydration mismatch)
   useEffect(() => {
     const stored = localStorage.getItem('kura-theme') as Theme | null;
     if (stored && ['light', 'dark', 'system'].includes(stored)) {
       setTheme(stored);
+      const resolved = resolveTheme(stored);
+      setResolvedTheme(resolved);
+      document.documentElement.classList.toggle('dark', resolved === 'dark');
+    } else {
+      const resolved = resolveTheme('system');
+      setResolvedTheme(resolved);
+      document.documentElement.classList.toggle('dark', resolved === 'dark');
     }
     setMounted(true);
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
-
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    function resolve() {
-      const isDark = theme === 'dark' || (theme === 'system' && mediaQuery.matches);
-      setResolvedTheme(isDark ? 'dark' : 'light');
-      document.documentElement.classList.toggle('dark', isDark);
+    function onChange() {
+      if (theme === 'system') {
+        const isDark = mediaQuery.matches;
+        setResolvedTheme(isDark ? 'dark' : 'light');
+        document.documentElement.classList.toggle('dark', isDark);
+      }
     }
-
-    resolve();
-    mediaQuery.addEventListener('change', resolve);
-    return () => mediaQuery.removeEventListener('change', resolve);
+    mediaQuery.addEventListener('change', onChange);
+    return () => mediaQuery.removeEventListener('change', onChange);
   }, [theme, mounted]);
 
   function handleSetTheme(newTheme: Theme) {
     setTheme(newTheme);
     localStorage.setItem('kura-theme', newTheme);
-    // Immediately apply
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const isDark = newTheme === 'dark' || (newTheme === 'system' && mediaQuery.matches);
-    setResolvedTheme(isDark ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', isDark);
+    const resolved = resolveTheme(newTheme);
+    setResolvedTheme(resolved);
+    document.documentElement.classList.toggle('dark', resolved === 'dark');
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme: handleSetTheme }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme: handleSetTheme, mounted }}>
       {children}
     </ThemeContext.Provider>
   );

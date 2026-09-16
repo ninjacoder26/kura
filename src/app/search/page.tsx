@@ -56,7 +56,7 @@ export default function SearchPage() {
       <div className="px-4 py-3 max-w-[740px] mx-auto">
         <div className="relative mb-3">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)]" />
-          <input type="text" value={query} onChange={e => handleSearch(e.target.value)} placeholder="Search Test" autoFocus
+          <input type="text" value={query} onChange={e => handleSearch(e.target.value)} placeholder="Search Kura" autoFocus
             className="w-full h-10 pl-10 pr-4 text-sm rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-colors" />
           {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)] animate-spin" />}
         </div>
@@ -76,7 +76,7 @@ export default function SearchPage() {
         {query.length < 2 ? (
           <div className="py-20 text-center">
             <div className="h-12 w-12 rounded-full bg-[var(--bg-raised)] flex items-center justify-center mx-auto mb-3 border border-[var(--border)]"><SearchIcon className="h-6 w-6 text-[var(--fg4)]" /></div>
-            <h2 className="text-lg font-medium text-[var(--fg)] mb-1">Search Test</h2>
+            <h2 className="text-lg font-medium text-[var(--fg)] mb-1">Search Kura</h2>
             <p className="text-sm text-[var(--fg4)]">Find posts, communities, and more.</p>
           </div>
         ) : (

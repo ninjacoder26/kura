@@ -2,7 +2,7 @@
   "name": "kura",
   "version": "0.1.0",
   "private": true,
-  "description": "Test — Nepal's community platform",
+  "description": "Kura — Nepal's community platform",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

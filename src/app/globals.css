@@ -166,6 +166,7 @@ input, textarea, select, button { font-family: inherit; }
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   transition: border-color .15s;
+  overflow: hidden;
 }
 .post-card:hover {
   border-color: var(--border-strong);
@@ -179,19 +180,18 @@ input, textarea, select, button { font-family: inherit; }
   }
 }
 
-/* Vote Button - Larger touch targets */
+/* Vote Button - Reddit style, larger touch targets */
 .vote-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--r-sm);
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
   color: var(--fg4);
-  transition: color .1s, background .1s;
+  transition: color .1s;
 }
 .vote-btn:hover {
-  background: var(--surface-hover);
   color: var(--fg2);
 }
 .vote-btn.upvoted {
@@ -201,21 +201,21 @@ input, textarea, select, button { font-family: inherit; }
   color: var(--brand-500);
 }
 
-/* Button - Reddit style, larger */
+/* Button - Reddit style */
 .kura-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 20px;
+  gap: 6px;
+  padding: 6px 16px;
   border-radius: var(--r-full);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   line-height: 1.2;
   transition: all .15s ease;
   cursor: pointer;
   white-space: nowrap;
-  min-height: 36px;
+  min-height: 32px;
 }
 .kura-btn:active {
   transform: scale(0.97);
@@ -253,15 +253,15 @@ img {
   transition: opacity 0.3s ease;
 }
 
-/* Better mobile touch targets */
+/* Mobile touch targets */
 @media (max-width: 640px) {
   .vote-btn {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
   .kura-btn {
-    min-height: 44px;
-    padding: 10px 24px;
+    min-height: 40px;
+    padding: 8px 20px;
   }
 }
 

@@ -45,21 +45,21 @@ function HeroBanner() {
       <div className="px-4 pb-4 -mt-6 relative">
         <div className="flex items-end gap-3 mb-3">
           <div className="h-14 w-14 rounded-full bg-[var(--surface)] border-4 border-[var(--surface)] flex items-center justify-center shadow-md">
-            <span className="text-[var(--brand-500)] font-bold text-xl">T</span>
+            <span className="text-[var(--brand-500)] font-bold text-xl">K</span>
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-[var(--fg)]">Test</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-[var(--fg)]">Kura</h1>
             <p className="text-xs text-[var(--fg4)]">Nepal&apos;s front page of the internet</p>
           </div>
         </div>
         <p className="text-sm text-[var(--fg3)] mb-4 max-w-lg">
-          Test is a network of communities where people can dive into their interests, hobbies and passions.
-          There&apos;s a Test for almost everything.
+          Kura is a network of communities where people can dive into their interests, hobbies and passions.
+          There&apos;s a Kura for almost everything.
         </p>
         <div className="flex flex-wrap gap-2">
           <Link href="/signup">
             <button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2 px-6">
-              Join Test
+              Join Kura
             </button>
           </Link>
           <Link href="/communities">
@@ -82,7 +82,7 @@ function RuleCard() {
 
   return (
     <div className="post-card p-4 mb-3">
-      <h3 className="text-sm font-bold text-[var(--fg)] mb-3">Test Rules</h3>
+      <h3 className="text-sm font-bold text-[var(--fg)] mb-3">Kura Rules</h3>
       <div className="space-y-3">
         {rules.map((rule, i) => {
           const Icon = rule.icon;
@@ -228,7 +228,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-medium text-[var(--fg)]">Home</h2>
-                  <p className="text-sm text-[var(--fg3)] mt-1">Your personal Test frontpage. Come here to check in with your favorite communities.</p>
+                  <p className="text-sm text-[var(--fg3)] mt-1">Your personal Kura frontpage. Come here to check in with your favorite communities.</p>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Link href="/communities">
                       <button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2 px-5">
@@ -252,14 +252,14 @@ export default function HomePage() {
               <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] flex items-center justify-center mx-auto mb-3">
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
-              <h2 className="text-lg font-medium text-[var(--fg)] mb-1">Your Test Frontpage</h2>
+              <h2 className="text-lg font-medium text-[var(--fg)] mb-1">Your Kura Frontpage</h2>
               <p className="text-sm text-[var(--fg3)] mb-4 max-w-sm mx-auto">
-                The best posts from your favorite communities will appear here. Join Test to start customizing your frontpage.
+                The best posts from your favorite communities will appear here. Join Kura to start customizing your frontpage.
               </p>
               <div className="flex justify-center gap-2">
                 <Link href="/signup">
                   <button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2 px-6">
-                    Join Test
+                    Join Kura
                   </button>
                 </Link>
                 <Link href="/login">
@@ -304,11 +304,11 @@ export default function HomePage() {
               <div className="p-3">
                 <div className="flex items-center gap-2 -mt-5 mb-2">
                   <div className="h-10 w-10 rounded-full bg-[var(--brand-500)] border-2 border-[var(--surface)] flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">T</span>
+                    <span className="text-white font-bold text-sm">K</span>
                   </div>
                 </div>
                 <p className="text-sm font-medium text-[var(--fg)]">Home</p>
-                <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">Your personal Test frontpage. Come here to check in with your favorite communities.</p>
+                <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">Your personal Kura frontpage. Come here to check in with your favorite communities.</p>
                 <div className="mt-3 space-y-2">
                   <Link href="/submit">
                     <button className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2">Create Post</button>
@@ -334,7 +334,7 @@ export default function HomePage() {
                 <Link href="/terms" className="hover:underline">Terms</Link>
                 <Link href="/privacy" className="hover:underline">Privacy</Link>
               </div>
-              <p>Test Inc. 2026. All rights reserved.</p>
+              <p>Kura Inc. 2026. All rights reserved.</p>
             </div>
           </div>
         </aside>

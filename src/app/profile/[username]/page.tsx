@@ -6,10 +6,11 @@ import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
-import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
+import { EmptyState } from '@/components/ui/Feedback';
 import { cn, formatDate } from '@/lib/utils';
-import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare, Ban, Twitter, Instagram, Github } from 'lucide-react';
+import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare, Ban, Twitter, Instagram, Github, Settings } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 interface UserComment { id: string; body: string; post_id: string; post_title?: string; created_at: string; }
 
@@ -21,6 +22,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
+  const { user } = useAuth();
+  const isOwnProfile = user && profile && user.id === profile.id;
 
   useEffect(() => { params.then(p => setUsername(p.username)); }, [params]);
 
@@ -46,7 +49,33 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     load();
   }, [username]);
 
-  if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[var(--bg)]">
+      <Header />
+      <div className="h-32 sm:h-40 bg-[var(--surface)] animate-pulse" />
+      <div className="max-w-[900px] mx-auto px-4 -mt-10">
+        <div className="flex items-end gap-3 mb-4">
+          <div className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] rounded-full bg-[var(--surface-hover)] animate-pulse border-4 border-[var(--surface)]" />
+          <div className="flex-1 pb-1">
+            <div className="h-6 w-40 bg-[var(--surface-hover)] rounded animate-pulse mb-2" />
+            <div className="h-4 w-24 bg-[var(--surface-hover)] rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="h-10 bg-[var(--surface-hover)] rounded animate-pulse" />
+      </div>
+      <div className="max-w-[900px] mx-auto px-4 py-4">
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="post-card p-4">
+              <div className="h-4 w-32 bg-[var(--surface-hover)] rounded animate-pulse mb-2" />
+              <div className="h-4 w-full bg-[var(--surface-hover)] rounded animate-pulse mb-2" />
+              <div className="h-4 w-3/4 bg-[var(--surface-hover)] rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
   if (error || !profile) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title={error || 'User not found'} description="This profile doesn't exist." /></div></div>;
 
   const profileColor = profile.theme_color || 'var(--brand-600)';
@@ -66,8 +95,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       {/* Profile Header */}
       <div className="bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="px-4 max-w-[900px] mx-auto">
-          <div className="flex items-end gap-3 -mt-6 pb-3">
-            <div className="h-[72px] w-[72px] sm:h-20 sm:w-20 rounded-full border-4 border-[var(--surface)] flex items-center justify-center text-white font-bold text-xl shrink-0 overflow-hidden"
+          <div className="flex items-end gap-3 -mt-8 sm:-mt-10 pb-3">
+            <div className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] rounded-full border-4 border-[var(--surface)] flex items-center justify-center text-white font-bold text-2xl shrink-0 overflow-hidden shadow-lg"
               style={{ background: profileColor }}>
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
@@ -76,16 +105,24 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               )}
             </div>
             <div className="flex-1 min-w-0 pb-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-[var(--fg)] flex items-center gap-2">
-                {profile.display_name || profile.username}
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-bold text-[var(--fg)]">
+                  {profile.display_name || profile.username}
+                </h1>
                 {profile.is_banned && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 rounded-full">
                     <Ban className="h-3 w-3" /> Banned
                   </span>
                 )}
-              </h1>
-              <p className="text-sm text-[var(--fg4)]">@{profile.username}</p>
+              </div>
+              <p className="text-sm text-[var(--fg4)]">u/{profile.username}</p>
             </div>
+            {isOwnProfile && (
+              <Link href="/settings"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-[var(--fg3)] border border-[var(--border)] rounded-full hover:bg-[var(--surface-hover)] hover:border-[var(--border-strong)] transition-all shrink-0 mb-1">
+                <Settings className="h-3.5 w-3.5" /> Edit
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -99,83 +136,136 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </div>
       )}
 
-      <div className="flex px-4 py-4 gap-5 max-w-[900px] mx-auto">
-        <main className="flex-1 min-w-0">
-          <div className="flex items-center gap-0 border-b border-[var(--border)] mb-3">
-            {[{ key: 'posts' as const, label: 'Posts', icon: ArrowBigUp }, { key: 'comments' as const, label: 'Comments', icon: MessageSquare }].map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={cn('flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold border-b-2 transition-colors', activeTab === tab.key ? 'border-[var(--brand-500)] text-[var(--brand-500)]' : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]')}>
-                <tab.icon className="h-4 w-4" /> {tab.label}
-              </button>
-            ))}
-          </div>
-          <div className="pb-20 lg:pb-8">
-            {activeTab === 'posts' && <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." />}
-            {activeTab === 'comments' && (comments.length === 0 ? (
-              <EmptyState title="No comments yet" description="This user hasn't commented on anything yet." />
-            ) : (
-              <div className="space-y-2">{comments.map(c => (
-                <div key={c.id} className="post-card p-3 anim-fade-up">
-                  {c.post_title && <Link href={`/post/${c.post_id}`} className="text-xs text-[var(--fg4)] hover:text-[var(--brand-500)] transition-colors font-bold">{c.post_title}</Link>}
-                  <p className="text-sm text-[var(--fg2)] mt-1 leading-relaxed">{c.body}</p>
-                  <p className="text-xs text-[var(--fg4)] mt-1.5">{formatDate(c.created_at)}</p>
-                </div>
-              ))}</div>
-            ))}
-          </div>
-        </main>
+      <div className="max-w-[900px] mx-auto px-4 py-4">
+        {/* Tabs */}
+        <div className="flex items-center gap-0 border-b border-[var(--border)] mb-3">
+          {[{ key: 'posts' as const, label: 'Posts', icon: ArrowBigUp }, { key: 'comments' as const, label: 'Comments', icon: MessageSquare }].map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={cn('flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold border-b-2 transition-colors', activeTab === tab.key ? 'border-[var(--brand-500)] text-[var(--brand-500)]' : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]')}>
+              <tab.icon className="h-4 w-4" /> {tab.label}
+            </button>
+          ))}
+        </div>
 
-        <aside className="hidden lg:block w-[312px] shrink-0">
-          <div className="sticky top-[60px] pb-8">
-            <div className="sidebar-widget">
-              <div className="sidebar-widget-header" style={{ borderBottomColor: profileColor }}>About</div>
-              <div className="p-3 space-y-3">
-                {profile.bio && <p className="text-sm text-[var(--fg2)] leading-relaxed">{profile.bio}</p>}
-
-                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--fg4)]">
-                  {profile.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span>}
-                  {profile.website && (
-                    <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[var(--brand-500)]">
-                      <LinkIcon className="h-3.5 w-3.5" /> {profile.website.replace(/https?:\/\//, '')}
-                    </a>
-                  )}
-                  <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-                </div>
-
-                {/* Social Links */}
-                {(profile.twitter || profile.instagram || profile.github) && (
-                  <div className="flex items-center gap-2 pt-2 border-t border-[var(--border)]">
-                    {profile.twitter && (
-                      <a href={`https://x.com/${profile.twitter}`} target="_blank" rel="noopener noreferrer"
-                        className="h-8 w-8 rounded-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] hover:bg-[var(--border)] transition-colors">
-                        <Twitter className="h-4 w-4" />
-                      </a>
-                    )}
-                    {profile.instagram && (
-                      <a href={`https://instagram.com/${profile.instagram}`} target="_blank" rel="noopener noreferrer"
-                        className="h-8 w-8 rounded-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] hover:bg-[var(--border)] transition-colors">
-                        <Instagram className="h-4 w-4" />
-                      </a>
-                    )}
-                    {profile.github && (
-                      <a href={`https://github.com/${profile.github}`} target="_blank" rel="noopener noreferrer"
-                        className="h-8 w-8 rounded-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] hover:bg-[var(--border)] transition-colors">
-                        <Github className="h-4 w-4" />
-                      </a>
-                    )}
+        <div className="flex gap-5">
+          {/* Main Content */}
+          <main className="flex-1 min-w-0">
+            <div className="pb-20 lg:pb-8">
+              {activeTab === 'posts' && <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." />}
+              {activeTab === 'comments' && (comments.length === 0 ? (
+                <EmptyState title="No comments yet" description="This user hasn't commented on anything yet." />
+              ) : (
+                <div className="space-y-2">{comments.map(c => (
+                  <div key={c.id} className="post-card p-3 anim-fade-up">
+                    {c.post_title && <Link href={`/post/${c.post_id}`} className="text-xs text-[var(--fg4)] hover:text-[var(--brand-500)] transition-colors font-bold">{c.post_title}</Link>}
+                    <p className="text-sm text-[var(--fg2)] mt-1 leading-relaxed">{c.body}</p>
+                    <p className="text-xs text-[var(--fg4)] mt-1.5">{formatDate(c.created_at)}</p>
                   </div>
-                )}
+                ))}</div>
+              ))}
+            </div>
+          </main>
 
-                {/* Stats */}
-                <div className="flex items-center gap-5 pt-3 border-t border-[var(--border)] text-sm">
-                  <div><p className="font-bold text-[var(--fg)]">{(profile.post_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
-                  <div><p className="font-bold text-[var(--fg)]">{(profile.comment_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Comments</p></div>
-                  <div><p className="font-bold" style={{ color: profileColor }}>{(profile.reputation || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Reputation</p></div>
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:block w-[312px] shrink-0">
+            <div className="sticky top-[60px] pb-8">
+              <div className="sidebar-widget">
+                <div className="sidebar-widget-header" style={{ borderBottomColor: profileColor }}>About</div>
+                <div className="p-3 space-y-3">
+                  {profile.bio && <p className="text-sm text-[var(--fg2)] leading-relaxed">{profile.bio}</p>}
+
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--fg4)]">
+                    {profile.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span>}
+                    {profile.website && (
+                      <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[var(--brand-500)]">
+                        <LinkIcon className="h-3.5 w-3.5" /> {profile.website.replace(/https?:\/\//, '')}
+                      </a>
+                    )}
+                    <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                  </div>
+
+                  {(profile.twitter || profile.instagram || profile.github) && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-[var(--border)]">
+                      {profile.twitter && (
+                        <a href={`https://x.com/${profile.twitter}`} target="_blank" rel="noopener noreferrer"
+                          className="h-8 w-8 rounded-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] hover:bg-[var(--border)] transition-colors">
+                          <Twitter className="h-4 w-4" />
+                        </a>
+                      )}
+                      {profile.instagram && (
+                        <a href={`https://instagram.com/${profile.instagram}`} target="_blank" rel="noopener noreferrer"
+                          className="h-8 w-8 rounded-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] hover:bg-[var(--border)] transition-colors">
+                          <Instagram className="h-4 w-4" />
+                        </a>
+                      )}
+                      {profile.github && (
+                        <a href={`https://github.com/${profile.github}`} target="_blank" rel="noopener noreferrer"
+                          className="h-8 w-8 rounded-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] hover:bg-[var(--border)] transition-colors">
+                          <Github className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-5 pt-3 border-t border-[var(--border)] text-sm">
+                    <div><p className="font-bold text-[var(--fg)]">{(profile.post_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
+                    <div><p className="font-bold text-[var(--fg)]">{(profile.comment_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Comments</p></div>
+                    <div><p className="font-bold" style={{ color: profileColor }}>{(profile.reputation || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Reputation</p></div>
+                  </div>
                 </div>
               </div>
             </div>
+          </aside>
+        </div>
+      </div>
+
+      {/* Mobile Sidebar - Below content */}
+      <div className="lg:hidden px-4 pb-20">
+        <div className="sidebar-widget">
+          <div className="sidebar-widget-header" style={{ borderBottomColor: profileColor }}>About</div>
+          <div className="p-3 space-y-3">
+            {profile.bio && <p className="text-sm text-[var(--fg2)] leading-relaxed">{profile.bio}</p>}
+
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--fg4)]">
+              {profile.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span>}
+              {profile.website && (
+                <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[var(--brand-500)]">
+                  <LinkIcon className="h-3.5 w-3.5" /> {profile.website.replace(/https?:\/\//, '')}
+                </a>
+              )}
+              <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+            </div>
+
+            {(profile.twitter || profile.instagram || profile.github) && (
+              <div className="flex items-center gap-2 pt-2 border-t border-[var(--border)]">
+                {profile.twitter && (
+                  <a href={`https://x.com/${profile.twitter}`} target="_blank" rel="noopener noreferrer"
+                    className="h-8 w-8 rounded-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] hover:bg-[var(--border)] transition-colors">
+                    <Twitter className="h-4 w-4" />
+                  </a>
+                )}
+                {profile.instagram && (
+                  <a href={`https://instagram.com/${profile.instagram}`} target="_blank" rel="noopener noreferrer"
+                    className="h-8 w-8 rounded-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] hover:bg-[var(--border)] transition-colors">
+                    <Instagram className="h-4 w-4" />
+                  </a>
+                )}
+                {profile.github && (
+                  <a href={`https://github.com/${profile.github}`} target="_blank" rel="noopener noreferrer"
+                    className="h-8 w-8 rounded-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] hover:bg-[var(--border)] transition-colors">
+                    <Github className="h-4 w-4" />
+                  </a>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center gap-5 pt-3 border-t border-[var(--border)] text-sm">
+              <div><p className="font-bold text-[var(--fg)]">{(profile.post_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
+              <div><p className="font-bold text-[var(--fg)]">{(profile.comment_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Comments</p></div>
+              <div><p className="font-bold" style={{ color: profileColor }}>{(profile.reputation || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Reputation</p></div>
+            </div>
           </div>
-        </aside>
+        </div>
       </div>
       <MobileNav />
     </div>

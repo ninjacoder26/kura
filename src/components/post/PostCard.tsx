@@ -170,15 +170,15 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
     <>
       <div className="post-card flex">
         {/* Vote column - Reddit style */}
-        <div className="flex flex-col items-center gap-0.5 px-1 py-2 bg-[var(--surface-hover)] rounded-l-[var(--r-md)] w-10 sm:w-11">
+        <div className="flex flex-col items-center gap-0.5 px-1 py-2 bg-[var(--bg-raised)] rounded-l-[var(--r-md)] w-[36px] sm:w-[40px]">
           <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')} aria-label="Upvote">
-            <ArrowBigUp className="h-6 w-6" fill={vote === 'up' ? 'currentColor' : 'none'} />
+            <ArrowBigUp className="h-[22px] w-[22px]" fill={vote === 'up' ? 'currentColor' : 'none'} />
           </button>
-          <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--accent-500)]', vote === 'down' && 'text-[var(--brand-500)]')}>
+          <span className={cn('text-[11px] font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--accent-500)]', vote === 'down' && 'text-[var(--brand-500)]')}>
             {formatNumber(score)}
           </span>
           <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')} aria-label="Downvote">
-            <ArrowBigDown className="h-6 w-6" fill={vote === 'down' ? 'currentColor' : 'none'} />
+            <ArrowBigDown className="h-[22px] w-[22px]" fill={vote === 'down' ? 'currentColor' : 'none'} />
           </button>
         </div>
 

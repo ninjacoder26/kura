@@ -50,7 +50,7 @@ function LoginForm() {
             <span className="text-white font-bold text-lg">K</span>
           </div>
           <h1 className="text-lg font-medium text-[var(--fg)]">Log In</h1>
-          <p className="text-xs text-[var(--fg4)] mt-1">Welcome back to Test</p>
+          <p className="text-xs text-[var(--fg4)] mt-1">Welcome back to Kura</p>
         </div>
 
         <button onClick={handleGoogle} type="button"
@@ -84,7 +84,7 @@ function LoginForm() {
           </button>
         </form>
         <p className="mt-4 text-center text-xs text-[var(--fg4)]">
-          New to Test? <Link href="/signup" className="text-[var(--brand-500)] font-bold hover:underline">Sign Up</Link>
+          New to Kura? <Link href="/signup" className="text-[var(--brand-500)] font-bold hover:underline">Sign Up</Link>
         </p>
       </div>
     </div>

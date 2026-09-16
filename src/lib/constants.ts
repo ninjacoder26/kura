@@ -1,5 +1,5 @@
-export const SITE_NAME = 'Test';
-export const SITE_DESCRIPTION = 'Test — Nepal, talking.';
+export const SITE_NAME = 'Kura';
+export const SITE_DESCRIPTION = 'Kura — Nepal, talking.';
 
 export const COMMUNITY_CATEGORIES = [
   { value: 'general', label: 'General' },

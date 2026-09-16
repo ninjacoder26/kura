@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
-import { Search, Plus, Sun, Moon, LogOut, User, ChevronDown, Bell } from 'lucide-react';
+import { Search, Plus, Sun, Moon, LogOut, User, ChevronDown, Bell, Settings } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { cn } from '@/lib/utils';
@@ -36,9 +36,9 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0 mr-2">
           <div className="h-8 w-8 rounded-full bg-[var(--brand-500)] flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-sm">T</span>
+            <span className="text-white font-bold text-sm">K</span>
           </div>
-          <span className="font-bold text-lg tracking-tight hidden md:block text-[var(--fg)]">test</span>
+          <span className="font-bold text-lg tracking-tight hidden md:block text-[var(--fg)]">kura</span>
         </Link>
 
         {/* Search */}
@@ -46,7 +46,7 @@ export default function Header() {
           <Link href="/search">
             <div className="flex items-center h-10 px-4 rounded-full bg-[var(--surface-hover)] border border-[var(--border)] hover:border-[var(--brand-400)] hover:bg-[var(--surface)] transition-all cursor-text group">
               <Search className="h-4 w-4 mr-2.5 text-[var(--fg4)] group-hover:text-[var(--brand-500)] shrink-0 transition-colors" />
-              <span className="text-sm text-[var(--fg4)]">Search Test</span>
+              <span className="text-sm text-[var(--fg4)]">Search Kura</span>
             </div>
           </Link>
         </div>
@@ -111,6 +111,10 @@ export default function Header() {
                   <Link href={`/profile/${user.username}`} onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors">
                     <User className="h-4 w-4" /> Profile
                   </Link>
+                  <Link href="/settings" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors">
+                    <Settings className="h-4 w-4" /> Settings
+                  </Link>
+                  <div className="border-t border-[var(--border)] my-1" />
                   <button onClick={async () => { setUserMenuOpen(false); await signOut(); router.push('/'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors">
                     <LogOut className="h-4 w-4" /> Log Out
                   </button>
