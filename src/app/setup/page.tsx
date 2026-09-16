@@ -139,7 +139,7 @@ export default function SetupPage() {
       <div className="max-w-3xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
         <div className="mb-6 sm:mb-8 anim-fade-up">
           <div className="flex items-center gap-2 sm:gap-3 mb-1.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--fg)]">Kura Setup</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--fg)]">Test Setup</h1>
             <StatusBadge status={overall} />
           </div>
           <p className="text-sm text-[var(--fg3)]">System status and configuration.</p>
@@ -150,7 +150,7 @@ export default function SetupPage() {
             <div className="flex items-start gap-3">
               <XCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium text-red-700 dark:text-red-400 text-sm">Kura needs setup</p>
+                <p className="font-medium text-red-700 dark:text-red-400 text-sm">Test needs setup</p>
                 <p className="text-xs sm:text-sm text-red-600 dark:text-red-300 mt-1">Follow the steps below to get running.</p>
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function SetupPage() {
             <div className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium text-emerald-700 dark:text-emerald-400 text-sm">Kura is ready</p>
+                <p className="font-medium text-emerald-700 dark:text-emerald-400 text-sm">Test is ready</p>
                 <p className="text-xs sm:text-sm text-emerald-600 dark:text-emerald-300 mt-1">All systems configured and working.</p>
               </div>
             </div>
@@ -236,7 +236,7 @@ export default function SetupPage() {
         </Card>
 
         <div className="mt-6 sm:mt-8 flex items-center justify-between pb-8 lg:pb-4">
-          <Link href="/" className="text-sm text-[var(--brand-600)] hover:underline">Back to Kura</Link>
+          <Link href="/" className="text-sm text-[var(--brand-600)] hover:underline">Back to Test</Link>
           <Link href="/communities"><Button size="sm">Browse Communities <ChevronRight className="h-4 w-4" /></Button></Link>
         </div>
       </div>

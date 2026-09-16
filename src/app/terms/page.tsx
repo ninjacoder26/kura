@@ -1,7 +1,7 @@
 import Header from '@/components/layout/Header';
 import Link from 'next/link';
 
-export const metadata = { title: 'Terms of Service — Kura' };
+export const metadata = { title: 'Terms of Service — Test' };
 
 export default function TermsPage() {
   return (
@@ -14,12 +14,12 @@ export default function TermsPage() {
         <div className="space-y-6 text-sm text-[var(--fg2)] leading-relaxed">
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">1. Acceptance of Terms</h2>
-            <p>By accessing or using Kura (&quot;the Platform&quot;), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform. Kura is a community platform designed for Nepal and Nepali-speaking communities worldwide.</p>
+            <p>By accessing or using Test (&quot;the Platform&quot;), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform. Test is a community platform designed for Nepal and Nepali-speaking communities worldwide.</p>
           </section>
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">2. Eligibility</h2>
-            <p>You must be at least 13 years of age to use Kura. By using the Platform, you represent that you meet this age requirement and have the legal capacity to enter into these Terms.</p>
+            <p>You must be at least 13 years of age to use Test. By using the Platform, you represent that you meet this age requirement and have the legal capacity to enter into these Terms.</p>
           </section>
 
           <section>
@@ -51,23 +51,23 @@ export default function TermsPage() {
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">5. Content</h2>
             <h3 className="font-bold mt-3 mb-1">5.1 Your Content</h3>
-            <p>You retain ownership of content you post on Kura. By posting content, you grant Kura a worldwide, non-exclusive, royalty-free license to use, display, reproduce, and distribute your content in connection with operating the Platform.</p>
+            <p>You retain ownership of content you post on Test. By posting content, you grant Test a worldwide, non-exclusive, royalty-free license to use, display, reproduce, and distribute your content in connection with operating the Platform.</p>
 
             <h3 className="font-bold mt-3 mb-1">5.2 Content Moderation</h3>
-            <p>Kura reserves the right to remove any content that violates these Terms or is otherwise objectionable, at our sole discretion. We may also suspend or terminate accounts of repeat offenders.</p>
+            <p>Test reserves the right to remove any content that violates these Terms or is otherwise objectionable, at our sole discretion. We may also suspend or terminate accounts of repeat offenders.</p>
 
             <h3 className="font-bold mt-3 mb-1">5.3 DMCA / Copyright</h3>
-            <p>If you believe your copyrighted work has been used on Kura without authorization, please contact us at <a href="mailto:legal@kura.com.np" className="text-[var(--brand-600)] hover:underline">legal@kura.com.np</a> with the required information under the Nepal Copyright Act, 2059 (2002).</p>
+            <p>If you believe your copyrighted work has been used on Test without authorization, please contact us at <a href="mailto:legal@test.com.np" className="text-[var(--brand-600)] hover:underline">legal@test.com.np</a> with the required information under the Nepal Copyright Act, 2059 (2002).</p>
           </section>
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">6. Intellectual Property</h2>
-            <p>The Platform, including its design, code, logos, and branding, is the intellectual property of Kura. You may not copy, modify, distribute, or reverse-engineer any part of the Platform without prior written consent.</p>
+            <p>The Platform, including its design, code, logos, and branding, is the intellectual property of Test. You may not copy, modify, distribute, or reverse-engineer any part of the Platform without prior written consent.</p>
           </section>
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">7. Communities and Voting</h2>
-            <p>Kura allows users to create and participate in communities. Community moderators are responsible for enforcing community-specific rules. The voting system is used to surface quality content and is not a measure of truth or factuality.</p>
+            <p>Test allows users to create and participate in communities. Community moderators are responsible for enforcing community-specific rules. The voting system is used to surface quality content and is not a measure of truth or factuality.</p>
           </section>
 
           <section>
@@ -77,12 +77,12 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">9. Disclaimers</h2>
-            <p>Kura is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind. We do not guarantee the accuracy, completeness, or reliability of any content on the Platform. Use of the Platform is at your own risk.</p>
+            <p>Test is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind. We do not guarantee the accuracy, completeness, or reliability of any content on the Platform. Use of the Platform is at your own risk.</p>
           </section>
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">10. Limitation of Liability</h2>
-            <p>To the maximum extent permitted by applicable law, Kura and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Platform.</p>
+            <p>To the maximum extent permitted by applicable law, Test and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Platform.</p>
           </section>
 
           <section>
@@ -97,12 +97,12 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">13. Contact</h2>
-            <p>For questions about these Terms, contact us at <a href="mailto:legal@kura.com.np" className="text-[var(--brand-600)] hover:underline">legal@kura.com.np</a></p>
+            <p>For questions about these Terms, contact us at <a href="mailto:legal@test.com.np" className="text-[var(--brand-600)] hover:underline">legal@test.com.np</a></p>
           </section>
         </div>
 
         <div className="mt-8 pt-4 border-t border-[var(--border)]">
-          <Link href="/" className="text-xs text-[var(--brand-600)] font-bold hover:underline">← Back to Kura</Link>
+          <Link href="/" className="text-xs text-[var(--brand-600)] font-bold hover:underline">← Back to Test</Link>
         </div>
       </div>
     </div>

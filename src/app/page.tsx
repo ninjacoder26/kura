@@ -106,7 +106,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-medium text-[var(--fg)]">Home</h2>
-                  <p className="text-sm text-[var(--fg3)] mt-1">Your personal Kura frontpage. Come here to check in with your favorite communities.</p>
+                  <p className="text-sm text-[var(--fg3)] mt-1">Your personal Test frontpage. Come here to check in with your favorite communities.</p>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Link href="/communities">
                       <button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2 px-5">
@@ -160,7 +160,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <p className="text-sm font-medium text-[var(--fg)]">Home</p>
-                <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">Your personal Kura frontpage.</p>
+                <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">Your personal Test frontpage.</p>
                 <div className="mt-3 space-y-2">
                   <Link href="/submit">
                     <button className="kura-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">Create Post</button>
@@ -179,7 +179,7 @@ export default function HomePage() {
                 <Link href="/terms" className="hover:underline">Terms</Link>
                 <Link href="/privacy" className="hover:underline">Privacy</Link>
               </div>
-              <p>Kura Inc. 2026. All rights reserved.</p>
+              <p>Test Inc. 2026. All rights reserved.</p>
             </div>
           </div>
         </aside>

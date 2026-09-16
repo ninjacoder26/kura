@@ -422,7 +422,7 @@ function SubmitForm() {
 
         {/* Draft autosave indicator */}
         <p className="text-xs text-[var(--fg4)] mt-3 text-center">
-          Kura saves your drafts automatically
+          Test saves your drafts automatically
         </p>
       </div>
       <MobileNav />

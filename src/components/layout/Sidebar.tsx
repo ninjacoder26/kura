@@ -95,7 +95,7 @@ export default function Sidebar() {
           <Link href="/terms" className="hover:underline">Terms</Link>
           <Link href="/privacy" className="hover:underline">Privacy</Link>
         </div>
-        <p>Kura Inc. 2026. All rights reserved.</p>
+        <p>Test Inc. 2026. All rights reserved.</p>
       </div>
     </nav>
   );

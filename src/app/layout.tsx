@@ -5,8 +5,8 @@ import { ToastProvider } from '@/components/providers/ToastProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Kura — Nepal, talking',
-  description: 'Kura is a modern community platform for Nepal. Discover communities, share ideas, and connect with people.',
+  title: 'Test — Nepal, talking',
+  description: 'Test is a modern community platform for Nepal. Discover communities, share ideas, and connect with people.',
   icons: { icon: '/favicon.ico' },
 };
 

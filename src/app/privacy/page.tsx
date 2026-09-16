@@ -1,7 +1,7 @@
 import Header from '@/components/layout/Header';
 import Link from 'next/link';
 
-export const metadata = { title: 'Privacy Policy — Kura' };
+export const metadata = { title: 'Privacy Policy — Test' };
 
 export default function PrivacyPage() {
   return (
@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         <div className="space-y-6 text-sm text-[var(--fg2)] leading-relaxed">
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">1. Introduction</h2>
-            <p>Kura (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform. This policy complies with the Electronic Transactions Act, 2063 (2008) and the Privacy Act, 2075 (2018) of Nepal.</p>
+            <p>Test (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform. This policy complies with the Electronic Transactions Act, 2063 (2008) and the Privacy Act, 2075 (2018) of Nepal.</p>
           </section>
 
           <section>
@@ -89,12 +89,12 @@ export default function PrivacyPage() {
               <li>Object to processing of your data</li>
               <li>Export your data in a portable format</li>
             </ul>
-            <p className="mt-2">To exercise these rights, contact us at <a href="mailto:privacy@kura.com.np" className="text-[var(--brand-600)] hover:underline">privacy@kura.com.np</a></p>
+            <p className="mt-2">To exercise these rights, contact us at <a href="mailto:privacy@test.com.np" className="text-[var(--brand-600)] hover:underline">privacy@test.com.np</a></p>
           </section>
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">8. Children&apos;s Privacy</h2>
-            <p>Kura is not intended for children under 13. We do not knowingly collect data from children under 13. If we become aware that we have collected such data, we will delete it promptly.</p>
+            <p>Test is not intended for children under 13. We do not knowingly collect data from children under 13. If we become aware that we have collected such data, we will delete it promptly.</p>
           </section>
 
           <section>
@@ -104,7 +104,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">10. International Data Transfers</h2>
-            <p>Your data may be processed in countries outside Nepal where our service providers operate (e.g., United States for Supabase and Vercel). These countries may have different data protection laws. By using Kura, you consent to such transfers.</p>
+            <p>Your data may be processed in countries outside Nepal where our service providers operate (e.g., United States for Supabase and Vercel). These countries may have different data protection laws. By using Test, you consent to such transfers.</p>
           </section>
 
           <section>
@@ -114,12 +114,12 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">12. Contact</h2>
-            <p>For privacy-related inquiries, contact us at <a href="mailto:privacy@kura.com.np" className="text-[var(--brand-600)] hover:underline">privacy@kura.com.np</a></p>
+            <p>For privacy-related inquiries, contact us at <a href="mailto:privacy@test.com.np" className="text-[var(--brand-600)] hover:underline">privacy@test.com.np</a></p>
           </section>
         </div>
 
         <div className="mt-8 pt-4 border-t border-[var(--border)]">
-          <Link href="/" className="text-xs text-[var(--brand-600)] font-bold hover:underline">← Back to Kura</Link>
+          <Link href="/" className="text-xs text-[var(--brand-600)] font-bold hover:underline">← Back to Test</Link>
         </div>
       </div>
     </div>

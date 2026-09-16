@@ -41,14 +41,14 @@ export default function Header() {
           <div className="h-8 w-8 rounded-full bg-[var(--brand-600)] flex items-center justify-center">
             <span className="text-white font-bold text-sm">K</span>
           </div>
-          <span className="font-bold text-lg tracking-tight hidden md:block text-[var(--fg)]">kura</span>
+          <span className="font-bold text-lg tracking-tight hidden md:block text-[var(--fg)]">test</span>
         </Link>
 
         <div className="flex-1 max-w-[690px] hidden sm:block">
           <Link href="/search">
             <div className="flex items-center h-10 px-4 rounded-full bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface)] transition-all cursor-text">
               <Search className="h-4 w-4 mr-2 text-[var(--fg4)] shrink-0" />
-              <span className="text-sm text-[var(--fg4)]">Search Kura</span>
+              <span className="text-sm text-[var(--fg4)]">Search Test</span>
             </div>
           </Link>
         </div>
