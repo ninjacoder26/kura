@@ -20,9 +20,10 @@ export default function CommunitiesPage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  useEffect(() => { setPage(0); setCommunities([]); setHasMore(true); }, [category]);
+  useEffect(() => { setPage(0); setHasMore(true); }, [category]);
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
       if (page === 0) setLoading(true);
       else setLoadingMore(true);
@@ -32,13 +33,14 @@ export default function CommunitiesPage() {
         if (category !== 'all') query = query.eq('category', category);
         query = query.range(page * 20, (page + 1) * 20 - 1);
         const { data } = await query;
-        if (data) {
+        if (!cancelled && data) {
           setCommunities(prev => page === 0 ? (data as any[]) : [...prev, ...(data as any[])]);
           setHasMore(data.length === 20);
         }
-      } catch { } finally { setLoading(false); setLoadingMore(false); }
+      } catch { } finally { if (!cancelled) { setLoading(false); setLoadingMore(false); } }
     }
     load();
+    return () => { cancelled = true; };
   }, [category, page]);
 
   const filtered = communities.filter(c => {

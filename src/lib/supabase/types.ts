@@ -19,6 +19,10 @@ export interface Database {
           cover_url: string | null;
           location: string | null;
           website: string | null;
+          twitter: string | null;
+          instagram: string | null;
+          github: string | null;
+          theme_color: string | null;
           role: 'user' | 'moderator' | 'admin';
           is_banned: boolean;
           ban_reason: string | null;
@@ -37,6 +41,10 @@ export interface Database {
           cover_url?: string | null;
           location?: string | null;
           website?: string | null;
+          twitter?: string | null;
+          instagram?: string | null;
+          github?: string | null;
+          theme_color?: string | null;
           role?: 'user' | 'moderator' | 'admin';
           is_banned?: boolean;
           ban_reason?: string | null;
@@ -55,6 +63,10 @@ export interface Database {
           cover_url?: string | null;
           location?: string | null;
           website?: string | null;
+          twitter?: string | null;
+          instagram?: string | null;
+          github?: string | null;
+          theme_color?: string | null;
           role?: 'user' | 'moderator' | 'admin';
           is_banned?: boolean;
           ban_reason?: string | null;
