@@ -150,7 +150,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   }
 
   if (loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
-  if (error || !post) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title={error || 'Post not found'} action={<Link href="/" className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">Go home</Link>} /></div></div>;
+  if (error || !post) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title={error || 'Post not found'} action={<Link href="/" className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm">Go home</Link>} /></div></div>;
 
   return (
     <div className="min-h-screen">
@@ -161,9 +161,9 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         </Link>
 
         <article className="post-card flex">
-          <div className="flex flex-col items-center gap-0.5 px-2 py-3 bg-[var(--bg-raised)] rounded-l w-10">
+          <div className="flex flex-col items-center gap-0.5 px-1 py-2 bg-[var(--surface-hover)] rounded-l-[var(--r-md)] w-10 sm:w-11">
             <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')}><ArrowBigUp className="h-6 w-6" fill={vote === 'up' ? 'currentColor' : 'none'} /></button>
-            <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--brand-600)]', vote === 'down' && 'text-[#003893]')}>{formatNumber(score)}</span>
+            <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--accent-500)]', vote === 'down' && 'text-[var(--brand-500)]')}>{formatNumber(score)}</span>
             <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')}><ArrowBigDown className="h-6 w-6" fill={vote === 'down' ? 'currentColor' : 'none'} /></button>
           </div>
           <div className="flex-1 min-w-0 p-3">
@@ -174,7 +174,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
             <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
             {post.type === 'link' && post.url && (
               <a href={post.url} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-600)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors">
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors">
                 <ExternalLink className="h-3.5 w-3.5" />
                 <span className="truncate max-w-[300px]">{new URL(post.url).hostname}</span>
               </a>
@@ -199,15 +199,15 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
             )}
             {post.body && <div className="mt-3 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap">{post.body}</div>}
             <div className="flex items-center gap-1 mt-3 -ml-1 flex-wrap">
-              <span className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-bold text-[var(--fg4)]"><MessageSquare className="h-5 w-5" /> {formatNumber(post.comment_count)} Comments</span>
-              <button onClick={handleShare} className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Share2 className="h-5 w-5" /> Share</button>
-              <button onClick={handleSave} className={cn('flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold hover:bg-[var(--surface-hover)] transition-colors', saved ? 'text-[var(--brand-600)]' : 'text-[var(--fg4)]')}>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[var(--fg4)]"><MessageSquare className="h-5 w-5" /> {formatNumber(post.comment_count)} Comments</span>
+              <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Share2 className="h-5 w-5" /> Share</button>
+              <button onClick={handleSave} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-[var(--surface-hover)] transition-colors', saved ? 'text-[var(--brand-500)]' : 'text-[var(--fg4)]')}>
                 {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />} {saved ? 'Saved' : 'Save'}
               </button>
               {user && user.id === post.author_id && (
                 <>
-                  <Link href={`/post/${id}/edit`} className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Pencil className="h-5 w-5" /> Edit</Link>
-                  <button onClick={handleDelete} className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 className="h-5 w-5" /> Delete</button>
+                  <Link href={`/post/${id}/edit`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Pencil className="h-5 w-5" /> Edit</Link>
+                  <button onClick={handleDelete} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 className="h-5 w-5" /> Delete</button>
                 </>
               )}
             </div>
@@ -221,12 +221,12 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
             </div>
           ) : user ? (
             <div className="post-card p-3">
-              <p className="text-xs text-[var(--fg4)] mb-2">Comment as <span className="text-[var(--brand-600)] font-bold">{user.username}</span></p>
+              <p className="text-xs text-[var(--fg4)] mb-2">Comment as <span className="text-[var(--brand-500)] font-bold">{user.username}</span></p>
               <CommentForm onSubmit={handleComment} loading={submittingComment} />
             </div>
           ) : (
             <div className="post-card p-4 text-center">
-              <p className="text-sm text-[var(--fg3)]"><Link href="/login" className="text-[var(--brand-600)] font-bold hover:underline">Log in</Link> or <Link href="/signup" className="text-[var(--brand-600)] font-bold hover:underline">sign up</Link> to leave a comment</p>
+              <p className="text-sm text-[var(--fg3)]"><Link href="/login" className="text-[var(--brand-500)] font-bold hover:underline">Log in</Link> or <Link href="/signup" className="text-[var(--brand-500)] font-bold hover:underline">sign up</Link> to leave a comment</p>
             </div>
           )}
         </div>

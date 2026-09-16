@@ -20,7 +20,7 @@ export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDesc
           title={emptyTitle}
           description={emptyDescription}
           action={
-            <Link href="/submit" className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]">
+            <Link href="/submit" className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)]">
               Create a post
             </Link>
           }

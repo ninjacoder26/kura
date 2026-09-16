@@ -29,7 +29,7 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry?: (
       <h3 className="text-sm font-medium text-[var(--fg)] mb-1">Something went wrong</h3>
       <p className="text-xs text-[var(--fg3)] max-w-sm">{message || 'An unexpected error occurred.'}</p>
       {onRetry && (
-        <button onClick={onRetry} className="mt-3 text-xs font-bold text-[var(--brand-600)] hover:underline">
+        <button onClick={onRetry} className="mt-3 text-xs font-bold text-[var(--brand-500)] hover:underline">
           Try again
         </button>
       )}
@@ -79,7 +79,7 @@ export function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const dims = { sm: 'h-5 w-5', md: 'h-8 w-8', lg: 'h-12 w-12' };
   return (
     <div className="flex items-center justify-center py-12">
-      <svg className={`animate-spin ${dims[size]} text-[var(--brand-600)]`} fill="none" viewBox="0 0 24 24">
+      <svg className={`animate-spin ${dims[size]} text-[var(--brand-500)]`} fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
       </svg>

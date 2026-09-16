@@ -25,7 +25,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             'text-[var(--fg)] placeholder:text-[var(--fg4)]',
             'transition-all',
             'hover:border-[var(--border-strong)]',
-            'focus:outline-none focus:border-[var(--brand-600)]',
+            'focus:outline-none focus:border-[var(--brand-500)]',
             error && 'border-red-500',
             className
           )}

@@ -46,7 +46,7 @@ function LoginForm() {
     <div className="min-h-[calc(100vh-48px)] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm anim-fade-up">
         <div className="text-center mb-6">
-          <div className="h-10 w-10 rounded-full bg-[var(--brand-600)] flex items-center justify-center mx-auto mb-3">
+          <div className="h-10 w-10 rounded-full bg-[var(--brand-500)] flex items-center justify-center mx-auto mb-3">
             <span className="text-white font-bold text-lg">K</span>
           </div>
           <h1 className="text-lg font-medium text-[var(--fg)]">Log In</h1>
@@ -69,22 +69,22 @@ function LoginForm() {
           <div>
             <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required autoComplete="email"
-              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
+              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-all hover:border-[var(--border-strong)]" />
           </div>
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-[var(--fg2)] uppercase tracking-wide">Password</label>
-              <Link href="/forgot-password" className="text-xs text-[var(--brand-600)] font-bold hover:underline">Forgot?</Link>
+              <Link href="/forgot-password" className="text-xs text-[var(--brand-500)] font-bold hover:underline">Forgot?</Link>
             </div>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required autoComplete="current-password"
-              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] transition-all hover:border-[var(--border-strong)]" />
+              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-all hover:border-[var(--border-strong)]" />
           </div>
-          <button type="submit" disabled={loading} className="kura-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] disabled:opacity-50 py-2.5">
+          <button type="submit" disabled={loading} className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] disabled:opacity-50 py-2.5">
             {loading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
         <p className="mt-4 text-center text-xs text-[var(--fg4)]">
-          New to Test? <Link href="/signup" className="text-[var(--brand-600)] font-bold hover:underline">Sign Up</Link>
+          New to Test? <Link href="/signup" className="text-[var(--brand-500)] font-bold hover:underline">Sign Up</Link>
         </p>
       </div>
     </div>
@@ -93,7 +93,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-[calc(100vh-48px)] flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-600)] border-t-transparent" /></div>}>
+    <Suspense fallback={<div className="min-h-[calc(100vh-48px)] flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" /></div>}>
       <LoginForm />
     </Suspense>
   );

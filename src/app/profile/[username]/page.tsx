@@ -101,7 +101,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           <div className="flex items-center gap-0 border-b border-[var(--border)] mb-3">
             {[{ key: 'posts' as const, label: 'Posts', icon: ArrowBigUp }, { key: 'comments' as const, label: 'Comments', icon: MessageSquare }].map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={cn('flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold border-b-2 transition-colors', activeTab === tab.key ? 'border-[var(--brand-600)] text-[var(--brand-600)]' : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]')}>
+                className={cn('flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold border-b-2 transition-colors', activeTab === tab.key ? 'border-[var(--brand-500)] text-[var(--brand-500)]' : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]')}>
                 <tab.icon className="h-4 w-4" /> {tab.label}
               </button>
             ))}
@@ -113,7 +113,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             ) : (
               <div className="space-y-2">{comments.map(c => (
                 <div key={c.id} className="post-card p-3 anim-fade-up">
-                  {c.post_title && <Link href={`/post/${c.post_id}`} className="text-xs text-[var(--fg4)] hover:text-[var(--brand-600)] transition-colors font-bold">{c.post_title}</Link>}
+                  {c.post_title && <Link href={`/post/${c.post_id}`} className="text-xs text-[var(--fg4)] hover:text-[var(--brand-500)] transition-colors font-bold">{c.post_title}</Link>}
                   <p className="text-sm text-[var(--fg2)] mt-1 leading-relaxed">{c.body}</p>
                   <p className="text-xs text-[var(--fg4)] mt-1.5">{formatDate(c.created_at)}</p>
                 </div>
@@ -132,7 +132,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                 <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--fg4)]">
                   {profile.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {profile.location}</span>}
                   {profile.website && (
-                    <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[var(--brand-600)]">
+                    <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[var(--brand-500)]">
                       <LinkIcon className="h-3.5 w-3.5" /> {profile.website.replace(/https?:\/\//, '')}
                     </a>
                   )}

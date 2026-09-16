@@ -169,12 +169,12 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
   return (
     <>
       <div className="post-card flex">
-        {/* Vote column */}
-        <div className="flex flex-col items-center gap-0.5 px-1.5 sm:px-2 py-2 bg-[var(--bg-raised)] rounded-l w-10">
+        {/* Vote column - Reddit style */}
+        <div className="flex flex-col items-center gap-0.5 px-1 py-2 bg-[var(--surface-hover)] rounded-l-[var(--r-md)] w-10 sm:w-11">
           <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')} aria-label="Upvote">
             <ArrowBigUp className="h-6 w-6" fill={vote === 'up' ? 'currentColor' : 'none'} />
           </button>
-          <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--brand-600)]', vote === 'down' && 'text-[#003893]')}>
+          <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--accent-500)]', vote === 'down' && 'text-[var(--brand-500)]')}>
             {formatNumber(score)}
           </span>
           <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')} aria-label="Downvote">
@@ -183,31 +183,31 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 p-2 sm:p-3">
-          {/* Meta line */}
-          <div className="flex items-center flex-wrap gap-x-1 text-[11px] sm:text-[12px] text-[var(--fg4)]">
-            {post.is_pinned && <span className="text-emerald-600 font-bold">Pinned</span>}
+        <div className="flex-1 min-w-0 p-2.5 sm:p-3">
+          {/* Meta line - Reddit style */}
+          <div className="flex items-center flex-wrap gap-x-1.5 text-[12px] text-[var(--fg4)]">
+            {post.is_pinned && <span className="text-[var(--success)] font-semibold">Pinned</span>}
             {showCommunity && post.community && (
               <>
-                <Link href={`/k/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">k/{post.community.slug}</Link>
-                <span>·</span>
+                <Link href={`/k/${post.community.slug}`} className="font-semibold text-[var(--fg)] hover:underline">k/{post.community.slug}</Link>
+                <span className="text-[var(--fg4)]">·</span>
               </>
             )}
             <span>Posted by</span>
             <Link href={`/profile/${post.author.username}`} className="hover:underline">@{post.author.username}</Link>
-            <span>·</span>
+            <span className="text-[var(--fg4)]">·</span>
             <time>{formatDate(post.created_at)}</time>
           </div>
 
-          {/* Title */}
+          {/* Title - Larger, bolder */}
           <Link href={`/post/${post.id}`} className="block group/title mt-1.5">
-            <h3 className="text-base sm:text-lg font-medium text-[var(--fg)] group-hover/title:underline leading-snug">{post.title}</h3>
+            <h3 className="text-[17px] font-semibold text-[var(--fg)] group-hover/title:underline leading-snug">{post.title}</h3>
           </Link>
 
           {/* Link preview */}
           {post.type === 'link' && post.url && sanitizeUrl(post.url) && (
             <a href={sanitizeUrl(post.url)!} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-600)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors">
+              className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors">
               <ExternalLink className="h-3.5 w-3.5" />
               <span className="truncate max-w-[200px]">{new URL(post.url).hostname}</span>
             </a>
@@ -245,26 +245,25 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
             </div>
           )}
 
-          {/* Action bar */}
-          <div className="flex items-center gap-0.5 sm:gap-1 mt-2 -ml-1 flex-wrap">
-            <Link href={`/post/${post.id}`} className="flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
-              <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="hidden sm:inline">{formatNumber(post.comment_count)} Comments</span>
-              <span className="sm:hidden">{formatNumber(post.comment_count)}</span>
+          {/* Action bar - Reddit style with proper spacing */}
+          <div className="flex items-center gap-1 mt-2 -ml-1 flex-wrap">
+            <Link href={`/post/${post.id}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+              <MessageSquare className="h-5 w-5" />
+              <span>{formatNumber(post.comment_count)} Comments</span>
             </Link>
-            <button onClick={handleShare} className="flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
-              <Share2 className="h-4 w-4 sm:h-5 sm:w-5" /> <span className="hidden sm:inline">Share</span>
+            <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+              <Share2 className="h-5 w-5" /> Share
             </button>
-            <button onClick={handleSave} className={cn('flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 rounded text-xs font-bold hover:bg-[var(--surface-hover)] transition-colors', saved ? 'text-[var(--brand-600)]' : 'text-[var(--fg4)]')}>
-              {saved ? <BookmarkCheck className="h-4 w-4 sm:h-5 sm:w-5" /> : <Bookmark className="h-4 w-4 sm:h-5 sm:w-5" />} <span className="hidden sm:inline">{saved ? 'Saved' : 'Save'}</span>
+            <button onClick={handleSave} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-[var(--surface-hover)] transition-colors', saved ? 'text-[var(--brand-500)]' : 'text-[var(--fg4)]')}>
+              {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />} {saved ? 'Saved' : 'Save'}
             </button>
             {user && user.id === post.author_id && (
               <>
-                <Link href={`/post/${post.id}/edit`} className="flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
-                  <Pencil className="h-4 w-4 sm:h-5 sm:w-5" /> <span className="hidden sm:inline">Edit</span>
+                <Link href={`/post/${post.id}/edit`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                  <Pencil className="h-5 w-5" /> Edit
                 </Link>
-                <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 rounded text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                  <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" /> <span className="hidden sm:inline">Delete</span>
+                <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                  <Trash2 className="h-5 w-5" /> Delete
                 </button>
               </>
             )}

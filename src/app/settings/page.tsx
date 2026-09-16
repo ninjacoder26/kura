@@ -165,7 +165,7 @@ export default function SettingsPage() {
     } catch (err: any) { toast('error', err.message || 'Failed to update password'); } finally { setChangingPassword(false); }
   }
 
-  if (authLoading || loading) return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-600)] border-t-transparent" /></div></div>;
+  if (authLoading || loading) return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" /></div></div>;
   if (!user) return null;
 
   const isUploading = uploadingAvatar || uploadingBanner;
@@ -232,12 +232,12 @@ export default function SettingsPage() {
               <div>
                 <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Display Name</label>
                 <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your display name" maxLength={50}
-                  className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all" />
+                  className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Bio</label>
                 <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell us about yourself" rows={3} maxLength={200}
-                  className="w-full p-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all resize-none" />
+                  className="w-full p-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all resize-none" />
                 <p className="text-xs text-[var(--fg4)] mt-1">{bio.length}/200</p>
               </div>
             </div>
@@ -248,12 +248,12 @@ export default function SettingsPage() {
             <div>
               <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Location</label>
               <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Kathmandu, Nepal" maxLength={100}
-                className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all" />
+                className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all" />
             </div>
             <div>
               <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Website</label>
               <input type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://example.com" maxLength={200}
-                className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all" />
+                className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all" />
             </div>
           </div>
 
@@ -264,17 +264,17 @@ export default function SettingsPage() {
               <div className="relative">
                 <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)]" />
                 <input type="text" value={twitter} onChange={e => setTwitter(e.target.value)} placeholder="Twitter / X username" maxLength={50}
-                  className="w-full h-11 pl-10 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all" />
+                  className="w-full h-11 pl-10 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all" />
               </div>
               <div className="relative">
                 <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)]" />
                 <input type="text" value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="Instagram username" maxLength={50}
-                  className="w-full h-11 pl-10 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all" />
+                  className="w-full h-11 pl-10 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all" />
               </div>
               <div className="relative">
                 <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)]" />
                 <input type="text" value={github} onChange={e => setGithub(e.target.value)} placeholder="GitHub username" maxLength={50}
-                  className="w-full h-11 pl-10 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all" />
+                  className="w-full h-11 pl-10 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all" />
               </div>
             </div>
           </div>
@@ -298,7 +298,7 @@ export default function SettingsPage() {
               Cancel
             </button>
             <button type="submit" disabled={saving || isUploading}
-              className={`px-8 py-2.5 rounded-full text-sm font-bold transition-all ${!saving && !isUploading ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'}`}>
+              className={`px-8 py-2.5 rounded-full text-sm font-bold transition-all ${!saving && !isUploading ? 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'}`}>
               {saving || isUploading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
@@ -312,15 +312,15 @@ export default function SettingsPage() {
             <div>
               <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">New Password</label>
               <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Min 6 characters" minLength={6}
-                className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all" />
+                className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all" />
             </div>
             <div>
               <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Confirm Password</label>
               <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Confirm password" minLength={6}
-                className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all" />
+                className="w-full h-11 px-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all" />
             </div>
             <button type="button" onClick={handlePasswordChange} disabled={changingPassword || !newPassword.trim()}
-              className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all ${!changingPassword && newPassword.trim() ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'}`}>
+              className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all ${!changingPassword && newPassword.trim() ? 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'}`}>
               {changingPassword ? 'Updating...' : 'Update Password'}
             </button>
           </div>

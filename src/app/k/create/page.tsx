@@ -135,7 +135,7 @@ export default function CreateCommunityPage() {
     }
   }
 
-  if (authLoading) return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--brand-600)]" /></div></div>;
+  if (authLoading) return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--brand-500)]" /></div></div>;
   if (!user) return null;
 
   const isUploading = uploadingBanner || uploadingIcon;
@@ -214,7 +214,7 @@ export default function CreateCommunityPage() {
                   required
                   minLength={3}
                   maxLength={21}
-                  className="w-full h-11 pl-8 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all"
+                  className="w-full h-11 pl-8 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all"
                 />
               </div>
               {slug && (
@@ -241,7 +241,7 @@ export default function CreateCommunityPage() {
               placeholder="Tell people what this community is about"
               rows={3}
               maxLength={500}
-              className="w-full p-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all resize-none"
+              className="w-full p-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all resize-none"
             />
             <p className="text-xs text-[var(--fg4)] mt-1">{description.length}/500</p>
           </div>
@@ -258,7 +258,7 @@ export default function CreateCommunityPage() {
                   className={cn(
                     'px-4 py-2 text-sm font-medium rounded-full transition-all',
                     category === c.value
-                      ? 'bg-[var(--brand-600)] text-white shadow-sm'
+                      ? 'bg-[var(--brand-500)] text-white shadow-sm'
                       : 'bg-[var(--surface)] text-[var(--fg3)] border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)]'
                   )}
                 >
@@ -281,7 +281,7 @@ export default function CreateCommunityPage() {
               className={cn(
                 'px-8 py-2.5 rounded-full text-sm font-bold transition-all',
                 name.trim() && slugAvailable && !submitting && !isUploading
-                  ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] shadow-sm'
+                  ? 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] shadow-sm'
                   : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'
               )}
             >

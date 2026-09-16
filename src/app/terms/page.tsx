@@ -57,7 +57,7 @@ export default function TermsPage() {
             <p>Test reserves the right to remove any content that violates these Terms or is otherwise objectionable, at our sole discretion. We may also suspend or terminate accounts of repeat offenders.</p>
 
             <h3 className="font-bold mt-3 mb-1">5.3 DMCA / Copyright</h3>
-            <p>If you believe your copyrighted work has been used on Test without authorization, please contact us at <a href="mailto:legal@test.com.np" className="text-[var(--brand-600)] hover:underline">legal@test.com.np</a> with the required information under the Nepal Copyright Act, 2059 (2002).</p>
+            <p>If you believe your copyrighted work has been used on Test without authorization, please contact us at <a href="mailto:legal@test.com.np" className="text-[var(--brand-500)] hover:underline">legal@test.com.np</a> with the required information under the Nepal Copyright Act, 2059 (2002).</p>
           </section>
 
           <section>
@@ -97,12 +97,12 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">13. Contact</h2>
-            <p>For questions about these Terms, contact us at <a href="mailto:legal@test.com.np" className="text-[var(--brand-600)] hover:underline">legal@test.com.np</a></p>
+            <p>For questions about these Terms, contact us at <a href="mailto:legal@test.com.np" className="text-[var(--brand-500)] hover:underline">legal@test.com.np</a></p>
           </section>
         </div>
 
         <div className="mt-8 pt-4 border-t border-[var(--border)]">
-          <Link href="/" className="text-xs text-[var(--brand-600)] font-bold hover:underline">← Back to Test</Link>
+          <Link href="/" className="text-xs text-[var(--brand-500)] font-bold hover:underline">← Back to Test</Link>
         </div>
       </div>
     </div>

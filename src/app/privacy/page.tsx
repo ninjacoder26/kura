@@ -89,7 +89,7 @@ export default function PrivacyPage() {
               <li>Object to processing of your data</li>
               <li>Export your data in a portable format</li>
             </ul>
-            <p className="mt-2">To exercise these rights, contact us at <a href="mailto:privacy@test.com.np" className="text-[var(--brand-600)] hover:underline">privacy@test.com.np</a></p>
+            <p className="mt-2">To exercise these rights, contact us at <a href="mailto:privacy@test.com.np" className="text-[var(--brand-500)] hover:underline">privacy@test.com.np</a></p>
           </section>
 
           <section>
@@ -114,12 +114,12 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">12. Contact</h2>
-            <p>For privacy-related inquiries, contact us at <a href="mailto:privacy@test.com.np" className="text-[var(--brand-600)] hover:underline">privacy@test.com.np</a></p>
+            <p>For privacy-related inquiries, contact us at <a href="mailto:privacy@test.com.np" className="text-[var(--brand-500)] hover:underline">privacy@test.com.np</a></p>
           </section>
         </div>
 
         <div className="mt-8 pt-4 border-t border-[var(--border)]">
-          <Link href="/" className="text-xs text-[var(--brand-600)] font-bold hover:underline">← Back to Test</Link>
+          <Link href="/" className="text-xs text-[var(--brand-500)] font-bold hover:underline">← Back to Test</Link>
         </div>
       </div>
     </div>

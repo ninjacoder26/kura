@@ -162,7 +162,7 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
         <button onClick={() => handleVote('up')} className={cn('vote-btn !h-6 !w-6', vote === 'up' && 'upvoted')} aria-label="Upvote comment">
           <ArrowBigUp className="h-4 w-4" fill={vote === 'up' ? 'currentColor' : 'none'} />
         </button>
-        <span className={cn('text-[11px] font-bold tabular-nums min-w-[16px] text-center', vote === 'up' && 'text-[var(--brand-600)]', vote === 'down' && 'text-[#003893]')}>
+        <span className={cn('text-[11px] font-bold tabular-nums min-w-[16px] text-center', vote === 'up' && 'text-[var(--brand-500)]', vote === 'down' && 'text-[#003893]')}>
           {score}
         </span>
         <button onClick={() => handleVote('down')} className={cn('vote-btn !h-6 !w-6', vote === 'down' && 'downvoted')} aria-label="Downvote comment">
@@ -184,12 +184,12 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
             value={replyBody}
             onChange={e => setReplyBody(e.target.value)}
             placeholder="What are your thoughts?"
-            className="w-full p-2 text-sm bg-[var(--bg)] border border-[var(--border)] rounded outline-none resize-none min-h-[80px] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:border-[var(--brand-600)]"
+            className="w-full p-2 text-sm bg-[var(--bg)] border border-[var(--border)] rounded outline-none resize-none min-h-[80px] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:border-[var(--brand-500)]"
             autoFocus
           />
           <div className="flex items-center justify-end gap-2 mt-1.5">
             <button onClick={() => { setShowReply(false); setReplyBody(''); }} className="text-xs font-bold text-[var(--fg4)] hover:text-[var(--fg)] px-2 py-1">Cancel</button>
-            <button onClick={handleReply} disabled={!replyBody.trim() || submittingReply} className={cn('kura-btn text-xs', replyBody.trim() && !submittingReply ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
+            <button onClick={handleReply} disabled={!replyBody.trim() || submittingReply} className={cn('kura-btn text-xs', replyBody.trim() && !submittingReply ? 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50')}>
               {submittingReply ? 'Posting...' : 'Reply'}
             </button>
           </div>

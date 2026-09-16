@@ -46,7 +46,7 @@ function HeroBanner() {
       <div className="px-4 pb-4 -mt-6 relative">
         <div className="flex items-end gap-3 mb-3">
           <div className="h-14 w-14 rounded-full bg-[var(--surface)] border-4 border-[var(--surface)] flex items-center justify-center shadow-md">
-            <span className="text-[var(--brand-600)] font-bold text-xl">T</span>
+            <span className="text-[var(--brand-500)] font-bold text-xl">T</span>
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-bold text-[var(--fg)]">Test</h1>
@@ -59,7 +59,7 @@ function HeroBanner() {
         </p>
         <div className="flex flex-wrap gap-2">
           <Link href="/signup">
-            <button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2 px-6">
+            <button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2 px-6">
               Join Test
             </button>
           </Link>
@@ -90,7 +90,7 @@ function RuleCard() {
           return (
             <div key={i} className="flex items-start gap-3">
               <div className="h-7 w-7 rounded-full bg-[var(--brand-50)] flex items-center justify-center shrink-0">
-                <Icon className="h-4 w-4 text-[var(--brand-600)]" />
+                <Icon className="h-4 w-4 text-[var(--brand-500)]" />
               </div>
               <div>
                 <p className="text-xs font-bold text-[var(--fg)]">{rule.title}</p>
@@ -143,7 +143,7 @@ function TrendingCommunities() {
             <span className="text-[11px] text-[var(--fg4)] shrink-0">{formatNumber(c.member_count)} members</span>
           </Link>
         ))}
-        <Link href="/communities" className="flex items-center justify-center gap-1 px-2 py-2 mt-1 text-xs font-bold text-[var(--brand-600)] hover:bg-[var(--surface-hover)] rounded transition-colors">
+        <Link href="/communities" className="flex items-center justify-center gap-1 px-2 py-2 mt-1 text-xs font-bold text-[var(--brand-500)] hover:bg-[var(--surface-hover)] rounded transition-colors">
           View All <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
@@ -232,12 +232,12 @@ export default function HomePage() {
                   <p className="text-sm text-[var(--fg3)] mt-1">Your personal Test frontpage. Come here to check in with your favorite communities.</p>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Link href="/communities">
-                      <button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2 px-5">
+                      <button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2 px-5">
                         <Users className="h-4 w-4" /> Browse Communities
                       </button>
                     </Link>
                     <Link href="/k/create">
-                      <button className="kura-btn border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2 px-5">
+                      <button className="kura-btn border border-[var(--brand-500)] text-[var(--brand-500)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2 px-5">
                         <Plus className="h-4 w-4" /> Create Community
                       </button>
                     </Link>
@@ -259,7 +259,7 @@ export default function HomePage() {
               </p>
               <div className="flex justify-center gap-2">
                 <Link href="/signup">
-                  <button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2 px-6">
+                  <button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2 px-6">
                     Join Test
                   </button>
                 </Link>
@@ -275,7 +275,7 @@ export default function HomePage() {
           {error && (
             <div className="post-card p-5 mb-3 text-center">
               <p className="text-sm text-red-500">{error}</p>
-              <button onClick={() => window.location.reload()} className="kura-btn mt-2 bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-xs">Retry</button>
+              <button onClick={() => window.location.reload()} className="kura-btn mt-2 bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-xs">Retry</button>
             </div>
           )}
 
@@ -304,7 +304,7 @@ export default function HomePage() {
               <div className="bg-gradient-to-b from-[var(--brand-500)] to-[var(--brand-700)] h-8" />
               <div className="p-3">
                 <div className="flex items-center gap-2 -mt-5 mb-2">
-                  <div className="h-10 w-10 rounded-full bg-[var(--brand-600)] border-2 border-[var(--surface)] flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-full bg-[var(--brand-500)] border-2 border-[var(--surface)] flex items-center justify-center">
                     <span className="text-white font-bold text-sm">T</span>
                   </div>
                 </div>
@@ -312,10 +312,10 @@ export default function HomePage() {
                 <p className="text-xs text-[var(--fg3)] mt-1 leading-relaxed">Your personal Test frontpage. Come here to check in with your favorite communities.</p>
                 <div className="mt-3 space-y-2">
                   <Link href="/submit">
-                    <button className="kura-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">Create Post</button>
+                    <button className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2">Create Post</button>
                   </Link>
                   <Link href="/k/create">
-                    <button className="kura-btn w-full border border-[var(--brand-600)] text-[var(--brand-600)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2">Create Community</button>
+                    <button className="kura-btn w-full border border-[var(--brand-500)] text-[var(--brand-500)] hover:bg-[var(--brand-50)] bg-transparent text-sm py-2">Create Community</button>
                   </Link>
                 </div>
               </div>

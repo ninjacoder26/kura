@@ -71,7 +71,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       <div className="min-h-screen">
         <Header />
         <div className="px-4 py-8">
-          <EmptyState title={error || 'Community not found'} action={<Link href="/communities"><button className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">Browse communities</button></Link>} />
+          <EmptyState title={error || 'Community not found'} action={<Link href="/communities"><button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-500)] text-sm">Browse communities</button></Link>} />
         </div>
       </div>
     );
@@ -90,7 +90,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
             <div className="flex-1 min-w-0 pb-1">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-bold text-[var(--fg)]">{community.name}</h1>
-                <button onClick={toggleJoin} disabled={joining} className={`kura-btn text-sm py-1.5 px-5 ${isMember ? 'border border-[var(--border)] text-[var(--fg2)] bg-transparent hover:border-[var(--border-strong)]' : 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]'}`}>
+                <button onClick={toggleJoin} disabled={joining} className={`kura-btn text-sm py-1.5 px-5 ${isMember ? 'border border-[var(--border)] text-[var(--fg2)] bg-transparent hover:border-[var(--border-strong)]' : 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-500)]'}`}>
                   {isMember ? 'Joined' : 'Join'}
                 </button>
               </div>
@@ -127,7 +127,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
                   {new Date(community.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
                 <Link href={`/submit?community=${community.slug}`} className="block mt-3">
-                  <button className="kura-btn w-full bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm py-2">Create Post</button>
+                  <button className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-500)] text-sm py-2">Create Post</button>
                 </Link>
               </div>
             </div>

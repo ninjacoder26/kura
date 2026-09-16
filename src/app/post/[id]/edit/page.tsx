@@ -67,7 +67,7 @@ function EditPostForm() {
           <div className="flex items-center justify-end gap-2">
             <Link href={`/post/${id}`}><button type="button" className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">Cancel</button></Link>
             <button type="submit" disabled={!title.trim() || saving}
-              className={`kura-btn text-sm ${title.trim() && !saving ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'}`}>
+              className={`kura-btn text-sm ${title.trim() && !saving ? 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'}`}>
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>

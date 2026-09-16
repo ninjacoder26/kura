@@ -167,7 +167,7 @@ function SubmitForm() {
     }
   }
 
-  if (authLoading) return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--brand-600)]" /></div></div>;
+  if (authLoading) return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--brand-500)]" /></div></div>;
   if (!user) return null;
 
   return (
@@ -189,7 +189,7 @@ function SubmitForm() {
               onClick={() => setShowDropdown(!showDropdown)}
               className={cn(
                 'flex items-center gap-2 w-full sm:w-72 h-10 px-3 text-sm rounded border bg-[var(--surface)] transition-colors text-left',
-                showDropdown ? 'border-[var(--brand-600)] ring-1 ring-[var(--brand-600)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
+                showDropdown ? 'border-[var(--brand-500)] ring-1 ring-[var(--brand-600)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
               )}
             >
               {selectedCommunity ? (
@@ -215,7 +215,7 @@ function SubmitForm() {
                       placeholder="Search communities"
                       value={communitySearch}
                       onChange={e => setCommunitySearch(e.target.value)}
-                      className="w-full h-9 pl-9 pr-3 text-sm bg-[var(--bg)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--brand-600)]"
+                      className="w-full h-9 pl-9 pr-3 text-sm bg-[var(--bg)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--brand-500)]"
                       autoFocus
                     />
                   </div>
@@ -241,7 +241,7 @@ function SubmitForm() {
                         <span className="font-medium text-[var(--fg)] block truncate">k/{c.slug}</span>
                         <span className="text-xs text-[var(--fg4)]">{c.name}</span>
                       </div>
-                      {communityId === c.id && <Check className="h-4 w-4 text-[var(--brand-600)] ml-auto shrink-0" />}
+                      {communityId === c.id && <Check className="h-4 w-4 text-[var(--brand-500)] ml-auto shrink-0" />}
                     </button>
                   ))}
                 </div>
@@ -267,14 +267,14 @@ function SubmitForm() {
                   className={cn(
                     'flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium transition-all relative',
                     type === t.value
-                      ? 'text-[var(--brand-60)] bg-[var(--surface)]'
+                      ? 'text-[var(--brand-500)] bg-[var(--surface)]'
                       : 'text-[var(--fg4)] hover:bg-[var(--surface-hover)] hover:text-[var(--fg3)]'
                   )}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="hidden sm:inline">{t.label}</span>
                   {type === t.value && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--brand-600)]" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--brand-500)]" />
                   )}
                 </button>
               );
@@ -296,7 +296,7 @@ function SubmitForm() {
                 required
                 className={cn(
                   'w-full px-4 py-3 text-lg font-medium rounded-lg border bg-[var(--bg)] transition-all outline-none',
-                  titleFocused ? 'border-[var(--brand-600)] ring-1 ring-[var(--brand-600)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
+                  titleFocused ? 'border-[var(--brand-500)] ring-1 ring-[var(--brand-600)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
                 )}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--fg4)] tabular-nums">{title.length}/300</span>
@@ -311,7 +311,7 @@ function SubmitForm() {
                   onChange={e => setBody(e.target.value)}
                   placeholder="Text (optional)"
                   rows={8}
-                  className="w-full px-4 py-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all resize-y min-h-[120px]"
+                  className="w-full px-4 py-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all resize-y min-h-[120px]"
                 />
               </div>
             )}
@@ -326,7 +326,7 @@ function SubmitForm() {
                   value={url}
                   onChange={e => setUrl(e.target.value)}
                   placeholder="Url"
-                  className="w-full h-12 pl-10 pr-4 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-600)] hover:border-[var(--border-strong)] transition-all"
+                  className="w-full h-12 pl-10 pr-4 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all"
                 />
               </div>
             )}
@@ -364,7 +364,7 @@ function SubmitForm() {
                     className={cn(
                       'border-2 border-dashed rounded-lg p-8 sm:p-12 text-center cursor-pointer transition-all',
                       dragActive
-                        ? 'border-[var(--brand-600)] bg-[var(--brand-50)]'
+                        ? 'border-[var(--brand-500)] bg-[var(--brand-50)]'
                         : 'border-[var(--border)] hover:border-[var(--brand-500)] hover:bg-[var(--surface-hover)]'
                     )}
                   >
@@ -373,7 +373,7 @@ function SubmitForm() {
                         'h-16 w-16 rounded-full flex items-center justify-center mb-3 transition-colors',
                         dragActive ? 'bg-[var(--brand-100)]' : 'bg-[var(--surface-hover)]'
                       )}>
-                        <Upload className={cn('h-8 w-8', dragActive ? 'text-[var(--brand-600)]' : 'text-[var(--fg4)]')} />
+                        <Upload className={cn('h-8 w-8', dragActive ? 'text-[var(--brand-500)]' : 'text-[var(--fg4)]')} />
                       </div>
                       <p className="text-sm font-medium text-[var(--fg)] mb-1">
                         {dragActive ? 'Drop image here' : 'Drag and drop image or'}
@@ -403,7 +403,7 @@ function SubmitForm() {
                   className={cn(
                     'px-6 py-2 rounded-full text-sm font-bold transition-all',
                     title.trim() && !submitting && !uploading && (type !== 'image' || imageFile)
-                      ? 'bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] shadow-sm'
+                      ? 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] shadow-sm'
                       : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'
                   )}
                 >

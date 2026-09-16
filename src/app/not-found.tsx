@@ -9,7 +9,7 @@ export default function NotFound() {
         </div>
         <h1 className="text-xl font-bold text-[var(--fg)] mb-2">Page not found</h1>
         <p className="text-sm text-[var(--fg3)] mb-4">The page you&apos;re looking for doesn&apos;t exist or has been moved.</p>
-        <Link href="/" className="kura-btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] text-sm">
+        <Link href="/" className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm">
           Back to Test
         </Link>
       </div>

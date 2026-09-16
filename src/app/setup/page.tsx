@@ -181,10 +181,10 @@ export default function SetupPage() {
                 ['Restart the dev server and refresh this page', ''],
               ].map(([text, href], i) => (
                 <li key={i} className="flex gap-3">
-                  <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[var(--brand-100)] dark:bg-[color-mix(in_srgb,var(--brand-600)_20%,transparent)] text-[var(--brand-600)] flex items-center justify-center text-xs font-bold">{i + 1}</span>
+                  <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[var(--brand-100)] dark:bg-[color-mix(in_srgb,var(--brand-600)_20%,transparent)] text-[var(--brand-500)] flex items-center justify-center text-xs font-bold">{i + 1}</span>
                   <div>
                     {href ? (
-                      <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--fg)] hover:text-[var(--brand-600)] hover:underline">{text} <span className="text-[var(--brand-600)]">(supabase.com)</span></a>
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--fg)] hover:text-[var(--brand-500)] hover:underline">{text} <span className="text-[var(--brand-500)]">(supabase.com)</span></a>
                     ) : (
                       <span className="font-medium text-[var(--fg)]">{text}</span>
                     )}
@@ -215,7 +215,7 @@ export default function SetupPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       <StatusBadge status={item.status} />
                       {item.action && (
-                        <a href={item.action.href} target="_blank" rel="noopener noreferrer" className="text-[11px] sm:text-xs text-[var(--brand-600)] hover:underline flex items-center gap-0.5">
+                        <a href={item.action.href} target="_blank" rel="noopener noreferrer" className="text-[11px] sm:text-xs text-[var(--brand-500)] hover:underline flex items-center gap-0.5">
                           {item.action.label} <ExternalLink className="h-3 w-3" />
                         </a>
                       )}
@@ -236,7 +236,7 @@ export default function SetupPage() {
         </Card>
 
         <div className="mt-6 sm:mt-8 flex items-center justify-between pb-8 lg:pb-4">
-          <Link href="/" className="text-sm text-[var(--brand-600)] hover:underline">Back to Test</Link>
+          <Link href="/" className="text-sm text-[var(--brand-500)] hover:underline">Back to Test</Link>
           <Link href="/communities"><Button size="sm">Browse Communities <ChevronRight className="h-4 w-4" /></Button></Link>
         </div>
       </div>
