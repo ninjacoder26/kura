@@ -116,14 +116,22 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
   // Adopt late-arriving batch results (or login) unless the user interacted.
   useEffect(() => {
     if (!userId) return;
-    return subscribeFeedVotes(() => {
-      if (interactedRef.current) return;
+    return subscribeFeedVotes(() => {      if (interactedRef.current) return;
       const v = getCachedVote(userId, post.id);
       if (v !== undefined) setVote(v);
       const s = getCachedSaved(userId, post.id);
       if (s !== undefined) setSaved(s);
     });
   }, [userId, post.id]);
+
+  // Reset on logout/account switch so one account's state never shows on another.
+  useEffect(() => {
+    if (!userId) {
+      interactedRef.current = false;
+      setVote(null);
+      setSaved(false);
+    }
+  }, [userId]);
 
   // Single-row fallback: only when no batch covers this card (batch failed,
   // or user logged in after the feed loaded). Deferred a tick so a parent
@@ -244,13 +252,13 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
       <div className="post-card flex">
         {/* Vote column - Reddit style */}
         <div className="flex flex-col items-center gap-0.5 px-1 py-2 bg-[var(--bg-raised)] rounded-l-[var(--r-md)] w-[36px] sm:w-[40px]">
-          <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')} aria-label="Upvote">
+          <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')} aria-label="Upvote" aria-pressed={vote === 'up'}>
             <ArrowBigUp className="h-[22px] w-[22px]" fill={vote === 'up' ? 'currentColor' : 'none'} />
           </button>
           <span className={cn('text-[11px] font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--accent-500)]', vote === 'down' && 'text-[var(--brand-500)]')}>
             {formatNumber(score)}
           </span>
-          <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')} aria-label="Downvote">
+          <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')} aria-label="Downvote" aria-pressed={vote === 'down'}>
             <ArrowBigDown className="h-[22px] w-[22px]" fill={vote === 'down' ? 'currentColor' : 'none'} />
           </button>
         </div>

@@ -63,7 +63,8 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       const supabase = createClient();
       const { data: postData, error: postErr } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('id', id).single();
       if (postErr) throw postErr;
-      setPost(postData);
+      // Deleted/lost author rows must never crash the page
+      setPost(postData ? { ...postData, author: postData.author || { username: 'unknown' } } : postData);
       if (postData) setScore(postData.upvotes - postData.downvotes);
 
       // Community rail card (best effort)
@@ -107,9 +108,14 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => { loadPost(); }, [loadPost]);
 
-  // Re-check vote/save when user changes
+  // Re-check vote/save when user changes (and clear on logout)
   useEffect(() => {
-    if (!id || !user) return;
+    if (!id) return;
+    if (!user) {
+      setVote(null);
+      setSaved(false);
+      return;
+    }
     (async () => {
       const supabase = createClient();
       const [voteRes, savedRes] = await Promise.all([
@@ -257,9 +263,9 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
 
         <article className="post-card flex">
           <div className="flex flex-col items-center gap-0.5 px-1 py-2 bg-[var(--surface-hover)] rounded-l-[var(--r-md)] w-10 sm:w-11">
-            <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')}><ArrowBigUp className="h-6 w-6" fill={vote === 'up' ? 'currentColor' : 'none'} /></button>
+            <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')} aria-label="Upvote" aria-pressed={vote === 'up'}><ArrowBigUp className="h-6 w-6" fill={vote === 'up' ? 'currentColor' : 'none'} /></button>
             <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--accent-500)]', vote === 'down' && 'text-[var(--brand-500)]')}>{formatNumber(score)}</span>
-            <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')}><ArrowBigDown className="h-6 w-6" fill={vote === 'down' ? 'currentColor' : 'none'} /></button>
+            <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')} aria-label="Downvote" aria-pressed={vote === 'down'}><ArrowBigDown className="h-6 w-6" fill={vote === 'down' ? 'currentColor' : 'none'} /></button>
           </div>
           <div className="flex-1 min-w-0 p-3">
             <div className="flex items-center flex-wrap gap-x-1 text-xs text-[var(--fg4)]">

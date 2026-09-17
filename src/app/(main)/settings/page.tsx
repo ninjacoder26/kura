@@ -15,7 +15,7 @@ const PROFILE_COLORS = [
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const { toast } = useToast();
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
@@ -140,11 +140,17 @@ export default function SettingsPage() {
         bannerUrl = uploaded;
       }
 
+      const normalizedWebsite = (() => {
+        const w = website.trim();
+        if (!w) return null;
+        return /^https?:\/\//i.test(w) ? w : `https://${w}`;
+      })();
+
       const { error } = await supabase.from('profiles').update({
         display_name: displayName.trim() || null,
         bio: bio.trim() || null,
         location: location.trim() || null,
-        website: website.trim() || null,
+        website: normalizedWebsite,
         twitter: twitter.trim() || null,
         instagram: instagram.trim() || null,
         github: github.trim() || null,
@@ -157,6 +163,7 @@ export default function SettingsPage() {
       setSavedBannerUrl(bannerUrl);
       setAvatarFile(null);
       setBannerFile(null);
+      await refreshUser();
       toast('success', 'Profile updated');
     } catch (err: any) { toast('error', err.message || 'Failed to update'); } finally { setSaving(false); }
   }

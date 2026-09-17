@@ -138,6 +138,7 @@ function SubmitForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !user) return;
+    if (!communityId) { toast('error', 'Choose a community to post in'); return; }
     setSubmitting(true);
     try {
       const supabase = createClient();
@@ -175,6 +176,9 @@ function SubmitForm() {
           <h1 className="text-lg font-medium text-[var(--fg)]">Create a post</h1>
           {selectedCommunity && (
             <span className="text-sm text-[var(--fg4)]">in <span className="font-bold text-[var(--fg)]">k/{selectedCommunity.slug}</span></span>
+          )}
+          {!selectedCommunity && (
+            <span className="text-xs text-[var(--accent-500)] font-bold">Choose a community below to post</span>
           )}
         </div>
 
@@ -395,10 +399,10 @@ function SubmitForm() {
               <div className="flex items-center gap-2">
                 <button
                   type="submit"
-                  disabled={!title.trim() || submitting || uploading || (type === 'image' && !imageFile)}
+                  disabled={!title.trim() || !communityId || submitting || uploading || (type === 'image' && !imageFile)}
                   className={cn(
                     'px-6 py-2 rounded-full text-sm font-bold transition-all',
-                    title.trim() && !submitting && !uploading && (type !== 'image' || imageFile)
+                    title.trim() && communityId && !submitting && !uploading && (type !== 'image' || imageFile)
                       ? 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] shadow-sm'
                       : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'
                   )}

@@ -6,8 +6,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, Plus, Sun, Moon, LogOut, User, ChevronDown, Bell, Settings, MessageSquare } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { cn } from '@/lib/utils';
-import { formatNumber } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 
 interface NotificationItem {

@@ -250,7 +250,7 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
             {popular.map(c => (
               <CommunityCard
                 key={c.slug}
-                community={{ id: c.id, name: c.name, slug: c.slug, description: c.description, color: '#6366f1', member_count: c.member_count, post_count: c.post_count, category: 'general' }}
+                community={{ id: c.id, name: c.name, slug: c.slug, description: c.description, color: c.color || '#6366f1', member_count: c.member_count, post_count: c.post_count, category: 'general' }}
               />
             ))}
           </div>

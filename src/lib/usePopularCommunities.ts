@@ -9,6 +9,7 @@ export interface PopularCommunity {
   slug: string;
   member_count: number;
   post_count: number;
+  color?: string | null;
   description?: string;
 }
 
@@ -25,7 +26,7 @@ function fetchPopular(limit: number): Promise<PopularCommunity[]> {
         const supabase = createClient();
         const { data } = await supabase
           .from('communities')
-          .select('id, name, slug, member_count, post_count, description')
+          .select('id, name, slug, member_count, post_count, color, description')
           .order('member_count', { ascending: false })
           .limit(limit);
         if (data) cache = data as PopularCommunity[];

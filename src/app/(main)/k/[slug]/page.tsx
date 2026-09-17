@@ -30,9 +30,22 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   const [hasMore, setHasMore] = useState(true);
   const userRef = useRef(user);
   userRef.current = user;
+  const communityRef = useRef<any>(null);
   useSyncFeedVotes(posts, user?.id);
 
-  useEffect(() => { params.then(p => setSlug(p.slug)); }, [params]);
+  useEffect(() => {
+    let cancelled = false;
+    params.then(p => {
+      if (cancelled) return;
+      // Fresh community: clear stale content immediately (no flash of old data)
+      setCommunity(null);
+      communityRef.current = null;
+      setPosts([]);
+      setError('');
+      setSlug(p.slug);
+    });
+    return () => { cancelled = true; };
+  }, [params]);
 
   const load = useCallback(async (pageNum: number = 0) => {
     if (!slug) return;
@@ -43,11 +56,31 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
     try {
       const supabase = createClient();
 
-      const commQuery = supabase.from('communities').select('*').eq('slug', slug).single();
+      // Community first (fast indexed lookup; also fails fast on bad slugs)
+      let comm = pageNum === 0 ? null : communityRef.current;
+      if (!comm) {
+        const { data, error } = await supabase.from('communities').select('*').eq('slug', slug).single();
+        if (error) throw error;
+        comm = data;
+        communityRef.current = comm;
+        setCommunity(comm);
+        if (currentUser && comm) {
+          const { data: member } = await supabase.from('community_members').select('id').eq('community_id', comm.id).eq('user_id', currentUser.id).single();
+          setIsMember(!!member);
+        }
+      }
+      if (!comm) {
+        setPosts([]);
+        setHasMore(false);
+        return;
+      }
+
+      // Posts filtered server-side so sort + pagination are actually correct
       let postsQuery = supabase
         .from('posts')
         .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)')
-        .eq('is_removed', false);
+        .eq('is_removed', false)
+        .eq('community_id', comm.id);
 
       if (sort === 'new') postsQuery = postsQuery.order('created_at', { ascending: false });
       else if (sort === 'top') {
@@ -60,28 +93,19 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
 
       postsQuery = postsQuery.range(pageNum * 20, (pageNum + 1) * 20 - 1);
 
-      const [commResult, postsResult] = await Promise.all([commQuery, postsQuery]);
+      const { data, error } = await postsQuery;
+      if (error) throw error;
 
-      if (commResult.error) throw commResult.error;
-      setCommunity(commResult.data);
+      const mapped = ((data as any[]) || []).map((p: any) => ({
+        ...p,
+        author: p.author || { username: 'unknown' },
+        community: p.community || undefined,
+      }));
 
-      if (commResult.data) {
-        if (currentUser) {
-          const { data: member } = await supabase.from('community_members').select('id').eq('community_id', commResult.data.id).eq('user_id', currentUser.id).single();
-          setIsMember(!!member);
-        }
-
-        if (postsResult.data) {
-          const communityPosts = (postsResult.data as any[])
-            .filter((p: any) => p.community_id === commResult.data.id)
-            .map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined }));
-
-          // Batch vote/save state in 2 queries (claims sync so cards mount warm)
-          if (currentUser) fetchAndCacheVotes(supabase, currentUser.id, communityPosts.map((p: any) => p.id));
-          setPosts(prev => pageNum === 0 ? communityPosts : [...prev, ...communityPosts]);
-          setHasMore(communityPosts.length === 20);
-        }
-      }
+      // Batch vote/save state in 2 queries (claims sync so cards mount warm)
+      if (currentUser) fetchAndCacheVotes(supabase, currentUser.id, mapped.map((p: any) => p.id));
+      setPosts(prev => pageNum === 0 ? mapped : [...prev, ...mapped]);
+      setHasMore(mapped.length === 20);
     } catch (err: any) { setError(err.message || 'Failed to load community'); } finally { setLoading(false); setLoadingMore(false); }
   }, [slug, sort, topRange]);
 

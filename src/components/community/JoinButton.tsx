@@ -9,12 +9,22 @@ import { cn } from '@/lib/utils';
 
 // Session-level membership cache so join buttons render their correct
 // state instantly across navigations without refetching per row.
+// Namespaced per user — never leaks one account's state into another.
 const memberCache = new Map<string, boolean>();
 const listeners = new Set<() => void>();
 
-function setCached(communityId: string, value: boolean) {
-  memberCache.set(communityId, value);
+function cacheKey(userId: string | undefined, communityId: string) {
+  return `${userId ?? 'anon'}:${communityId}`;
+}
+
+function setCached(userId: string | undefined, communityId: string, value: boolean) {
+  memberCache.set(cacheKey(userId, communityId), value);
   listeners.forEach(l => l());
+}
+
+function getCached(userId: string | undefined, communityId: string): boolean | null {
+  if (!userId) return false;
+  return memberCache.get(cacheKey(userId, communityId)) ?? null;
 }
 
 interface JoinButtonProps {
@@ -30,7 +40,7 @@ export default function JoinButton({ communityId, communityName, className }: Jo
   const [, force] = useState(0);
   const [checking, setChecking] = useState(false);
 
-  const isMember = user ? (memberCache.get(communityId) ?? null) : false;
+  const isMember = getCached(user?.id, communityId);
 
   useEffect(() => {
     const onChange = () => force(n => n + 1);
@@ -39,7 +49,7 @@ export default function JoinButton({ communityId, communityName, className }: Jo
   }, []);
 
   useEffect(() => {
-    if (!user || memberCache.has(communityId)) return;
+    if (!user || memberCache.has(cacheKey(user.id, communityId))) return;
     let cancelled = false;
     setChecking(true);
     (async () => {
@@ -51,7 +61,7 @@ export default function JoinButton({ communityId, communityName, className }: Jo
           .eq('community_id', communityId)
           .eq('user_id', user.id)
           .maybeSingle();
-        if (!cancelled) setCached(communityId, !!data);
+        if (!cancelled) setCached(user.id, communityId, !!data);
       } catch {
         // Leave as Join on failure; toggle will surface errors
       } finally {
@@ -69,8 +79,8 @@ export default function JoinButton({ communityId, communityName, className }: Jo
       toast('info', 'Log in to join communities');
       return;
     }
-    const wasMember = memberCache.get(communityId) ?? false;
-    setCached(communityId, !wasMember);
+    const wasMember = getCached(user.id, communityId) ?? false;
+    setCached(user.id, communityId, !wasMember);
     toast('success', wasMember ? `Left ${communityName}` : `Joined ${communityName}`);
     try {
       const supabase = createClient();
@@ -83,7 +93,7 @@ export default function JoinButton({ communityId, communityName, className }: Jo
       }
       invalidateJoinedCommunities(user.id);
     } catch (err: any) {
-      setCached(communityId, wasMember);
+      setCached(user.id, communityId, wasMember);
       toast('error', err.message || 'Failed');
     }
   }

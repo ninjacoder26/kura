@@ -32,6 +32,14 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
   useEffect(() => { params.then(p => setUsername(p.username)); }, [params]);
 
+  function handleSavedRemove(id: string) {
+    setSavedPosts(prev => prev.filter(p => p.id !== id));
+  }
+
+  function handleUpvotedRemove(id: string) {
+    setUpvotedPosts(prev => prev.filter(p => p.id !== id));
+  }
+
   // Own-profile extras: saved + upvoted posts (Reddit-style profile tabs)
   useEffect(() => {
     if (!profile || !user || user.id !== profile.id) return;
@@ -228,12 +236,12 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               {activeTab === 'saved' && (loadingExtras && savedPosts.length === 0 ? (
                 <div className="space-y-2">{[1, 2].map(i => <div key={i} className="post-card p-4"><div className="h-4 w-2/3 rounded skeleton mb-2" /><div className="h-3 w-full rounded skeleton" /></div>)}</div>
               ) : (
-                <PostList posts={savedPosts} emptyTitle="No saved posts" emptyDescription="Tap Save on any post to find it here later." />
+                <PostList posts={savedPosts} emptyTitle="No saved posts" emptyDescription="Tap Save on any post to find it here later." onDelete={handleSavedRemove} />
               ))}
               {activeTab === 'upvoted' && (loadingExtras && upvotedPosts.length === 0 ? (
                 <div className="space-y-2">{[1, 2].map(i => <div key={i} className="post-card p-4"><div className="h-4 w-2/3 rounded skeleton mb-2" /><div className="h-3 w-full rounded skeleton" /></div>)}</div>
               ) : (
-                <PostList posts={upvotedPosts} emptyTitle="No upvoted posts" emptyDescription="Posts you upvote will show up here." />
+                <PostList posts={upvotedPosts} emptyTitle="No upvoted posts" emptyDescription="Posts you upvote will show up here." onDelete={handleUpvotedRemove} />
               ))}
             </div>
           </main>

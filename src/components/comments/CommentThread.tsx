@@ -74,6 +74,14 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
     });
   }, [userId, comment.id]);
 
+  // Reset on logout/account switch so one account's votes never show on another.
+  useEffect(() => {
+    if (!userId) {
+      interactedRef.current = false;
+      setVote(null);
+    }
+  }, [userId]);
+
   // Single-row fallback: only when no thread batch covers this comment.
   // Deferred a tick so the parent batch effect claims first.
   useEffect(() => {
