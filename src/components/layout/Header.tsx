@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Search, Plus, Sun, Moon, LogOut, User, ChevronDown, Bell, Settings, MessageSquare } from 'lucide-react';
+import { Search, Plus, Sun, Moon, LogOut, User, ChevronDown, Bell, Settings } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { cn, formatNumber } from '@/lib/utils';
@@ -125,8 +125,8 @@ export default function Header() {
               <Plus className="h-4 w-4" /> Create
             </button>
           </Link>
-          <Link href="/submit" className="sm:hidden">
-            <button className="vote-btn !w-9 !h-9"><Plus className="h-5 w-5" /></button>
+          <Link href="/submit" className="sm:hidden" aria-label="Create post">
+            <button className="vote-btn !w-9 !h-9" aria-label="Create post"><Plus className="h-5 w-5" /></button>
           </Link>
 
           {/* Notifications */}
@@ -240,8 +240,8 @@ export default function Header() {
           )}
 
           {/* Mobile search */}
-          <Link href="/search" className="sm:hidden">
-            <button className="vote-btn !w-9 !h-9"><Search className="h-5 w-5" /></button>
+          <Link href="/search" className="sm:hidden" aria-label="Search">
+            <button className="vote-btn !w-9 !h-9" aria-label="Search"><Search className="h-5 w-5" /></button>
           </Link>
         </div>
       </div>

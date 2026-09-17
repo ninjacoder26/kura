@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { FileText, Link2, Image as ImageIcon, ChevronDown, X, Upload, Loader2, Plus, Search, Check, GripVertical } from 'lucide-react';
+import { FileText, Link2, Image as ImageIcon, ChevronDown, X, Upload, Loader2, Plus, Search, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -39,16 +39,43 @@ function SubmitForm() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const [titleFocused, setTitleFocused] = useState(false);
-  const [flair, setFlair] = useState('');
-  const [showFlairPicker, setShowFlairPicker] = useState(false);
+
+  const DRAFT_KEY = 'kura-submit-draft';
+
+  // Restore text draft once on mount (community resolved after fetch below)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (typeof d.title === 'string') setTitle(d.title);
+      if (typeof d.body === 'string') setBody(d.body);
+      if (typeof d.url === 'string') setUrl(d.url);
+      if (typeof d.type === 'string') setType(d.type);
+    } catch {}
+  }, []);
+
+  // Persist draft (debounced); cleared when fully empty or on successful post
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        if (!title && !body && !url && !communityId) {
+          localStorage.removeItem(DRAFT_KEY);
+          return;
+        }
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, body, url, type, communityId }));
+      } catch {}
+    }, 500);
+    return () => clearTimeout(t);
+  }, [title, body, url, type, communityId]);
 
   useEffect(() => { if (!authLoading && !user) router.replace('/login?redirect=/submit'); }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (titleRef.current) titleRef.current.focus();
+    // Autofocus title on desktop only — mobile would pop the keyboard uninvited
+    if (window.matchMedia?.('(pointer: fine)').matches) titleRef.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -66,6 +93,15 @@ function SubmitForm() {
           if (preselectedCommunity) {
             const match = (data as any[]).find((c: any) => c.slug === preselectedCommunity);
             if (match) setCommunityId(match.id);
+          } else {
+            // Restore drafted community if it still exists
+            try {
+              const raw = localStorage.getItem(DRAFT_KEY);
+              const d = raw ? JSON.parse(raw) : null;
+              if (d?.communityId && (data as any[]).some((c: any) => c.id === d.communityId)) {
+                setCommunityId(d.communityId);
+              }
+            } catch {}
           }
         }
       } catch {}
@@ -112,7 +148,6 @@ function SubmitForm() {
   async function uploadImage(): Promise<string | null> {
     if (!imageFile || !user) return null;
     setUploading(true);
-    setUploadProgress(0);
     try {
       if (isCloudinaryConfigured()) {
         const result = await uploadToCloudinary(imageFile, `kura/${user.id}`);
@@ -131,7 +166,6 @@ function SubmitForm() {
       return null;
     } finally {
       setUploading(false);
-      setUploadProgress(0);
     }
   }
 
@@ -157,6 +191,7 @@ function SubmitForm() {
         community_id: communityId || null,
       });
       if (error) throw error;
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
       toast('success', 'Post created!');
       router.push(selectedCommunity ? `/k/${selectedCommunity.slug}` : '/');
     } catch (err: any) {
@@ -186,6 +221,7 @@ function SubmitForm() {
         <div className="mb-3" ref={dropdownRef}>
           <div className="relative">
             <button
+              type="button"
               onClick={() => setShowDropdown(!showDropdown)}
               className={cn(
                 'flex items-center gap-2 w-full sm:w-72 h-10 px-3 text-sm rounded border bg-[var(--surface)] transition-colors text-left',
@@ -227,6 +263,7 @@ function SubmitForm() {
                   {filtered.map(c => (
                     <button
                       key={c.id}
+                      type="button"
                       onClick={() => { setCommunityId(c.id); setShowDropdown(false); setCommunitySearch(''); }}
                       className={cn(
                         'w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-left',
@@ -263,6 +300,7 @@ function SubmitForm() {
               return (
                 <button
                   key={t.value}
+                  type="button"
                   onClick={() => setType(t.value)}
                   className={cn(
                     'flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium transition-all relative',

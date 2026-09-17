@@ -9,7 +9,7 @@ import { slugify } from '@/lib/utils';
 import { COMMUNITY_CATEGORIES } from '@/lib/constants';
 import Link from 'next/link';
 import { uploadToCloudinary, isCloudinaryConfigured, validateImageFile } from '@/lib/cloudinary';
-import { Camera, Upload, Loader2, Check, Info, X } from 'lucide-react';
+import { Camera, Loader2, Check, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function CreateCommunityPage() {

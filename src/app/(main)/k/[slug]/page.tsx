@@ -8,7 +8,7 @@ import Link from 'next/link';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
-import { Users, Calendar, Shield, Plus } from 'lucide-react';
+import { Calendar, Shield, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FEED_SORTS, TOP_RANGES, topRangeCutoff, risingCutoff, type FeedSort, type TopRange } from '@/lib/feedSort';
 import { useAuth } from '@/components/providers/AuthProvider';

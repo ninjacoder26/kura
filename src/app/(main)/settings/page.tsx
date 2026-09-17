@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
-import { User, Camera, Lock, Image, Twitter, Instagram, Github, Palette } from 'lucide-react';
+import { User, Camera, Lock, Image, Twitter, Instagram, Github } from 'lucide-react';
 import { uploadToCloudinary, isCloudinaryConfigured, validateImageFile } from '@/lib/cloudinary';
 
 const PROFILE_COLORS = [
