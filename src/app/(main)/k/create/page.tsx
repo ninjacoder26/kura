@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import Header from '@/components/layout/Header';
-import MobileNav from '@/components/layout/MobileNav';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { slugify } from '@/lib/utils';
@@ -135,14 +133,12 @@ export default function CreateCommunityPage() {
     }
   }
 
-  if (authLoading) return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--brand-500)]" /></div></div>;
+  if (authLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--brand-500)]" /></div>;
   if (!user) return null;
 
   const isUploading = uploadingBanner || uploadingIcon;
 
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <Header />
       <div className="px-4 py-6 max-w-[640px] mx-auto">
         <h1 className="text-xl font-bold text-[var(--fg)] mb-1">Create a Community</h1>
         <p className="text-sm text-[var(--fg3)] mb-6">Build a space for people to discuss topics you care about.</p>
@@ -293,8 +289,7 @@ export default function CreateCommunityPage() {
             </button>
           </div>
         </form>
+        <div className="pb-20 lg:pb-8" />
       </div>
-      <MobileNav />
-    </div>
   );
 }

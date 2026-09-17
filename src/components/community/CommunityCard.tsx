@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { formatNumber } from '@/lib/utils';
+import JoinButton from '@/components/community/JoinButton';
 
 export interface CommunityData {
+  id?: string;
   name: string;
   slug: string;
   description?: string;
@@ -37,6 +39,9 @@ export default function CommunityCard({ community }: { community: CommunityData 
             <span>{formatNumber(community.post_count)} posts</span>
           </div>
         </div>
+        {community.id && (
+          <JoinButton communityId={community.id} communityName={community.name} />
+        )}
       </div>
     </Link>
   );

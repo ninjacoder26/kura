@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import Header from '@/components/layout/Header';
-import MobileNav from '@/components/layout/MobileNav';
 import Sidebar from '@/components/layout/Sidebar';
 import CommunityCard from '@/components/community/CommunityCard';
 import type { CommunityData } from '@/components/community/CommunityCard';
@@ -48,9 +46,7 @@ export default function CommunitiesPage() {
   });
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      <div className="flex px-4 py-3 gap-5">
+      <div className="flex px-4 py-3 gap-5 max-w-[1400px] mx-auto w-full">
         <aside className="hidden lg:block w-[228px] shrink-0">
           <div className="sticky top-12"><Sidebar /></div>
         </aside>
@@ -92,7 +88,5 @@ export default function CommunitiesPage() {
           <div className="pb-20 lg:pb-6" />
         </main>
       </div>
-      <MobileNav />
-    </div>
   );
 }

@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import Header from '@/components/layout/Header';
+import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
 import Sidebar from '@/components/layout/Sidebar';
-import MobileNav from '@/components/layout/MobileNav';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import Link from 'next/link';
 import { Sparkles, Plus, Users, TrendingUp, Shield, MessageCircle, ChevronRight } from 'lucide-react';
 import { cn, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { usePopularCommunities } from '@/lib/usePopularCommunities';
 
 type SortType = 'new' | 'top' | 'hot';
 
@@ -104,18 +104,7 @@ function RuleCard() {
 }
 
 function TrendingCommunities() {
-  const [communities, setCommunities] = useState<{ name: string; slug: string; member_count: number; description?: string }[]>([]);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase.from('communities').select('name, slug, member_count, description').order('member_count', { ascending: false }).limit(5);
-        if (data) setCommunities(data as any[]);
-      } catch {}
-    }
-    load();
-  }, []);
+  const communities = usePopularCommunities(5);
 
   if (communities.length === 0) return null;
 
@@ -151,14 +140,18 @@ function TrendingCommunities() {
 }
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
-  const [sort, setSort] = useState<SortType>('new');
+  const [sort, setSort] = useState<SortType>('hot');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [retryKey, setRetryKey] = useState(0);
+  const userRef = useRef(user);
+  userRef.current = user;
+  useSyncFeedVotes(posts, user?.id);
 
   useEffect(() => { setPage(0); setHasMore(true); }, [sort]);
 
@@ -183,22 +176,30 @@ export default function HomePage() {
             author: p.author || { username: 'unknown' },
             community: p.community || undefined,
           }));
+          // Batch vote/save state in 2 queries (claims sync so cards mount warm)
+          const uid = userRef.current?.id;
+          if (uid) fetchAndCacheVotes(supabase, uid, mapped.map(p => p.id));
           setPosts(prev => page === 0 ? mapped : [...prev, ...mapped]);
           setHasMore(data.length === 20);
         }
       } catch (err: any) { setError(err.message || 'Failed to load feed'); } finally { setLoading(false); setLoadingMore(false); }
     }
     load();
-  }, [sort, page]);
+  }, [sort, page, retryKey]);
 
   function handlePostDelete(id: string) {
     setPosts(prev => prev.filter(p => p.id !== id));
   }
 
+  function handleRetry() {
+    setError('');
+    setPage(0);
+    setHasMore(true);
+  }
+
   return (
-    <div className="min-h-screen">
-      <Header />
-      <div className="flex px-4 py-3 gap-5">
+    <>
+      <div className="flex px-4 py-3 gap-5 max-w-[1400px] mx-auto w-full">
         <aside className="hidden lg:block w-[228px] shrink-0">
           <div className="sticky top-12">
             <Sidebar />
@@ -206,12 +207,12 @@ export default function HomePage() {
         </aside>
 
         <main className="flex-1 min-w-0">
-          {/* Hero for logged-out users */}
-          {!user && <HeroBanner />}
+          {/* Hero for logged-out users — gated on auth resolving to avoid flashing it at logged-in users */}
+          {!authLoading && !user && <HeroBanner />}
 
           {/* Sort tabs */}
           <div className="post-card flex items-center gap-1 px-3 py-2 mb-3">
-            {([['new', 'New'], ['hot', 'Hot'], ['top', 'Top']] as const).map(([key, label]) => (
+            {([['hot', 'Hot'], ['new', 'New'], ['top', 'Top']] as const).map(([key, label]) => (
               <button key={key} onClick={() => setSort(key)}
                 className={cn('text-sm font-bold px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)] transition-colors', sort === key ? 'text-[var(--fg)]' : 'text-[var(--fg4)]')}>
                 {label}
@@ -250,7 +251,7 @@ export default function HomePage() {
           )}
 
           {/* Empty state for logged-out users */}
-          {!loading && posts.length === 0 && !error && !user && (
+          {!authLoading && !loading && posts.length === 0 && !error && !user && (
             <div className="post-card p-5 mb-3 anim-fade-up text-center">
               <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] flex items-center justify-center mx-auto mb-3">
                 <Sparkles className="h-6 w-6 text-white" />
@@ -277,7 +278,7 @@ export default function HomePage() {
           {error && (
             <div className="post-card p-5 mb-3 text-center">
               <p className="text-sm text-red-500">{error}</p>
-              <button onClick={() => window.location.reload()} className="kura-btn mt-2 bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-xs">Retry</button>
+              <button onClick={handleRetry} className="kura-btn mt-2 bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-xs">Retry</button>
             </div>
           )}
 
@@ -327,7 +328,7 @@ export default function HomePage() {
             <TrendingCommunities />
 
             {/* Rules - only for logged-out */}
-            {!user && <RuleCard />}
+            {!authLoading && !user && <RuleCard />}
 
             {/* Footer links */}
             <div className="text-[11px] text-[var(--fg4)] space-y-1 px-1">
@@ -342,7 +343,6 @@ export default function HomePage() {
           </div>
         </aside>
       </div>
-      <MobileNav />
-    </div>
+    </>
   );
 }

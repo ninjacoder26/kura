@@ -34,7 +34,6 @@ export async function uploadToCloudinary(
   formData.append('file', file);
   formData.append('upload_preset', uploadPreset);
   formData.append('folder', folder);
-  formData.append('resource_type', 'image');
 
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
     method: 'POST',
@@ -49,8 +48,7 @@ export async function uploadToCloudinary(
   return res.json();
 }
 
-export function getCloudinaryUrl(
-  publicId: string,
+export function getCloudinaryUrl(  publicId: string,
   options?: {
     width?: number;
     height?: number;
@@ -77,8 +75,7 @@ export function getCloudinaryUrl(
   return `${parts.join('/')}/${publicId}`;
 }
 
-export function validateImageFile(file: File): { valid: boolean; error?: string } {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+export function validateImageFile(file: File): { valid: boolean; error?: string } {  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   if (!allowedTypes.includes(file.type)) {
     return { valid: false, error: 'Only JPEG, PNG, GIF, and WebP images are allowed' };
   }
@@ -86,4 +83,23 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
     return { valid: false, error: 'Image must be under 20MB' };
   }
   return { valid: true };
+}
+
+/**
+ * Rewrites a Cloudinary delivery URL to use automatic format/quality
+ * (WebP/AVIF + smart compression) and an optional width cap.
+ * Non-Cloudinary URLs (Supabase storage, data: previews, etc.) pass
+ * through untouched, so this is safe to apply to any <img src>.
+ */
+export function optimizeImageUrl(url: string | null | undefined, options?: { width?: number }): string {
+  if (!url) return '';
+  const marker = '/image/upload/';
+  const idx = url.indexOf(marker);
+  if (!url.includes('res.cloudinary.com') || idx === -1) return url;
+  // Don't double-transform URLs that already carry transformations.
+  const after = url.slice(idx + marker.length);
+  if (/^(f_|q_|w_|h_|c_)/.test(after.split('/')[0])) return url;
+  const params = ['f_auto', 'q_auto'];
+  if (options?.width) params.push(`w_${options.width}`, 'c_limit');
+  return `${url.slice(0, idx + marker.length)}${params.join(',')}/${after}`;
 }

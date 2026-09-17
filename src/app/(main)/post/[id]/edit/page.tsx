@@ -2,8 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import Header from '@/components/layout/Header';
-import MobileNav from '@/components/layout/MobileNav';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import { LoadingSpinner } from '@/components/ui/Feedback';
@@ -53,12 +51,10 @@ function EditPostForm() {
     } catch (err: any) { toast('error', err.message || 'Failed to update'); } finally { setSaving(false); }
   }
 
-  if (authLoading || loading) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
+  if (authLoading || loading) return <div className="px-4 py-8"><LoadingSpinner /></div>;
   if (!user) return null;
 
   return (
-    <div className="min-h-screen">
-      <Header />
       <div className="px-4 py-4 max-w-[740px] mx-auto">
         <h1 className="text-lg font-medium text-[var(--fg)] mb-4">Edit Post</h1>
         <form onSubmit={handleSave} className="space-y-3">
@@ -73,11 +69,9 @@ function EditPostForm() {
           </div>
         </form>
       </div>
-      <MobileNav />
-    </div>
   );
 }
 
 export default function EditPostPage() {
-  return <Suspense fallback={<div className="min-h-screen"><Header /><LoadingSpinner /></div>}><EditPostForm /></Suspense>;
+  return <Suspense fallback={<div className="px-4 py-8"><LoadingSpinner /></div>}><EditPostForm /></Suspense>;
 }

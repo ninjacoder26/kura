@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import Header from '@/components/layout/Header';
-import MobileNav from '@/components/layout/MobileNav';
 import { FileText, Link2, Image as ImageIcon, ChevronDown, X, Upload, Loader2, Plus, Search, Check, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -167,12 +165,10 @@ function SubmitForm() {
     }
   }
 
-  if (authLoading) return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--brand-500)]" /></div></div>;
+  if (authLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--brand-500)]" /></div>;
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <Header />
       <div className="px-4 py-4 max-w-[740px] mx-auto">
         {/* Title */}
         <div className="flex items-center gap-3 mb-4">
@@ -421,15 +417,13 @@ function SubmitForm() {
         </div>
 
         {/* Draft autosave indicator */}
-        <p className="text-xs text-[var(--fg4)] mt-3 text-center">
+        <p className="text-xs text-[var(--fg4)] mt-3 text-center pb-20 lg:pb-8">
           Kura saves your drafts automatically
         </p>
       </div>
-      <MobileNav />
-    </div>
   );
 }
 
 export default function SubmitPage() {
-  return <Suspense fallback={<div className="min-h-screen"><Header /></div>}><SubmitForm /></Suspense>;
+  return <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[var(--brand-500)]" /></div>}><SubmitForm /></Suspense>;
 }

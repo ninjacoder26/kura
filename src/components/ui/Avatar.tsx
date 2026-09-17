@@ -1,4 +1,5 @@
 import { cn, getInitials } from '@/lib/utils';
+import { optimizeImageUrl } from '@/lib/cloudinary';
 
 interface AvatarProps {
   src?: string | null;
@@ -20,8 +21,10 @@ export default function Avatar({ src, alt, name, size = 'md', className }: Avata
   if (src) {
     return (
       <img
-        src={src}
+        src={optimizeImageUrl(src, { width: 128 })}
         alt={alt || name}
+        loading="lazy"
+        decoding="async"
         className={cn('rounded-full object-cover shrink-0', dims[size], className)}
       />
     );

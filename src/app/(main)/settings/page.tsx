@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import Header from '@/components/layout/Header';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { User, Camera, Lock, Image, Twitter, Instagram, Github, Palette } from 'lucide-react';
@@ -32,12 +31,14 @@ export default function SettingsPage() {
   // Avatar
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [savedAvatarUrl, setSavedAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Banner
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [savedBannerUrl, setSavedBannerUrl] = useState<string | null>(null);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,8 +63,8 @@ export default function SettingsPage() {
         setInstagram(data.instagram || '');
         setGithub(data.github || '');
         setThemeColor(data.theme_color || '#dc143c');
-        if (data.avatar_url) setAvatarPreview(data.avatar_url);
-        if (data.cover_url) setBannerPreview(data.cover_url);
+        if (data.avatar_url) { setAvatarPreview(data.avatar_url); setSavedAvatarUrl(data.avatar_url); }
+        if (data.cover_url) { setBannerPreview(data.cover_url); setSavedBannerUrl(data.cover_url); }
       }
       setLoading(false);
     }
@@ -120,18 +121,23 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       const supabase = createClient();
-      let avatarUrl = avatarPreview;
-      let bannerUrl = bannerPreview;
+      // Start from the last SAVED urls — a failed upload must never wipe them.
+      let avatarUrl = savedAvatarUrl;
+      let bannerUrl = savedBannerUrl;
 
       if (avatarFile) {
         setUploadingAvatar(true);
-        avatarUrl = await uploadImage(avatarFile, 'avatar');
+        const uploaded = await uploadImage(avatarFile, 'avatar');
         setUploadingAvatar(false);
+        if (!uploaded) throw new Error('Avatar upload failed — nothing was saved. Check your connection and try again.');
+        avatarUrl = uploaded;
       }
       if (bannerFile) {
         setUploadingBanner(true);
-        bannerUrl = await uploadImage(bannerFile, 'banner');
+        const uploaded = await uploadImage(bannerFile, 'banner');
         setUploadingBanner(false);
+        if (!uploaded) throw new Error('Banner upload failed — nothing was saved. Check your connection and try again.');
+        bannerUrl = uploaded;
       }
 
       const { error } = await supabase.from('profiles').update({
@@ -147,6 +153,10 @@ export default function SettingsPage() {
         cover_url: bannerUrl,
       }).eq('id', user.id);
       if (error) throw error;
+      setSavedAvatarUrl(avatarUrl);
+      setSavedBannerUrl(bannerUrl);
+      setAvatarFile(null);
+      setBannerFile(null);
       toast('success', 'Profile updated');
     } catch (err: any) { toast('error', err.message || 'Failed to update'); } finally { setSaving(false); }
   }
@@ -165,14 +175,12 @@ export default function SettingsPage() {
     } catch (err: any) { toast('error', err.message || 'Failed to update password'); } finally { setChangingPassword(false); }
   }
 
-  if (authLoading || loading) return <div className="min-h-screen"><Header /><div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" /></div></div>;
+  if (authLoading || loading) return <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" /></div>;
   if (!user) return null;
 
   const isUploading = uploadingAvatar || uploadingBanner;
 
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <Header />
       <div className="px-4 py-6 max-w-[640px] mx-auto">
         <h1 className="text-xl font-bold text-[var(--fg)] mb-1">Edit Profile</h1>
         <p className="text-sm text-[var(--fg3)] mb-6">Customize your public profile.</p>
@@ -325,7 +333,7 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+        <div className="pb-20 lg:pb-8" />
       </div>
-    </div>
   );
 }

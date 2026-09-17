@@ -3,10 +3,21 @@
 import Link from 'next/link';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, Trash2, Pencil, ExternalLink, Maximize2 } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
-import { useState, useEffect, memo, useCallback } from 'react';
+import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
+import { optimizeImageUrl } from '@/lib/cloudinary';
+import {
+  getCachedVote,
+  getCachedSaved,
+  isVoteResolved,
+  isVoteClaimed,
+  fetchAndCacheOne,
+  markVoted,
+  markSavedState,
+  subscribeFeedVotes,
+} from '@/lib/feedVoteCache';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 
 interface PostAuthor {
@@ -54,39 +65,68 @@ function sanitizeUrl(url: string): string | null {
   return url;
 }
 
+/** Never throws — an invalid post URL must not crash the feed. */
+function safeHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
 const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }: PostCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [vote, setVote] = useState<'up' | 'down' | null>(null);
+  const userId = user?.id;
+  // Resolved synchronously from the feed batch cache when available.
+  const [vote, setVote] = useState<'up' | 'down' | null>(() => (userId ? getCachedVote(userId, post.id) ?? null : null));
   const [score, setScore] = useState(post.upvotes - post.downvotes);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState(() => (userId ? getCachedSaved(userId, post.id) ?? false : false));
   const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  // Once the user interacts, incoming cache updates must not clobber state
+  // (the interaction itself writes through to the cache anyway).
+  const interactedRef = useRef(false);
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-    const supabase = createClient();
+    return () => {
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    };
+  }, []);
 
-    const votePromise = supabase
-      .from('votes')
-      .select('value')
-      .eq('user_id', user.id)
-      .eq('post_id', post.id)
-      .single();
-
-    const savedPromise = supabase
-      .from('saved_posts')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('post_id', post.id)
-      .single();
-
-    Promise.all([votePromise, savedPromise]).then(([voteRes, savedRes]) => {
-      if (voteRes.data) setVote(voteRes.data.value === 1 ? 'up' : 'down');
-      if (savedRes.data) setSaved(true);
+  // Adopt late-arriving batch results (or login) unless the user interacted.
+  useEffect(() => {
+    if (!userId) return;
+    return subscribeFeedVotes(() => {
+      if (interactedRef.current) return;
+      const v = getCachedVote(userId, post.id);
+      if (v !== undefined) setVote(v);
+      const s = getCachedSaved(userId, post.id);
+      if (s !== undefined) setSaved(s);
     });
-  }, [user, post.id]);
+  }, [userId, post.id]);
+
+  // Single-row fallback: only when no batch covers this card (batch failed,
+  // or user logged in after the feed loaded). Deferred a tick so a parent
+  // batch effect (which always runs after child effects in the same commit)
+  // gets first claim — avoiding duplicate queries.
+  useEffect(() => {
+    if (!userId) return;
+    if (isVoteResolved(userId, post.id) || isVoteClaimed(userId, post.id)) return;
+    const t = setTimeout(() => {
+      if (interactedRef.current) return;
+      if (isVoteResolved(userId, post.id) || isVoteClaimed(userId, post.id)) return;
+      fetchAndCacheOne(createClient(), userId, post.id).then(({ vote: v, saved: s }) => {
+        if (interactedRef.current) return;
+        setVote(v);
+        setSaved(s);
+      });
+    }, 0);
+    return () => clearTimeout(t);
+  }, [userId, post.id]);
 
   useEffect(() => {
     setScore(post.upvotes - post.downvotes);
@@ -96,7 +136,9 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
     if (!user) { toast('info', 'Log in to vote'); return; }
     const oldVote = vote;
     const newVote = vote === value ? null : value;
+    interactedRef.current = true;
     setVote(newVote);
+    markVoted(user.id, post.id, newVote);
     const delta = (newVote === 'up' ? 1 : newVote === 'down' ? -1 : 0) - (oldVote === 'up' ? 1 : oldVote === 'down' ? -1 : 0);
     setScore(score + delta);
 
@@ -111,6 +153,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
       if (result.error) throw result.error;
     } catch (err: any) {
       setVote(oldVote);
+      markVoted(user.id, post.id, oldVote);
       setScore(post.upvotes - post.downvotes);
       toast('error', err.message || 'Failed to vote');
     }
@@ -119,7 +162,9 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
   async function handleSave() {
     if (!user) { toast('info', 'Log in to save posts'); return; }
     const oldSaved = saved;
+    interactedRef.current = true;
     setSaved(!oldSaved);
+    markSavedState(user.id, post.id, !oldSaved);
     try {
       const supabase = createClient();
       let result;
@@ -132,12 +177,24 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
       toast('success', oldSaved ? 'Post unsaved' : 'Post saved');
     } catch (err: any) {
       setSaved(oldSaved);
+      markSavedState(user.id, post.id, oldSaved);
       toast('error', err.message || 'Failed to save post');
     }
   }
 
+  function handleDeleteClick() {
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+      confirmTimer.current = setTimeout(() => setConfirmingDelete(false), 3000);
+      return;
+    }
+    if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    setConfirmingDelete(false);
+    handleDelete();
+  }
+
   async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this post?')) return;
     setDeleting(true);
     try {
       const supabase = createClient();
@@ -205,11 +262,11 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
           </Link>
 
           {/* Link preview */}
-          {post.type === 'link' && post.url && sanitizeUrl(post.url) && (
+          {post.type === 'link' && post.url && sanitizeUrl(post.url) && safeHostname(post.url) && (
             <a href={sanitizeUrl(post.url)!} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors">
               <ExternalLink className="h-3.5 w-3.5" />
-              <span className="truncate max-w-[200px]">{new URL(post.url).hostname}</span>
+              <span className="truncate max-w-[200px]">{safeHostname(post.url)}</span>
             </a>
           )}
 
@@ -221,8 +278,10 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
                   <div className="w-full h-[200px] sm:h-[300px] skeleton" />
                 )}
                 <img
-                  src={post.image_url}
+                  src={optimizeImageUrl(post.image_url, { width: 1080 })}
                   alt={post.title}
+                  loading="lazy"
+                  decoding="async"
                   onLoad={handleImageLoad}
                   className={cn(
                     'max-h-[512px] w-full object-contain transition-opacity duration-300',
@@ -262,8 +321,8 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
                 <Link href={`/post/${post.id}/edit`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
                   <Pencil className="h-5 w-5" /> Edit
                 </Link>
-                <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                  <Trash2 className="h-5 w-5" /> Delete
+                <button onClick={handleDeleteClick} disabled={deleting} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20')}>
+                  <Trash2 className="h-5 w-5" /> {confirmingDelete ? (deleting ? 'Deleting…' : 'Confirm?') : 'Delete'}
                 </button>
               </>
             )}

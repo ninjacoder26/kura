@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Compass, Plus, Users, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { NavLink, usePendingHref } from '@/components/layout/NavProgress';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const pending = usePendingHref();
   const { user } = useAuth();
 
   const navItems = [
@@ -28,26 +29,29 @@ export default function MobileNav() {
         {navItems.map(item => {
           const Icon = item.icon;
           const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+          const isPending = pending === item.href && !active;
           return (
-            <Link
+            <NavLink
               key={item.href}
               href={item.href}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-1 transition-colors rounded-lg',
                 item.accent
                   ? 'text-[var(--brand-500)]'
-                  : active ? 'text-[var(--brand-500)]' : 'text-[var(--fg4)]'
+                  : active || isPending ? 'text-[var(--brand-500)]' : 'text-[var(--fg4)]'
               )}
             >
               {item.accent ? (
                 <div className="h-10 w-10 -mt-4 rounded-full bg-[var(--brand-500)] flex items-center justify-center shadow-lg ring-4 ring-[var(--surface)]">
                   <Icon className="h-5 w-5 text-white" />
                 </div>
+              ) : isPending ? (
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" />
               ) : (
                 <Icon className="h-6 w-6" />
               )}
               <span className="text-[10px] font-semibold leading-tight">{item.label}</span>
-            </Link>
+            </NavLink>
           );
         })}
       </div>

@@ -1,17 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/providers/ToastProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
+import AuthCard from '@/components/ui/AuthCard';
 import { Check, X, Loader2 } from 'lucide-react';
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const redirectTo = searchParams.get('redirect') || '/';
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -20,14 +23,12 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
 
-  // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace('/');
+      router.replace(redirectTo);
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, redirectTo, router]);
 
-  // (#50): Debounced username availability check
   const checkUsername = useCallback(async (value: string) => {
     if (value.length < 3) { setUsernameStatus('idle'); return; }
     if (!/^[a-zA-Z0-9_]+$/.test(value)) { setUsernameStatus('idle'); return; }
@@ -61,7 +62,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { username, full_name: username },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
       },
     });
 
@@ -73,7 +74,7 @@ export default function SignupPage() {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
     });
   }
 
@@ -86,31 +87,25 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-sm text-center anim-fade-up">
+      <AuthCard title="Check your email" subtitle={<>We sent a confirmation link to <strong>{email}</strong>.</>}>
+        <div className="text-center">
           <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
             <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
           </div>
-          <h1 className="text-lg font-medium text-[var(--fg)]">Check your email</h1>
-          <p className="text-xs text-[var(--fg3)] mt-2">We sent a confirmation link to <strong>{email}</strong>.</p>
-          <Link href="/login" className="inline-block mt-4">
+          <Link href="/login" className="inline-block mt-2">
             <button className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-xs">Back to login</button>
           </Link>
         </div>
-      </div>
+      </AuthCard>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-sm anim-fade-up">
-        <div className="text-center mb-6">
-          <div className="h-10 w-10 rounded-full bg-[var(--brand-500)] flex items-center justify-center mx-auto mb-3">
-            <span className="text-white font-bold text-lg">K</span>
-          </div>
-          <h1 className="text-lg font-medium text-[var(--fg)]">Sign Up</h1>
-          <p className="text-xs text-[var(--fg4)] mt-1">Join the conversation</p>
-        </div>
+    <AuthCard
+      title="Sign Up"
+      subtitle="Join the conversation"
+      footer={<>Already a member? <Link href="/login" className="text-[var(--brand-500)] font-bold hover:underline">Log In</Link></>}
+    >
 
         <button onClick={handleGoogle} type="button"
           className="kura-btn w-full border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] bg-transparent text-sm py-2.5 mb-4">
@@ -118,9 +113,9 @@ export default function SignupPage() {
           Continue with Google
         </button>
 
-        <div className="relative mb-4">
+          <div className="relative mb-4">
           <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[var(--border)]" /></div>
-          <div className="relative flex justify-center text-[11px]"><span className="px-2 bg-[var(--bg)] text-[var(--fg4)]">OR</span></div>
+          <div className="relative flex justify-center text-[11px]"><span className="px-2 bg-[var(--surface)] text-[var(--fg4)]">OR</span></div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -148,10 +143,14 @@ export default function SignupPage() {
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>
-        <p className="mt-4 text-center text-xs text-[var(--fg4)]">
-          Already a member? <Link href="/login" className="text-[var(--brand-500)] font-bold hover:underline">Log In</Link>
-        </p>
-      </div>
-    </div>
+    </AuthCard>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" /></div>}>
+      <SignupForm />
+    </Suspense>
   );
 }

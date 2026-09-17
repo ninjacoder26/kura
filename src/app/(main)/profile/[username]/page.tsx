@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import Header from '@/components/layout/Header';
-import MobileNav from '@/components/layout/MobileNav';
+import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import { EmptyState } from '@/components/ui/Feedback';
@@ -24,6 +23,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
   const { user } = useAuth();
   const isOwnProfile = user && profile && user.id === profile.id;
+  useSyncFeedVotes(posts, user?.id);
 
   useEffect(() => { params.then(p => setUsername(p.username)); }, [params]);
 
@@ -42,6 +42,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             supabase.from('comments').select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20)
           ]);
           if (postsResult.data) setPosts((postsResult.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
+          if (postsResult.data && user) fetchAndCacheVotes(supabase, user.id, (postsResult.data as any[]).map((p: any) => p.id));
           if (commentsResult.data) setComments((commentsResult.data as any[]).map((c: any) => ({ id: c.id, body: c.body, post_id: c.post_id, post_title: c.posts?.title, created_at: c.created_at })));
         }
       } catch (err: any) { setError(err.message || 'Failed to load profile'); } finally { setLoading(false); }
@@ -50,8 +51,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   }, [username]);
 
   if (loading && !profile) return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <Header />
+    <div className="bg-[var(--bg)]">
       <div className="h-32 sm:h-40 bg-[var(--surface)] animate-pulse" />
       <div className="max-w-[900px] mx-auto px-4 -mt-10">
         <div className="flex items-end gap-3 mb-4">
@@ -76,13 +76,12 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       </div>
     </div>
   );
-  if (error || !profile) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title={error || 'User not found'} description="This profile doesn't exist." /></div></div>;
+  if (error || !profile) return <div className="px-4 py-8"><EmptyState title={error || 'User not found'} description="This profile doesn't exist." /></div>;
 
   const profileColor = profile.theme_color || 'var(--brand-600)';
 
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <Header />
+    <div className="bg-[var(--bg)]">
       {/* Banner */}
       <div className="h-24 sm:h-36 relative">
         {profile.cover_url ? (
@@ -267,7 +266,6 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           </div>
         </div>
       </div>
-      <MobileNav />
     </div>
   );
 }

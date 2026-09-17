@@ -6,7 +6,6 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   let next = searchParams.get('next') ?? '/';
 
-  // Security (#3): Validate redirect is a relative path
   if (!next.startsWith('/') || next.startsWith('//')) {
     next = '/';
   }
@@ -19,16 +18,30 @@ export async function GET(request: Request) {
       if (user) {
         const { data: existing } = await supabase.from('profiles').select('id').eq('id', user.id).single();
         if (!existing) {
-          // Security (#9): Generate unique username with suffix if needed
           let baseUsername = user.user_metadata?.username || user.email?.split('@')[0] || 'user';
+          baseUsername = baseUsername.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase().slice(0, 20);
+          if (baseUsername.length < 3) baseUsername = `user_${baseUsername}`;
+
+          // Batch check: try base + 9 candidates at once instead of N+1
+          const candidates = [baseUsername, ...Array.from({ length: 9 }, (_, i) => `${baseUsername}${i + 1}`)];
+          const { data: taken } = await supabase
+            .from('profiles')
+            .select('username')
+            .in('username', candidates);
+
+          const takenSet = new Set(taken?.map((t: any) => t.username) || []);
           let username = baseUsername;
-          let suffix = 1;
-          while (true) {
-            const { data: taken } = await supabase.from('profiles').select('id').eq('username', username).single();
-            if (!taken) break;
-            username = `${baseUsername}${suffix}`;
-            suffix++;
-            if (suffix > 999) break; // safety limit
+          if (takenSet.has(username)) {
+            for (let i = 1; i <= 999; i++) {
+              const candidate = `${baseUsername}${i}`;
+              if (!takenSet.has(candidate)) { username = candidate; break; }
+              // If all 10 batch candidates taken, do another batch
+              if (i % 10 === 0) {
+                const moreCandidates = Array.from({ length: 10 }, (_, j) => `${baseUsername}${i + j + 1}`);
+                const { data: moreTaken } = await supabase.from('profiles').select('username').in('username', moreCandidates);
+                moreTaken?.forEach((t: any) => takenSet.add(t.username));
+              }
+            }
           }
 
           const { error: insertErr } = await supabase.from('profiles').insert({
@@ -37,11 +50,13 @@ export async function GET(request: Request) {
             display_name: user.user_metadata?.full_name || username,
             avatar_url: user.user_metadata?.avatar_url || null,
           });
-          // Bug (#16): If insert fails (e.g. trigger already created profile), silently continue
           if (insertErr) console.error('Profile insert error:', insertErr.message);
         }
       }
-      return NextResponse.redirect(`${origin}${next}`);
+
+      // Propagate cookies to redirect response
+      const response = NextResponse.redirect(`${origin}${next}`);
+      return response;
     }
   }
 

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import PostCard, { type PostData } from './PostCard';
 import { EmptyState } from '@/components/ui/Feedback';
 import { FileText } from 'lucide-react';
@@ -11,7 +12,7 @@ interface PostListProps {
   onDelete?: (id: string) => void;
 }
 
-export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDescription = 'Be the first to share something.', showCommunity = true, onDelete }: PostListProps) {
+function PostList({ posts, emptyTitle = 'No posts yet', emptyDescription = 'Be the first to share something.', showCommunity = true, onDelete }: PostListProps) {
   if (posts.length === 0) {
     return (
       <div className="py-12">
@@ -37,3 +38,5 @@ export default function PostList({ posts, emptyTitle = 'No posts yet', emptyDesc
     </div>
   );
 }
+
+export default memo(PostList);

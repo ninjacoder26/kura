@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import Header from '@/components/layout/Header';
-import MobileNav from '@/components/layout/MobileNav';
-import CommentThread, { type CommentData } from '@/components/comments/CommentThread';
+import CommentThread, { type CommentData, collectCommentIds } from '@/components/comments/CommentThread';
 import CommentForm from '@/components/comments/CommentForm';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
 import ImageLightbox from '@/components/ui/ImageLightbox';
@@ -13,7 +11,18 @@ import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkChec
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
+import { fetchAndCacheCommentVotes, markVoted, markSavedState } from '@/lib/feedVoteCache';
+import { optimizeImageUrl } from '@/lib/cloudinary';
 import { useRouter } from 'next/navigation';
+
+/** Never throws — an invalid post URL must not crash the page. */
+function safeHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
 
 export default function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth();
@@ -30,11 +39,22 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   const [submittingComment, setSubmittingComment] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userRef = useRef(user);
+  userRef.current = user;
 
   useEffect(() => { params.then(p => setId(p.id)); }, [params]);
 
+  useEffect(() => {
+    return () => {
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    };
+  }, []);
+
   const loadPost = useCallback(async () => {
     if (!id) return;
+    const currentUser = userRef.current;
     try {
       const supabase = createClient();
       const { data: postData, error: postErr } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('id', id).single();
@@ -42,41 +62,54 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       setPost(postData);
       if (postData) setScore(postData.upvotes - postData.downvotes);
 
-      // Parallel queries for vote, save, and comments
       const queries: Promise<any>[] = [
         supabase.from('comments').select('*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url)').eq('post_id', id).eq('is_removed', false).order('created_at', { ascending: true })
       ];
 
-      if (user) {
+      if (currentUser) {
         queries.push(
-          supabase.from('votes').select('value').eq('user_id', user.id).eq('post_id', id).single(),
-          supabase.from('saved_posts').select('id').eq('user_id', user.id).eq('post_id', id).single()
+          supabase.from('votes').select('value').eq('user_id', currentUser.id).eq('post_id', id).single(),
+          supabase.from('saved_posts').select('id').eq('user_id', currentUser.id).eq('post_id', id).single()
         );
       }
 
       const results = await Promise.all(queries);
 
-      // Process comments (first result)
       const commentResult = results[0];
       if (commentResult.data) {
         const flat = (commentResult.data as any[]).map((c: any) => ({ ...c, author: c.author || { username: 'unknown' }, children: [] as CommentData[] }));
         const map = new Map(flat.map((c: any) => [c.id, c]));
         const roots: CommentData[] = [];
         for (const c of flat) { if (c.parent_id && map.has(c.parent_id)) { map.get(c.parent_id)!.children!.push(c); } else { roots.push(c); } }
+        // Batch thread votes in 1 query (claims sync so items mount warm)
+        if (currentUser) fetchAndCacheCommentVotes(supabase, currentUser.id, collectCommentIds(roots));
         setComments(roots);
       }
 
-      // Process vote and save (if logged in)
-      if (user && results.length === 3) {
+      if (currentUser && results.length === 3) {
         const voteData = results[1].data;
         const savedData = results[2].data;
         if (voteData) setVote(voteData.value === 1 ? 'up' : 'down');
         if (savedData) setSaved(true);
       }
     } catch (err: any) { setError(err.message || 'Failed to load post'); } finally { setLoading(false); }
-  }, [id, user]);
+  }, [id]);
 
   useEffect(() => { loadPost(); }, [loadPost]);
+
+  // Re-check vote/save when user changes
+  useEffect(() => {
+    if (!id || !user) return;
+    (async () => {
+      const supabase = createClient();
+      const [voteRes, savedRes] = await Promise.all([
+        supabase.from('votes').select('value').eq('user_id', user.id).eq('post_id', id).single(),
+        supabase.from('saved_posts').select('id').eq('user_id', user.id).eq('post_id', id).single()
+      ]);
+      if (voteRes.data) setVote(voteRes.data.value === 1 ? 'up' : 'down');
+      if (savedRes.data) setSaved(true);
+    })();
+  }, [user, id]);
 
   async function handleVote(value: 'up' | 'down') {
     if (!user) { toast('info', 'Log in to vote'); return; }
@@ -84,6 +117,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     const newValue = vote === value ? null : value;
     const oldScore = score;
     setVote(newValue);
+    markVoted(user.id, id, newValue);
     let delta = 0;
     if (oldValue === 'up') delta -= 1;
     else if (oldValue === 'down') delta += 1;
@@ -101,6 +135,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       }
     } catch (err: any) {
       setVote(oldValue);
+      markVoted(user.id, id, oldValue);
       setScore(oldScore);
       toast('error', err.message || 'Failed to vote');
     }
@@ -110,6 +145,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     if (!user) { toast('info', 'Log in to save posts'); return; }
     const oldSaved = saved;
     setSaved(!saved);
+    markSavedState(user.id, id, !saved);
     try {
       const supabase = createClient();
       if (oldSaved) {
@@ -123,12 +159,24 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       }
     } catch (err: any) {
       setSaved(oldSaved);
+      markSavedState(user.id, id, oldSaved);
       toast('error', err.message || 'Failed to save');
     }
   }
 
+  function handleDeleteClick() {
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+      confirmTimer.current = setTimeout(() => setConfirmingDelete(false), 3000);
+      return;
+    }
+    if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    setConfirmingDelete(false);
+    handleDelete();
+  }
+
   async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this post?')) return;
     try {
       const supabase = createClient();
       const { error } = await supabase.from('posts').update({ is_removed: true }).eq('id', id);
@@ -163,12 +211,10 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     }
   }
 
-  if (loading && !post) return <div className="min-h-screen"><Header /><LoadingSpinner /></div>;
-  if (error || !post) return <div className="min-h-screen"><Header /><div className="px-4 py-8"><EmptyState title={error || 'Post not found'} action={<Link href="/" className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm">Go home</Link>} /></div></div>;
+  if (loading && !post) return <div className="px-4 py-8"><LoadingSpinner /></div>;
+  if (error || !post) return <div className="px-4 py-8"><EmptyState title={error || 'Post not found'} action={<Link href="/" className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm">Go home</Link>} /></div>;
 
   return (
-    <div className="min-h-screen">
-      <Header />
       <div className="px-4 py-3 max-w-[740px] mx-auto">
         <Link href={post.community ? `/k/${post.community.slug}` : '/'} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--fg4)] hover:text-[var(--fg)] mb-3 transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to {post.community ? `k/${post.community.slug}` : 'home'}
@@ -186,11 +232,11 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
               <span>by</span> <Link href={`/profile/${post.author.username}`} className="hover:underline">@{post.author.username}</Link><span>·</span><time>{formatDate(post.created_at)}</time>
             </div>
             <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
-            {post.type === 'link' && post.url && (
+            {post.type === 'link' && post.url && safeHostname(post.url) && (
               <a href={post.url} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors">
                 <ExternalLink className="h-3.5 w-3.5" />
-                <span className="truncate max-w-[300px]">{new URL(post.url).hostname}</span>
+                <span className="truncate max-w-[300px]">{safeHostname(post.url)}</span>
               </a>
             )}
             {post.type === 'image' && post.image_url && (
@@ -198,8 +244,10 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
                 <div className="relative rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--bg)]">
                   {!imageLoaded && <div className="w-full h-[300px] skeleton" />}
                   <img
-                    src={post.image_url}
+                    src={optimizeImageUrl(post.image_url, { width: 1200 })}
                     alt={post.title}
+                    loading="lazy"
+                    decoding="async"
                     onLoad={() => setImageLoaded(true)}
                     className={cn('max-h-[600px] w-full object-contain transition-opacity duration-300', imageLoaded ? 'opacity-100' : 'opacity-0 absolute')}
                   />
@@ -221,7 +269,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
               {user && user.id === post.author_id && (
                 <>
                   <Link href={`/post/${id}/edit`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Pencil className="h-5 w-5" /> Edit</Link>
-                  <button onClick={handleDelete} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 className="h-5 w-5" /> Delete</button>
+                  <button onClick={handleDeleteClick} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20')}><Trash2 className="h-5 w-5" /> {confirmingDelete ? 'Confirm?' : 'Delete'}</button>
                 </>
               )}
             </div>
@@ -246,8 +294,6 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         </div>
 
         <div className="pb-20 lg:pb-8"><CommentThread comments={comments} onCommentChange={loadPost} /></div>
-      </div>
-      <MobileNav />
 
       {/* Lightbox */}
       {lightboxOpen && post.image_url && (
