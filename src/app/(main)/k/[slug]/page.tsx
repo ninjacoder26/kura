@@ -3,16 +3,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
+import { invalidateJoinedCommunities } from '@/lib/usePopularCommunities';
 import Link from 'next/link';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
 import { Users, Calendar, Shield, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FEED_SORTS, TOP_RANGES, topRangeCutoff, risingCutoff, type FeedSort, type TopRange } from '@/lib/feedSort';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
-
-type SortType = 'hot' | 'new' | 'top';
 
 export default function CommunityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { user } = useAuth();
@@ -24,7 +24,8 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [isMember, setIsMember] = useState(false);
-  const [sort, setSort] = useState<SortType>('hot');
+  const [sort, setSort] = useState<FeedSort>('hot');
+  const [topRange, setTopRange] = useState<TopRange>('week');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const userRef = useRef(user);
@@ -45,11 +46,16 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       const commQuery = supabase.from('communities').select('*').eq('slug', slug).single();
       let postsQuery = supabase
         .from('posts')
-        .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)')
+        .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)')
         .eq('is_removed', false);
 
       if (sort === 'new') postsQuery = postsQuery.order('created_at', { ascending: false });
-      else if (sort === 'top') postsQuery = postsQuery.order('upvotes', { ascending: false });
+      else if (sort === 'top') {
+        postsQuery = postsQuery.order('upvotes', { ascending: false });
+        const cutoff = topRangeCutoff(topRange);
+        if (cutoff) postsQuery = postsQuery.gte('created_at', cutoff);
+      }
+      else if (sort === 'rising') postsQuery = postsQuery.gte('created_at', risingCutoff()).order('upvotes', { ascending: false });
       else postsQuery = postsQuery.order('upvotes', { ascending: false }).order('downvotes', { ascending: true });
 
       postsQuery = postsQuery.range(pageNum * 20, (pageNum + 1) * 20 - 1);
@@ -77,7 +83,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         }
       }
     } catch (err: any) { setError(err.message || 'Failed to load community'); } finally { setLoading(false); setLoadingMore(false); }
-  }, [slug, sort]);
+  }, [slug, sort, topRange]);
 
   useEffect(() => { load(0); setPage(0); }, [load]);
 
@@ -115,6 +121,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         const { error } = await supabase.from('community_members').insert({ community_id: community.id, user_id: user.id });
         if (error) throw error;
       }
+      invalidateJoinedCommunities(user.id);
     } catch (err: any) {
       // Revert on error
       setIsMember(wasMember);
@@ -167,13 +174,23 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
           </Link>
 
           {/* Sort tabs — Reddit style */}
-          <div className="post-card flex items-center gap-1 px-3 py-2 mb-3">
-            {([['hot', 'Hot'], ['new', 'New'], ['top', 'Top']] as const).map(([key, label]) => (
+          <div className="post-card flex items-center gap-1 px-3 py-2 mb-3 flex-wrap">
+            {FEED_SORTS.map(({ key, label }) => (
               <button key={key} onClick={() => { setSort(key); setPage(0); }}
                 className={cn('text-sm font-bold px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)] transition-colors', sort === key ? 'text-[var(--fg)]' : 'text-[var(--fg4)]')}>
                 {label}
               </button>
             ))}
+            {sort === 'top' && (
+              <span className="flex items-center gap-1 ml-1 pl-2 border-l border-[var(--border)]">
+                {TOP_RANGES.map(r => (
+                  <button key={r.key} onClick={() => { setTopRange(r.key); setPage(0); }}
+                    className={cn('text-[11px] font-bold px-2 py-1 rounded-full transition-colors', topRange === r.key ? 'bg-[var(--brand-500)] text-white' : 'text-[var(--fg4)] hover:bg-[var(--surface-hover)]')}>
+                    {r.label}
+                  </button>
+                ))}
+              </span>
+            )}
             {loading && posts.length > 0 && (
               <div className="ml-auto h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" />
             )}

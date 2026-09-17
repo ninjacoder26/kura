@@ -72,10 +72,11 @@ function SignupForm() {
 
   async function handleGoogle() {
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
     });
+    if (error) toast('error', error.message);
   }
 
   function getUsernameIcon() {

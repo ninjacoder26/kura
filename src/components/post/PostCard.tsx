@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, Trash2, Pencil, ExternalLink, Maximize2 } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, Trash2, Pencil, ExternalLink, Maximize2, MoreHorizontal, Flag } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
 import { optimizeImageUrl } from '@/lib/cloudinary';
+import JoinButton from '@/components/community/JoinButton';
 import {
   getCachedVote,
   getCachedSaved,
@@ -19,6 +20,7 @@ import {
   subscribeFeedVotes,
 } from '@/lib/feedVoteCache';
 import ImageLightbox from '@/components/ui/ImageLightbox';
+import ReportDialog from '@/components/moderation/ReportDialog';
 
 interface PostAuthor {
   username: string;
@@ -27,9 +29,11 @@ interface PostAuthor {
 }
 
 interface PostCommunity {
+  id?: string;
   name: string;
   slug: string;
   color?: string;
+  icon_url?: string | null;
 }
 
 export interface PostData {
@@ -86,6 +90,9 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   // Once the user interacts, incoming cache updates must not clobber state
   // (the interaction itself writes through to the cache anyway).
   const interactedRef = useRef(false);
@@ -96,6 +103,15 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
       if (confirmTimer.current) clearTimeout(confirmTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [menuOpen]);
 
   // Adopt late-arriving batch results (or login) unless the user interacted.
   useEffect(() => {
@@ -246,6 +262,16 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
             {post.is_pinned && <span className="text-[var(--success)] font-semibold">Pinned</span>}
             {showCommunity && post.community && (
               <>
+                {post.community.icon_url ? (
+                  <img src={optimizeImageUrl(post.community.icon_url, { width: 64 })} alt="" loading="lazy" decoding="async" className="h-5 w-5 rounded-full object-cover shrink-0" />
+                ) : (
+                  <span
+                    className="h-5 w-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                    style={{ backgroundColor: post.community.color || 'var(--brand-600)' }}
+                  >
+                    {post.community.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
                 <Link href={`/k/${post.community.slug}`} className="font-semibold text-[var(--fg)] hover:underline">k/{post.community.slug}</Link>
                 <span className="text-[var(--fg4)]">·</span>
               </>
@@ -254,6 +280,11 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
             <Link href={`/profile/${post.author.username}`} className="hover:underline">@{post.author.username}</Link>
             <span className="text-[var(--fg4)]">·</span>
             <time>{formatDate(post.created_at)}</time>
+            {showCommunity && post.community?.id && (
+              <span className="ml-auto pl-2">
+                <JoinButton communityId={post.community.id} communityName={post.community.name} className="!text-[11px] !py-0.5 !px-3 !min-h-0" />
+              </span>
+            )}
           </div>
 
           {/* Title - Larger, bolder */}
@@ -264,7 +295,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
           {/* Link preview */}
           {post.type === 'link' && post.url && sanitizeUrl(post.url) && safeHostname(post.url) && (
             <a href={sanitizeUrl(post.url)!} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors">
+              className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-500)]/10 hover:bg-[var(--brand-500)]/20 transition-colors">
               <ExternalLink className="h-3.5 w-3.5" />
               <span className="truncate max-w-[200px]">{safeHostname(post.url)}</span>
             </a>
@@ -299,7 +330,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
 
           {/* Body preview */}
           {post.body && (
-            <div className="mt-2 text-[13px] text-[var(--fg3)] line-clamp-3 leading-relaxed">
+            <div className="mt-2 text-[13px] text-[var(--fg3)] line-clamp-3 leading-relaxed break-words">
               {post.body}
             </div>
           )}
@@ -316,6 +347,21 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
             <button onClick={handleSave} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-[var(--surface-hover)] transition-colors', saved ? 'text-[var(--brand-500)]' : 'text-[var(--fg4)]')}>
               {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />} {saved ? 'Saved' : 'Save'}
             </button>
+            <div ref={menuRef} className="relative">
+              <button onClick={() => setMenuOpen(o => !o)} aria-label="More actions" className="flex items-center px-2 py-1.5 rounded-full text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                <MoreHorizontal className="h-5 w-5" />
+              </button>
+              {menuOpen && (
+                <div className="absolute left-0 bottom-full mb-1 w-40 rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] py-1 z-30 anim-scale-in">
+                  <button
+                    onClick={() => { setMenuOpen(false); setReportOpen(true); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"
+                  >
+                    <Flag className="h-4 w-4" /> Report
+                  </button>
+                </div>
+              )}
+            </div>
             {user && user.id === post.author_id && (
               <>
                 <Link href={`/post/${post.id}/edit`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
@@ -337,6 +383,11 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
           alt={post.title}
           onClose={() => setLightboxOpen(false)}
         />
+      )}
+
+      {/* Report */}
+      {reportOpen && (
+        <ReportDialog targetType="post" targetId={post.id} onClose={() => setReportOpen(false)} />
       )}
     </>
   );

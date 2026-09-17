@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
+import { invalidateJoinedCommunities } from '@/lib/usePopularCommunities';
 import { cn } from '@/lib/utils';
 
 // Session-level membership cache so join buttons render their correct
@@ -80,6 +81,7 @@ export default function JoinButton({ communityId, communityName, className }: Jo
         const { error } = await supabase.from('community_members').insert({ community_id: communityId, user_id: user.id });
         if (error) throw error;
       }
+      invalidateJoinedCommunities(user.id);
     } catch (err: any) {
       setCached(communityId, wasMember);
       toast('error', err.message || 'Failed');

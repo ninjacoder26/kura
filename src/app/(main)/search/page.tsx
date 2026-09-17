@@ -94,7 +94,7 @@ export default function SearchPage() {
     try {
       const supabase = createClient();
       const [postRes, commRes, peopleRes] = await Promise.all([
-        supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('is_removed', false).ilike('title', `%${escaped}%`).order('created_at', { ascending: false }).limit(10),
+        supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('is_removed', false).ilike('title', `%${escaped}%`).order('created_at', { ascending: false }).limit(10),
         supabase.from('communities').select('*').or(`name.ilike.%${escaped}%,slug.ilike.%${escaped}%`).order('member_count', { ascending: false }).limit(10),
         supabase.from('profiles').select('username, display_name, avatar_url, bio').or(`username.ilike.%${escaped}%,display_name.ilike.%${escaped}%`).limit(10),
       ]);
@@ -129,7 +129,7 @@ export default function SearchPage() {
   const showResults = query.length >= 2;
 
   return (
-    <div className="flex px-4 py-3 gap-5">
+    <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
       <aside className="hidden lg:block w-[228px] shrink-0">
         <div className="sticky top-12"><Sidebar /></div>
       </aside>
@@ -199,7 +199,7 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
         const supabase = createClient();
         const { data } = await supabase
           .from('posts')
-          .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)')
+          .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)')
           .eq('is_removed', false)
           .order('upvotes', { ascending: false })
           .limit(6);

@@ -7,7 +7,7 @@ import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import { EmptyState } from '@/components/ui/Feedback';
 import { cn, formatDate } from '@/lib/utils';
-import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare, Ban, Twitter, Instagram, Github, Settings } from 'lucide-react';
+import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare, Ban, Twitter, Instagram, Github, Settings, Bookmark, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
 
@@ -20,12 +20,66 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [comments, setComments] = useState<UserComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'saved' | 'upvoted'>('posts');
+  const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
+  const [upvotedPosts, setUpvotedPosts] = useState<PostData[]>([]);
+  const [loadingExtras, setLoadingExtras] = useState(false);
   const { user } = useAuth();
   const isOwnProfile = user && profile && user.id === profile.id;
   useSyncFeedVotes(posts, user?.id);
+  useSyncFeedVotes(savedPosts, user?.id);
+  useSyncFeedVotes(upvotedPosts, user?.id);
 
   useEffect(() => { params.then(p => setUsername(p.username)); }, [params]);
+
+  // Own-profile extras: saved + upvoted posts (Reddit-style profile tabs)
+  useEffect(() => {
+    if (!profile || !user || user.id !== profile.id) return;
+    if (activeTab !== 'saved' && activeTab !== 'upvoted') return;
+    if ((activeTab === 'saved' && savedPosts.length > 0) || (activeTab === 'upvoted' && upvotedPosts.length > 0)) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingExtras(true);
+      try {
+        const supabase = createClient();
+        if (activeTab === 'saved') {
+          const { data } = await supabase
+            .from('saved_posts')
+            .select('post:posts(*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url))')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false })
+            .limit(20);
+          if (!cancelled && data) {
+            const mapped = (data as any[]).map(r => r.post).filter(Boolean)
+              .map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined }));
+            if (user) fetchAndCacheVotes(supabase, user.id, mapped.map((p: any) => p.id));
+            setSavedPosts(mapped);
+          }
+        } else {
+          const { data } = await supabase
+            .from('votes')
+            .select('post:posts(*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url))')
+            .eq('user_id', profile.id)
+            .eq('value', 1)
+            .not('post_id', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(20);
+          if (!cancelled && data) {
+            const mapped = (data as any[]).map(r => r.post).filter(Boolean)
+              .map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined }));
+            if (user) fetchAndCacheVotes(supabase, user.id, mapped.map((p: any) => p.id));
+            setUpvotedPosts(mapped);
+          }
+        }
+      } catch {
+        // Tabs show their empty states on failure
+      } finally {
+        if (!cancelled) setLoadingExtras(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, profile?.id, user?.id]);
 
   useEffect(() => {
     if (!username) return;
@@ -38,7 +92,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         if (prof) {
           // Parallel queries for posts and comments
           const [postsResult, commentsResult] = await Promise.all([
-            supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20),
+            supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20),
             supabase.from('comments').select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20)
           ]);
           if (postsResult.data) setPosts((postsResult.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
@@ -138,7 +192,16 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       <div className="max-w-[900px] mx-auto px-4 py-4">
         {/* Tabs */}
         <div className="flex items-center gap-0 border-b border-[var(--border)] mb-3">
-          {[{ key: 'posts' as const, label: 'Posts', icon: ArrowBigUp }, { key: 'comments' as const, label: 'Comments', icon: MessageSquare }].map(tab => (
+          {[
+            { key: 'posts' as const, label: 'Posts', icon: ArrowBigUp },
+            { key: 'comments' as const, label: 'Comments', icon: MessageSquare },
+            ...(isOwnProfile
+              ? [
+                  { key: 'saved' as const, label: 'Saved', icon: Bookmark },
+                  { key: 'upvoted' as const, label: 'Upvoted', icon: ThumbsUp },
+                ]
+              : []),
+          ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={cn('flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold border-b-2 transition-colors', activeTab === tab.key ? 'border-[var(--brand-500)] text-[var(--brand-500)]' : 'border-transparent text-[var(--fg4)] hover:text-[var(--fg3)]')}>
               <tab.icon className="h-4 w-4" /> {tab.label}
@@ -157,10 +220,20 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                 <div className="space-y-2">{comments.map(c => (
                   <div key={c.id} className="post-card p-3 anim-fade-up">
                     {c.post_title && <Link href={`/post/${c.post_id}`} className="text-xs text-[var(--fg4)] hover:text-[var(--brand-500)] transition-colors font-bold">{c.post_title}</Link>}
-                    <p className="text-sm text-[var(--fg2)] mt-1 leading-relaxed">{c.body}</p>
+                    <p className="text-sm text-[var(--fg2)] mt-1 leading-relaxed break-words">{c.body}</p>
                     <p className="text-xs text-[var(--fg4)] mt-1.5">{formatDate(c.created_at)}</p>
                   </div>
                 ))}</div>
+              ))}
+              {activeTab === 'saved' && (loadingExtras && savedPosts.length === 0 ? (
+                <div className="space-y-2">{[1, 2].map(i => <div key={i} className="post-card p-4"><div className="h-4 w-2/3 rounded skeleton mb-2" /><div className="h-3 w-full rounded skeleton" /></div>)}</div>
+              ) : (
+                <PostList posts={savedPosts} emptyTitle="No saved posts" emptyDescription="Tap Save on any post to find it here later." />
+              ))}
+              {activeTab === 'upvoted' && (loadingExtras && upvotedPosts.length === 0 ? (
+                <div className="space-y-2">{[1, 2].map(i => <div key={i} className="post-card p-4"><div className="h-4 w-2/3 rounded skeleton mb-2" /><div className="h-3 w-full rounded skeleton" /></div>)}</div>
+              ) : (
+                <PostList posts={upvotedPosts} emptyTitle="No upvoted posts" emptyDescription="Posts you upvote will show up here." />
               ))}
             </div>
           </main>

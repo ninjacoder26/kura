@@ -11,8 +11,8 @@ import { Sparkles, Plus, Users, TrendingUp, Shield, MessageCircle, ChevronRight 
 import { cn, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { usePopularCommunities } from '@/lib/usePopularCommunities';
-
-type SortType = 'new' | 'top' | 'hot';
+import { FEED_SORTS, TOP_RANGES, topRangeCutoff, risingCutoff, type FeedSort, type TopRange } from '@/lib/feedSort';
+import Avatar from '@/components/ui/Avatar';
 
 function FeedSkeleton() {
   return (
@@ -145,7 +145,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
-  const [sort, setSort] = useState<SortType>('hot');
+  const [sort, setSort] = useState<FeedSort>('hot');
+  const [topRange, setTopRange] = useState<TopRange>('week');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [retryKey, setRetryKey] = useState(0);
@@ -153,7 +154,7 @@ export default function HomePage() {
   userRef.current = user;
   useSyncFeedVotes(posts, user?.id);
 
-  useEffect(() => { setPage(0); setHasMore(true); }, [sort]);
+  useEffect(() => { setPage(0); setHasMore(true); }, [sort, topRange]);
 
   useEffect(() => {
     async function load() {
@@ -161,10 +162,17 @@ export default function HomePage() {
       else setLoadingMore(true);
       try {
         const supabase = createClient();
-        let query = supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('is_removed', false);
+        let query = supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('is_removed', false);
 
         if (sort === 'new') query = query.order('created_at', { ascending: false });
-        else if (sort === 'top') query = query.order('upvotes', { ascending: false });
+        else if (sort === 'top') {
+          query = query.order('upvotes', { ascending: false });
+          const cutoff = topRangeCutoff(topRange);
+          if (cutoff) query = query.gte('created_at', cutoff);
+        }
+        else if (sort === 'rising') {
+          query = query.gte('created_at', risingCutoff()).order('upvotes', { ascending: false });
+        }
         else query = query.order('upvotes', { ascending: false }).order('downvotes', { ascending: true });
 
         query = query.range(page * 20, (page + 1) * 20 - 1);
@@ -185,7 +193,7 @@ export default function HomePage() {
       } catch (err: any) { setError(err.message || 'Failed to load feed'); } finally { setLoading(false); setLoadingMore(false); }
     }
     load();
-  }, [sort, page, retryKey]);
+  }, [sort, topRange, page, retryKey]);
 
   function handlePostDelete(id: string) {
     setPosts(prev => prev.filter(p => p.id !== id));
@@ -199,7 +207,7 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="flex px-4 py-3 gap-5 max-w-[1400px] mx-auto w-full">
+      <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
         <aside className="hidden lg:block w-[228px] shrink-0">
           <div className="sticky top-12">
             <Sidebar />
@@ -210,14 +218,36 @@ export default function HomePage() {
           {/* Hero for logged-out users — gated on auth resolving to avoid flashing it at logged-in users */}
           {!authLoading && !user && <HeroBanner />}
 
+          {/* Composer — Reddit-style quick create box */}
+          {!authLoading && user && (
+            <Link href="/submit" className="block mb-3">
+              <div className="post-card flex items-center gap-3 p-2.5 hover:border-[var(--border-strong)] transition-colors">
+                <Avatar src={user.avatar_url} name={user.display_name || user.username || 'you'} size="md" />
+                <span className="flex-1 h-10 flex items-center px-4 rounded-full bg-[var(--surface-hover)] border border-[var(--border)] text-sm text-[var(--fg4)] hover:border-[var(--brand-400)] transition-colors">
+                  Create a post...
+                </span>
+              </div>
+            </Link>
+          )}
+
           {/* Sort tabs */}
-          <div className="post-card flex items-center gap-1 px-3 py-2 mb-3">
-            {([['hot', 'Hot'], ['new', 'New'], ['top', 'Top']] as const).map(([key, label]) => (
+          <div className="post-card flex items-center gap-1 px-3 py-2 mb-3 flex-wrap">
+            {FEED_SORTS.map(({ key, label }) => (
               <button key={key} onClick={() => setSort(key)}
                 className={cn('text-sm font-bold px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)] transition-colors', sort === key ? 'text-[var(--fg)]' : 'text-[var(--fg4)]')}>
                 {label}
               </button>
             ))}
+            {sort === 'top' && (
+              <span className="flex items-center gap-1 ml-1 pl-2 border-l border-[var(--border)]">
+                {TOP_RANGES.map(r => (
+                  <button key={r.key} onClick={() => setTopRange(r.key)}
+                    className={cn('text-[11px] font-bold px-2 py-1 rounded-full transition-colors', topRange === r.key ? 'bg-[var(--brand-500)] text-white' : 'text-[var(--fg4)] hover:bg-[var(--surface-hover)]')}>
+                    {r.label}
+                  </button>
+                ))}
+              </span>
+            )}
             {loading && posts.length > 0 && (
               <div className="ml-auto h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand-500)] border-t-transparent" />
             )}

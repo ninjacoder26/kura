@@ -10,6 +10,7 @@ interface AuthUser {
   username?: string;
   display_name?: string;
   avatar_url?: string;
+  reputation?: number;
 }
 
 interface AuthContextType {
@@ -29,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = createClient();
     const { data } = await supabase
       .from('profiles')
-      .select('username, display_name, avatar_url')
+      .select('username, display_name, avatar_url, reputation')
       .eq('id', authUser.id)
       .single();
 
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username: data?.username || authUser.email?.split('@')[0] || 'user',
       display_name: data?.display_name,
       avatar_url: data?.avatar_url,
+      reputation: data?.reputation ?? 0,
     });
   }, []);
 

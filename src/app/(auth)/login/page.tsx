@@ -31,7 +31,7 @@ function LoginForm() {
     setLoading(true); setError('');
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
       setError(authError.message);
@@ -39,28 +39,36 @@ function LoginForm() {
       return;
     }
 
-    // Wait for auth state to propagate before navigating
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(resolve, 100);
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
-        if (event === 'SIGNED_IN') {
-          clearTimeout(timeout);
-          subscription.unsubscribe();
-          resolve();
-        }
-      });
-    });
+    // signInWithPassword resolves WITH the session — no need to wait for a
+    // state event that may already have fired (previous race fix was fragile).
+    if (!data.session) {
+      setError('Could not start a session. Please try again.');
+      setLoading(false);
+      return;
+    }
 
     toast('success', 'Logged in successfully');
     router.push(redirectTo);
+    router.refresh();
   }
+
+  async function handleResendConfirmation() {
+    if (!email) return;
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (error) toast('error', error.message);
+    else toast('success', 'Confirmation email sent — check your inbox');
+  }
+
+  const showResend = error.toLowerCase().includes('confirm') && email.length > 0;
 
   async function handleGoogle() {
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
     });
+    if (error) toast('error', error.message);
   }
 
   return (
@@ -81,7 +89,16 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          {error && <div className="p-3 rounded text-xs text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">{error}</div>}
+          {error && (
+            <div className="p-3 rounded text-xs text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <p>{error}</p>
+              {showResend && (
+                <button type="button" onClick={handleResendConfirmation} className="mt-1.5 font-bold text-[var(--brand-500)] hover:underline">
+                  Resend confirmation email
+                </button>
+              )}
+            </div>
+          )}
           <div>
             <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required autoComplete="email"

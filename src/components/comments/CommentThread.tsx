@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowBigUp, ArrowBigDown, Reply, Trash2 } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, Reply, Trash2, Flag, ChevronDown } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import Avatar from '@/components/ui/Avatar';
+import ReportDialog from '@/components/moderation/ReportDialog';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -52,6 +53,8 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
   const [submittingReply, setSubmittingReply] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const interactedRef = useRef(false);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -158,6 +161,16 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
         depth: comment.depth + 1,
       });
       if (error) throw error;
+      // Notify the parent comment author (best effort, never blocks)
+      if (comment.author_id && comment.author_id !== user.id) {
+        supabase.from('notifications').insert({
+          user_id: comment.author_id,
+          type: 'reply',
+          title: `${user.username} replied to your comment`,
+          body: replyBody.trim().slice(0, 140),
+          link: `/post/${comment.post_id}`,
+        }).then(() => {});
+      }
       toast('success', 'Reply added');
       setShowReply(false);
       setReplyBody('');
@@ -202,17 +215,32 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
   return (
     <div className={cn('py-2', comment.depth > 0 && 'ml-4 border-l-2 border-[var(--border)] pl-3')}>
       <div className="flex items-center gap-1.5 mb-1">
+        <button
+          onClick={() => setCollapsed(c => !c)}
+          aria-label={collapsed ? 'Expand comment' : 'Collapse comment'}
+          title={collapsed ? 'Expand' : 'Collapse thread'}
+          className="h-5 w-5 -ml-1 flex items-center justify-center rounded text-[var(--fg4)] hover:bg-[var(--surface-hover)] hover:text-[var(--fg)] transition-colors shrink-0"
+        >
+          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', collapsed && '-rotate-90')} />
+        </button>
         <Avatar name={comment.author.display_name || comment.author.username} src={comment.author.avatar_url} size="xs" />
         <Link href={`/profile/${comment.author.username}`} className="text-xs font-bold text-[var(--fg)] hover:underline">
           @{comment.author.username}
         </Link>
         <span className="text-[var(--fg4)]">·</span>
         <time className="text-[11px] text-[var(--fg4)]">{formatDate(comment.created_at)}</time>
+        {collapsed && comment.children && comment.children.length > 0 && (
+          <span className="text-[11px] text-[var(--brand-500)] font-bold">
+            {comment.children.length} {comment.children.length === 1 ? 'reply' : 'replies'}
+          </span>
+        )}
       </div>
 
-      <p className="text-sm text-[var(--fg2)] leading-relaxed ml-7">{comment.body}</p>
+      {!collapsed && (
+        <>
+          <p className="text-sm text-[var(--fg2)] leading-relaxed ml-7 break-words">{comment.body}</p>
 
-      <div className="flex items-center gap-0.5 ml-6 mt-1">
+          <div className="flex items-center gap-0.5 ml-6 mt-1">
         <button onClick={() => handleVote('up')} className={cn('vote-btn !h-6 !w-6', vote === 'up' && 'upvoted')} aria-label="Upvote comment">
           <ArrowBigUp className="h-4 w-4" fill={vote === 'up' ? 'currentColor' : 'none'} />
         </button>
@@ -228,6 +256,11 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
         {user && user.id === comment.author_id && (
           <button onClick={handleDeleteClick} disabled={deleting} className={cn('flex items-center gap-1 px-2 py-1 text-[11px] font-bold rounded transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20')}>
             <Trash2 className="h-3.5 w-3.5" /> {confirmingDelete ? (deleting ? '…' : 'Confirm?') : 'Delete'}
+          </button>
+        )}
+        {user && (
+          <button onClick={() => setReportOpen(true)} title="Report comment" aria-label="Report comment" className="flex items-center px-1.5 py-1 text-[var(--fg4)] hover:bg-[var(--surface-hover)] rounded transition-colors">
+            <Flag className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
@@ -254,6 +287,12 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
         <div>
           {comment.children.map(child => <CommentItem key={child.id} comment={child} onReplyAdded={onReplyAdded} />)}
         </div>
+      )}
+        </>
+      )}
+
+      {reportOpen && (
+        <ReportDialog targetType="comment" targetId={comment.id} onClose={() => setReportOpen(false)} />
       )}
     </div>
   );

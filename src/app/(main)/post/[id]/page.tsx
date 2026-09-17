@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import CommentThread, { type CommentData, collectCommentIds } from '@/components/comments/CommentThread';
+import ReportDialog from '@/components/moderation/ReportDialog';
 import CommentForm from '@/components/comments/CommentForm';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
 import ImageLightbox from '@/components/ui/ImageLightbox';
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, ArrowLeft, Trash2, Pencil, ExternalLink, Maximize2 } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, ArrowLeft, Trash2, Pencil, ExternalLink, Maximize2, Flag } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -40,6 +41,9 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [commentSort, setCommentSort] = useState<'best' | 'top' | 'new' | 'old'>('best');
+  const [communityInfo, setCommunityInfo] = useState<any>(null);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userRef = useRef(user);
   userRef.current = user;
@@ -57,10 +61,16 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     const currentUser = userRef.current;
     try {
       const supabase = createClient();
-      const { data: postData, error: postErr } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(name,slug,color)').eq('id', id).single();
+      const { data: postData, error: postErr } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('id', id).single();
       if (postErr) throw postErr;
       setPost(postData);
       if (postData) setScore(postData.upvotes - postData.downvotes);
+
+      // Community rail card (best effort)
+      if (postData?.community_id) {
+        supabase.from('communities').select('id, name, slug, description, color, icon_url, member_count, post_count, created_at').eq('id', postData.community_id).single()
+          .then(({ data }: any) => { if (data) setCommunityInfo(data); });
+      }
 
       const queries: Promise<any>[] = [
         supabase.from('comments').select('*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url)').eq('post_id', id).eq('is_removed', false).order('created_at', { ascending: true })
@@ -193,6 +203,16 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       const supabase = createClient();
       const { error } = await supabase.from('comments').insert({ body, author_id: user.id, post_id: id });
       if (error) throw error;
+      // Notify the post author (best effort, never blocks)
+      if (post?.author_id && post.author_id !== user.id) {
+        supabase.from('notifications').insert({
+          user_id: post.author_id,
+          type: 'comment',
+          title: `${user.username} commented on your post`,
+          body: body.slice(0, 140),
+          link: `/post/${id}`,
+        }).then(() => {});
+      }
       toast('success', 'Comment added');
       await loadPost();
     } catch (err: any) { toast('error', err.message || 'Failed to add comment'); } finally { setSubmittingComment(false); }
@@ -211,11 +231,26 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     }
   }
 
+  const sortedComments = useMemo(() => {
+    const arr = [...comments];
+    if (commentSort === 'top') arr.sort((a, b) => b.upvotes - a.upvotes);
+    else if (commentSort === 'new') arr.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+    else if (commentSort === 'old') arr.sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
+    else arr.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
+    return arr;
+  }, [comments, commentSort]);
+
+  const upvotePct =
+    post && post.upvotes + post.downvotes > 0
+      ? Math.round((post.upvotes / (post.upvotes + post.downvotes)) * 100)
+      : 100;
+
   if (loading && !post) return <div className="px-4 py-8"><LoadingSpinner /></div>;
   if (error || !post) return <div className="px-4 py-8"><EmptyState title={error || 'Post not found'} action={<Link href="/" className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm">Go home</Link>} /></div>;
 
   return (
-      <div className="px-4 py-3 max-w-[740px] mx-auto">
+      <div className="px-3 sm:px-4 py-3 w-full xl:max-w-[1240px] mx-auto flex gap-5 justify-center">
+      <main className="flex-1 min-w-0 max-w-[740px]">
         <Link href={post.community ? `/k/${post.community.slug}` : '/'} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--fg4)] hover:text-[var(--fg)] mb-3 transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to {post.community ? `k/${post.community.slug}` : 'home'}
         </Link>
@@ -234,7 +269,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
             <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
             {post.type === 'link' && post.url && safeHostname(post.url) && (
               <a href={post.url} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors">
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-500)]/10 hover:bg-[var(--brand-500)]/20 transition-colors">
                 <ExternalLink className="h-3.5 w-3.5" />
                 <span className="truncate max-w-[300px]">{safeHostname(post.url)}</span>
               </a>
@@ -259,12 +294,15 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
                 </div>
               </div>
             )}
-            {post.body && <div className="mt-3 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap">{post.body}</div>}
+            {post.body && <div className="mt-3 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap break-words">{post.body}</div>}
             <div className="flex items-center gap-1 mt-3 -ml-1 flex-wrap">
               <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[var(--fg4)]"><MessageSquare className="h-5 w-5" /> {formatNumber(post.comment_count)} Comments</span>
               <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Share2 className="h-5 w-5" /> Share</button>
               <button onClick={handleSave} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-[var(--surface-hover)] transition-colors', saved ? 'text-[var(--brand-500)]' : 'text-[var(--fg4)]')}>
                 {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />} {saved ? 'Saved' : 'Save'}
+              </button>
+              <button onClick={() => setReportOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                <Flag className="h-5 w-5" /> Report
               </button>
               {user && user.id === post.author_id && (
                 <>
@@ -293,7 +331,73 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           )}
         </div>
 
-        <div className="pb-20 lg:pb-8"><CommentThread comments={comments} onCommentChange={loadPost} /></div>
+        {/* Comment sort — Reddit style */}
+        <div className="flex items-center gap-1 mt-4 mb-1">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-[var(--fg4)] mr-1">Sort by:</span>
+          {([['best', 'Best'], ['top', 'Top'], ['new', 'New'], ['old', 'Old']] as const).map(([key, label]) => (
+            <button key={key} onClick={() => setCommentSort(key)}
+              className={cn('text-xs font-bold px-2.5 py-1 rounded-full transition-colors', commentSort === key ? 'bg-[var(--surface-hover)] text-[var(--fg)]' : 'text-[var(--fg4)] hover:bg-[var(--surface-hover)]')}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="pb-20 lg:pb-8"><CommentThread comments={sortedComments} onCommentChange={loadPost} /></div>
+      </main>
+
+      {/* Community rail — Reddit style */}
+      <aside className="hidden xl:block w-[312px] shrink-0">
+        <div className="sticky top-12 space-y-4">
+          {communityInfo ? (
+            <div className="sidebar-widget overflow-hidden">
+              <div className="h-12" style={{ backgroundColor: communityInfo.color || 'var(--brand-600)' }} />
+              <div className="p-3">
+                <div className="flex items-center gap-2 -mt-7 mb-2">
+                  <div
+                    className="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold border-[3px] border-[var(--surface)] shrink-0 overflow-hidden"
+                    style={{ backgroundColor: communityInfo.color || 'var(--brand-600)' }}
+                  >
+                    {communityInfo.icon_url ? (
+                      <img src={optimizeImageUrl(communityInfo.icon_url, { width: 128 })} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                    ) : (
+                      communityInfo.name.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <Link href={`/k/${communityInfo.slug}`} className="font-bold text-sm text-[var(--fg)] hover:underline truncate">
+                    k/{communityInfo.slug}
+                  </Link>
+                </div>
+                {communityInfo.description && (
+                  <p className="text-xs text-[var(--fg3)] leading-relaxed line-clamp-3 break-words">{communityInfo.description}</p>
+                )}
+                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[var(--border)] text-sm">
+                  <div><p className="font-bold text-[var(--fg)]">{(communityInfo.member_count ?? 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Members</p></div>
+                  <div><p className="font-bold text-[var(--fg)]">{(communityInfo.post_count ?? 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
+                  <div><p className="font-bold text-[var(--accent-500)]">{upvotePct}%</p><p className="text-[11px] text-[var(--fg4)]">Upvoted</p></div>
+                </div>
+                <div className="text-[11px] text-[var(--fg4)] mt-2">
+                  Created {new Date(communityInfo.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+                <Link href={`/submit?community=${communityInfo.slug}`} className="block mt-3">
+                  <button className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2">Create Post</button>
+                </Link>
+              </div>
+            </div>
+          ) : post.community ? (
+            <div className="sidebar-widget p-4">
+              <Link href={`/k/${post.community.slug}`} className="font-bold text-sm text-[var(--fg)] hover:underline">
+                k/{post.community.slug}
+              </Link>
+              <p className="text-xs text-[var(--fg4)] mt-1">View community</p>
+            </div>
+          ) : null}
+        </div>
+      </aside>
+
+      {/* Report */}
+      {reportOpen && (
+        <ReportDialog targetType="post" targetId={id} onClose={() => setReportOpen(false)} />
+      )}
 
       {/* Lightbox */}
       {lightboxOpen && post.image_url && (
