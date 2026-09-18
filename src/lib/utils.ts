@@ -7,6 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDate(date: string | Date) {
   const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
   const now = new Date();
   const diff = now.getTime() - d.getTime();
   const sec = Math.floor(diff / 1000);
@@ -21,7 +22,8 @@ export function formatDate(date: string | Date) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function formatNumber(n: number): string {
+export function formatNumber(n: number | null | undefined): string {
+  if (n === null || n === undefined || isNaN(n)) return '0';
   const abs = Math.abs(n);
   const sign = n < 0 ? '-' : '';
   if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}m`;

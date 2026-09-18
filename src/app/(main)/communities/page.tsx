@@ -59,7 +59,7 @@ export default function CommunitiesPage() {
   });
 
   return (
-      <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
+      <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full max-w-[1460px] mx-auto">
         <aside className="hidden lg:block w-[272px] shrink-0">
           <div className="sticky top-12"><Sidebar /></div>
         </aside>

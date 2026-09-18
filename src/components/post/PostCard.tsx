@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, Trash2, Pencil, ExternalLink, Maximize2, MoreHorizontal, Flag } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, Trash2, Pencil, ExternalLink, Maximize2, MoreHorizontal, Flag, ImageOff } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -97,6 +97,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageBroken, setImageBroken] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -320,7 +321,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
             <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link>
             <RoleBadge role={post.author.role} />
             <span className="text-[var(--fg4)]">·</span>
-            <time>{formatDate(post.created_at)}</time>
+            <time dateTime={post.created_at}>{formatDate(post.created_at)}</time>
             {showCommunity && post.community?.id && (
               <span className="ml-auto pl-2">
                 <JoinButton communityId={post.community.id} communityName={post.community.name} className="!text-xs !py-1 !px-3.5 !min-h-[28px]" />
@@ -330,7 +331,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
 
           {/* Title */}
           <Link href={`/post/${post.id}`} className="block group/title mt-1.5">
-            <h3 className="text-[18px] font-semibold text-[var(--fg)] group-hover/title:underline leading-snug">{post.title}</h3>
+            <h3 className="text-[18px] font-semibold text-[var(--fg)] group-hover/title:underline leading-snug break-words">{post.title}</h3>
           </Link>
 
           {/* Link preview */}
@@ -344,6 +345,12 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
 
           {/* Image preview - Reddit card style */}
           {post.type === 'image' && post.image_url && (
+            imageBroken ? (
+              <div className="mt-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] py-10 flex flex-col items-center justify-center gap-2 text-[var(--fg4)]">
+                <ImageOff className="h-6 w-6" />
+                <span className="text-xs font-semibold">Image unavailable</span>
+              </div>
+            ) : (
             <div className="mt-2 relative group cursor-pointer" onClick={() => setLightboxOpen(true)}>
               <div className="relative rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--bg)]">
                 {!imageLoaded && (
@@ -355,6 +362,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
                   loading="lazy"
                   decoding="async"
                   onLoad={handleImageLoad}
+                  onError={() => setImageBroken(true)}
                   className={cn(
                     'max-h-[512px] w-full object-contain transition-opacity duration-300',
                     imageLoaded ? 'opacity-100' : 'opacity-0 absolute'
@@ -367,6 +375,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
                 </div>
               </div>
             </div>
+            )
           )}
 
           {/* Body preview */}
@@ -409,7 +418,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
                 <MoreHorizontal className="h-5 w-5" />
               </button>
               {menuOpen && (
-                <div className="absolute left-0 bottom-full mb-1 w-40 rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] py-1 z-30 anim-scale-in">
+                <div className="absolute left-0 top-full mt-1 w-40 rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-lg)] py-1 z-30 anim-scale-in">
                   <button
                     onClick={() => { setMenuOpen(false); setReportOpen(true); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors"

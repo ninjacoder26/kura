@@ -9,7 +9,7 @@ import ReportDialog from '@/components/moderation/ReportDialog';
 import CommentForm from '@/components/comments/CommentForm';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
 import ImageLightbox from '@/components/ui/ImageLightbox';
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, ArrowLeft, Trash2, Pencil, ExternalLink, Maximize2, Flag } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, ArrowLeft, Trash2, Pencil, ExternalLink, Maximize2, Flag, ImageOff, BellPlus, BellRing } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -42,13 +42,16 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   const [submittingComment, setSubmittingComment] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageBroken, setImageBroken] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [following, setFollowing] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [commentSort, setCommentSort] = useState<'best' | 'top' | 'new' | 'old'>('best');
   const [communityInfo, setCommunityInfo] = useState<any>(null);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userRef = useRef(user);
   userRef.current = user;
+  const reqRef = useRef(0);
 
   useEffect(() => { params.then(p => setId(p.id)); }, [params]);
 
@@ -60,6 +63,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
 
   const loadPost = useCallback(async () => {
     if (!id) return;
+    const myReq = ++reqRef.current;
     const currentUser = userRef.current;
     try {
       const supabase = createClient();
@@ -82,11 +86,15 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       if (currentUser) {
         queries.push(
           supabase.from('votes').select('value').eq('user_id', currentUser.id).eq('post_id', id).single(),
-          supabase.from('saved_posts').select('id').eq('user_id', currentUser.id).eq('post_id', id).single()
+          supabase.from('saved_posts').select('id').eq('user_id', currentUser.id).eq('post_id', id).single(),
+          supabase.from('post_follows').select('id').eq('user_id', currentUser.id).eq('post_id', id).single()
         );
       }
 
       const results = await Promise.all(queries);
+
+      // Stale (navigated to another post mid-flight) — drop it
+      if (reqRef.current !== myReq) return;
 
       const commentResult = results[0];
       if (commentResult.data) {
@@ -99,33 +107,38 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         setComments(roots);
       }
 
-      if (currentUser && results.length === 3) {
+      if (currentUser && results.length === 4) {
         const voteData = results[1].data;
         const savedData = results[2].data;
+        const followData = results[3].data;
         if (voteData) setVote(voteData.value === 1 ? 'up' : 'down');
         if (savedData) setSaved(true);
+        setFollowing(!!followData);
       }
-    } catch (err: any) { setError(err.message || 'Failed to load post'); } finally { setLoading(false); }
+    } catch (err: any) { if (reqRef.current === myReq) setError(err.message || 'Failed to load post'); } finally { if (reqRef.current === myReq) setLoading(false); }
   }, [id]);
 
   useEffect(() => { loadPost(); }, [loadPost]);
 
-  // Re-check vote/save when user changes (and clear on logout)
+  // Re-check vote/save/follow when user changes (and clear on logout)
   useEffect(() => {
     if (!id) return;
     if (!user) {
       setVote(null);
       setSaved(false);
+      setFollowing(false);
       return;
     }
     (async () => {
       const supabase = createClient();
-      const [voteRes, savedRes] = await Promise.all([
+      const [voteRes, savedRes, followRes] = await Promise.all([
         supabase.from('votes').select('value').eq('user_id', user.id).eq('post_id', id).single(),
-        supabase.from('saved_posts').select('id').eq('user_id', user.id).eq('post_id', id).single()
+        supabase.from('saved_posts').select('id').eq('user_id', user.id).eq('post_id', id).single(),
+        supabase.from('post_follows').select('id').eq('user_id', user.id).eq('post_id', id).single()
       ]);
       if (voteRes.data) setVote(voteRes.data.value === 1 ? 'up' : 'down');
       if (savedRes.data) setSaved(true);
+      setFollowing(!!followRes.data);
     })();
   }, [user, id]);
 
@@ -225,6 +238,33 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     } catch (err: any) { toast('error', friendlyDbError(err.message, { authed: true, action: 'delete this post' })); }
   }
 
+  async function handleFollow() {
+    if (!user) { toast('info', 'Log in to follow posts'); return; }
+    const wasFollowing = following;
+    setFollowing(!wasFollowing);
+    try {
+      const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) {
+        setFollowing(wasFollowing);
+        return;
+      }
+      if (wasFollowing) {
+        const { error } = await supabase.from('post_follows').delete().eq('user_id', user.id).eq('post_id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('post_follows').insert({ user_id: user.id, post_id: id });
+        if (error) throw error;
+        toast('success', 'Following post — we\'ll notify you of new comments');
+      }
+    } catch (err: any) {
+      setFollowing(wasFollowing);
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'follow this post' }));
+    }
+  }
+
   async function handleComment(body: string) {
     if (!user) { toast('info', 'Log in to comment'); return; }
     const supabase = createClient();
@@ -246,6 +286,19 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           link: `/post/${id}`,
         }).then(() => {});
       }
+      // Notify followers (best effort, never blocks)
+      supabase.from('post_follows').select('user_id').eq('post_id', id).neq('user_id', user.id).limit(100)
+        .then(({ data }: { data: { user_id: string }[] | null }) => {
+          const ids = ((data as any[]) || []).map(r => r.user_id).filter(f => f && f !== post?.author_id);
+          if (ids.length === 0) return;
+          supabase.from('notifications').insert(ids.map(f => ({
+            user_id: f,
+            type: 'comment',
+            title: `${user.username} commented in a post you follow`,
+            body: body.slice(0, 140),
+            link: `/post/${id}`,
+          }))).then(() => {});
+        });
       toast('success', 'Comment added');
       await loadPost();
     } catch (err: any) { toast('error', friendlyDbError(err.message, { authed: true, action: 'comment' })); } finally { setSubmittingComment(false); }
@@ -297,9 +350,9 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           <div className="flex-1 min-w-0 p-3">
             <div className="flex items-center flex-wrap gap-x-1 text-xs text-[var(--fg4)]">
               {post.community && <><Link href={`/k/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">k/{post.community.slug}</Link><span>·</span></>}
-              <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link><RoleBadge role={post.author.role} /><span>·</span><time>{formatDate(post.created_at)}</time>
+              <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link><RoleBadge role={post.author.role} /><span>·</span><time dateTime={post.created_at}>{formatDate(post.created_at)}</time>
             </div>
-            <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
+            <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2 break-words">{post.title}</h1>
             {post.type === 'link' && post.url && safeHostname(post.url) && (
               <a href={post.url} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-500)]/10 hover:bg-[var(--brand-500)]/20 transition-colors">
@@ -308,6 +361,12 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
               </a>
             )}
             {post.type === 'image' && post.image_url && (
+              imageBroken ? (
+                <div className="mt-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] py-12 flex flex-col items-center justify-center gap-2 text-[var(--fg4)]">
+                  <ImageOff className="h-8 w-8" />
+                  <span className="text-sm font-semibold">Image unavailable</span>
+                </div>
+              ) : (
               <div className="mt-2 relative group cursor-pointer" onClick={() => setLightboxOpen(true)}>
                 <div className="relative rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--bg)]">
                   {!imageLoaded && <div className="w-full h-[300px] skeleton" />}
@@ -317,6 +376,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
                     loading="lazy"
                     decoding="async"
                     onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageBroken(true)}
                     className={cn('max-h-[600px] w-full object-contain transition-opacity duration-300', imageLoaded ? 'opacity-100' : 'opacity-0 absolute')}
                   />
                 </div>
@@ -326,6 +386,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
                   </div>
                 </div>
               </div>
+              )
             )}
             {post.body && <div className="mt-3 text-sm text-[var(--fg2)] leading-relaxed whitespace-pre-wrap break-words">{post.body}</div>}
             <div className="flex items-center gap-1 mt-3 -ml-1 flex-wrap">
@@ -336,6 +397,9 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
               </button>
               <button onClick={() => setReportOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
                 <Flag className="h-5 w-5" /> Report
+              </button>
+              <button onClick={handleFollow} title={following ? 'Unfollow post' : 'Follow post'} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-[var(--surface-hover)] transition-colors', following ? 'text-[var(--brand-500)]' : 'text-[var(--fg4)]')}>
+                {following ? <BellRing className="h-5 w-5" /> : <BellPlus className="h-5 w-5" />} {following ? 'Following' : 'Follow'}
               </button>
               {user && user.id === post.author_id && (
                 <>

@@ -8,11 +8,12 @@ import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
 import { getPageCache, setPageCache, isCacheFresh } from '@/lib/pageCache';
 import { invalidateJoinedCommunities } from '@/lib/usePopularCommunities';
 import Link from 'next/link';
+import JoinButton from '@/components/community/JoinButton';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
 import { Calendar, Shield, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
 import { FEED_SORTS, TOP_RANGES, topRangeCutoff, risingCutoff, type FeedSort, type TopRange } from '@/lib/feedSort';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -28,12 +29,14 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [isMember, setIsMember] = useState(false);
+  const [similar, setSimilar] = useState<any[]>([]);
   const [sort, setSort] = useState<FeedSort>('hot');
   const [topRange, setTopRange] = useState<TopRange>('week');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const userRef = useRef(user);
   userRef.current = user;
+  const reqRef = useRef(0);
   const communityRef = useRef<any>(null);
   const sortRef = useRef(sort);
   sortRef.current = sort;
@@ -64,6 +67,9 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
 
   const load = useCallback(async (pageNum: number = 0) => {
     if (!slug) return;
+    // Only page-0 loads participate in staleness tracking — appends must
+    // never be dropped by a newer request.
+    const myReq = pageNum === 0 ? ++reqRef.current : reqRef.current;
     const currentUser = userRef.current;
     const postsKey = `k:${slug}:${sort}:${topRange}`;
     // Fresh cache (<30s): skip the refetch entirely on revisit
@@ -104,6 +110,9 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         postsQuery,
       ]);
 
+      // Stale page-0 response (sort/slug changed mid-flight) — drop it
+      if (pageNum === 0 && reqRef.current !== myReq) return;
+
       if (commResult.error) throw commResult.error;
       const comm = commResult.data;
       communityRef.current = comm;
@@ -135,7 +144,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         return next;
       });
       setHasMore(more);
-    } catch (err: any) { setError(err.message || 'Failed to load community'); } finally { setLoading(false); setLoadingMore(false); }
+    } catch (err: any) { if (pageNum !== 0 || reqRef.current === myReq) setError(err.message || 'Failed to load community'); } finally { if (pageNum !== 0 || reqRef.current === myReq) { setLoading(false); setLoadingMore(false); } }
   }, [slug, sort, topRange]);
 
   useEffect(() => { load(0); setPage(0); }, [load]);
@@ -150,6 +159,22 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       setIsMember(!!data);
     })();
   }, [user, community?.id]);
+
+  // Similar communities (same category) for the rail
+  useEffect(() => {
+    if (!community?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        let q = supabase.from('communities').select('id, name, slug, color, icon_url, member_count').order('member_count', { ascending: false }).neq('id', community.id).limit(5);
+        if (community.category) q = q.eq('category', community.category);
+        const { data } = await q;
+        if (!cancelled && data) setSimilar(data as any[]);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [community?.id, community?.category]);
 
   function loadMore() {
     const nextPage = page + 1;
@@ -251,8 +276,8 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
             </div>
           </Link>
 
-          {/* Sort tabs — Reddit style */}
-          <div className="post-card flex items-center gap-1 px-3 py-2 mb-3 flex-wrap">
+          {/* Sort tabs — Reddit style, sticky while scrolling */}
+          <div className="post-card flex items-center gap-1 px-3 py-2 mb-3 flex-wrap sticky top-12 z-20">
             {FEED_SORTS.map(({ key, label }) => (
               <button key={key} onClick={() => { setSort(key); setPage(0); }}
                 className={cn('text-sm font-bold px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)] transition-colors', sort === key ? 'text-[var(--fg)]' : 'text-[var(--fg4)]')}>
@@ -306,6 +331,9 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
                 <Link href={`/submit?community=${community.slug}`} className="block mt-3">
                   <button className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2">Create Post</button>
                 </Link>
+                <div className="mt-2">
+                  <JoinButton communityId={community.id} communityName={community.name} className="w-full py-2" />
+                </div>
               </div>
             </div>
             {community.rules && (
@@ -313,7 +341,36 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
                 <div className="sidebar-widget-header flex items-center gap-1.5"><Shield className="h-3 w-3" /> Rules</div>
                 <div className="p-3 space-y-2">
                   {community.rules.split('\n').filter(Boolean).map((rule: string, i: number) => (
-                    <div key={i} className="flex gap-2 text-sm text-[var(--fg2)]"><span className="font-bold text-[var(--fg4)] shrink-0">{i + 1}.</span><span>{rule.trim()}</span></div>
+                    <div key={i} className="flex gap-2 text-sm text-[var(--fg2)]"><span className="font-bold text-[var(--fg4)] shrink-0">{i + 1}.</span><span className="break-words">{rule.trim()}</span></div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {similar.length > 0 && (
+              <div className="sidebar-widget">
+                <div className="sidebar-widget-header">More like this</div>
+                <div className="p-2">
+                  {similar.map((c: any) => (
+                    <Link
+                      key={c.slug}
+                      href={`/k/${c.slug}`}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors group"
+                    >
+                      <div
+                        className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden"
+                        style={{ backgroundColor: c.color || 'var(--brand-600)' }}
+                      >
+                        {c.icon_url ? (
+                          <img src={c.icon_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                        ) : (
+                          c.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[var(--fg)] group-hover:underline truncate">k/{c.slug}</p>
+                      </div>
+                      <span className="text-[11px] text-[var(--fg4)] shrink-0">{formatNumber(c.member_count)}</span>
+                    </Link>
                   ))}
                 </div>
               </div>

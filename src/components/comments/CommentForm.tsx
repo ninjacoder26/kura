@@ -29,6 +29,7 @@ export default function CommentForm({ onSubmit, placeholder = 'Write a comment..
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
         disabled={loading}
+        maxLength={10000}
         className="w-full p-3 text-sm bg-[var(--bg)] border-none outline-none resize-none min-h-[90px] text-[var(--fg)] placeholder:text-[var(--fg4)] disabled:opacity-50"
       />
       <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-alt)] border-t border-[var(--border)]">

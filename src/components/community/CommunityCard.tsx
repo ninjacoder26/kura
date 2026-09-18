@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { formatNumber } from '@/lib/utils';
 import JoinButton from '@/components/community/JoinButton';
@@ -16,7 +17,7 @@ export interface CommunityData {
   category: string;
 }
 
-export default function CommunityCard({ community }: { community: CommunityData }) {
+export default memo(function CommunityCard({ community }: { community: CommunityData }) {
   return (
     <Link href={`/k/${community.slug}`} className="block">
       <div className="post-card flex items-center gap-3 p-3 hover:border-[var(--border-strong)] transition-colors">
@@ -45,4 +46,4 @@ export default function CommunityCard({ community }: { community: CommunityData 
       </div>
     </Link>
   );
-}
+})

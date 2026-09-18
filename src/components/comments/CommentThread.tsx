@@ -7,7 +7,7 @@ import { cn, formatDate } from '@/lib/utils';
 import Avatar from '@/components/ui/Avatar';
 import RoleBadge from '@/components/ui/RoleBadge';
 import ReportDialog from '@/components/moderation/ReportDialog';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
@@ -44,9 +44,10 @@ export interface CommentData {
 interface CommentItemProps {
   comment: CommentData;
   onReplyAdded?: () => void;
+  forceCollapsed?: boolean | null;
 }
 
-function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
+const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceCollapsed }: CommentItemProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -60,6 +61,13 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+
+  // Collapse-all / expand-all from the thread header
+  useEffect(() => {
+    if (forceCollapsed !== null && forceCollapsed !== undefined) {
+      setCollapsed(forceCollapsed);
+    }
+  }, [forceCollapsed]);
   const interactedRef = useRef(false);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -243,7 +251,10 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
   }
 
   return (
-    <div className={cn('py-2', comment.depth > 0 && 'ml-4 border-l-2 border-[var(--border)] pl-3')}>
+    <div
+      className={cn('py-2', comment.depth > 0 && 'border-l-2 border-[var(--border)] pl-3')}
+      style={comment.depth > 0 ? { marginLeft: Math.min(comment.depth, 4) * 12 } : undefined}
+    >
       <div className="flex items-center gap-1.5 mb-1">
         <button
           onClick={() => setCollapsed(c => !c)}
@@ -259,7 +270,7 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
         </Link>
         <RoleBadge role={comment.author.role} />
         <span className="text-[var(--fg4)]">·</span>
-        <time className="text-[11px] text-[var(--fg4)]">{formatDate(comment.created_at)}</time>
+        <time dateTime={comment.created_at} className="text-[11px] text-[var(--fg4)]">{formatDate(comment.created_at)}</time>
         {collapsed && comment.children && comment.children.length > 0 && (
           <span className="text-[11px] text-[var(--brand-500)] font-bold">
             {comment.children.length} {comment.children.length === 1 ? 'reply' : 'replies'}
@@ -307,6 +318,7 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
             value={replyBody}
             onChange={e => setReplyBody(e.target.value)}
             placeholder="What are your thoughts?"
+            maxLength={10000}
             className="w-full p-2 text-sm bg-[var(--bg)] border border-[var(--border)] rounded outline-none resize-none min-h-[80px] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:border-[var(--brand-500)]"
             autoFocus
           />
@@ -321,7 +333,7 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
 
       {comment.children && comment.children.length > 0 && (
         <div>
-          {comment.children.map(child => <CommentItem key={child.id} comment={child} onReplyAdded={onReplyAdded} />)}
+          {comment.children.map(child => <CommentItem key={child.id} comment={child} onReplyAdded={onReplyAdded} forceCollapsed={forceCollapsed} />)}
         </div>
       )}
         </>
@@ -332,11 +344,12 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
       )}
     </div>
   );
-}
+})
 
 export default function CommentThread({ comments, onCommentChange }: { comments: CommentData[]; onCommentChange?: () => void }) {
   const { user } = useAuth();
   const idsKey = collectCommentIds(comments).join(',');
+  const [collapseAll, setCollapseAll] = useState<boolean | null>(null);
 
   // Thread-level batch (covers remounts + login-after-load; no-op if claimed).
   useEffect(() => {
@@ -348,7 +361,19 @@ export default function CommentThread({ comments, onCommentChange }: { comments:
   if (comments.length === 0) {
     return <div className="py-8 text-center"><p className="text-xs text-[var(--fg4)]">No comments yet. Be the first to share what you think!</p></div>;
   }
-  return <div>{comments.map(comment => <CommentItem key={comment.id} comment={comment} onReplyAdded={onCommentChange} />)}</div>;
+  return (
+    <div>
+      <div className="flex justify-end">
+        <button
+          onClick={() => setCollapseAll(c => (c === true ? false : true))}
+          className="text-[11px] font-bold text-[var(--fg4)] hover:text-[var(--fg)] px-2 py-1 rounded transition-colors"
+        >
+          {collapseAll === true ? 'Expand all' : 'Collapse all'}
+        </button>
+      </div>
+      {comments.map(comment => <CommentItem key={comment.id} comment={comment} onReplyAdded={onCommentChange} forceCollapsed={collapseAll} />)}
+    </div>
+  );
 }
 
 /** Flatten a comment tree to ids (for batch vote prefetching). */

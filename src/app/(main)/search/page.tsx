@@ -286,7 +286,7 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
+    <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full max-w-[1460px] mx-auto">
           <div className="flex-1 min-w-0 max-w-[740px] mx-auto w-full">
             <div className="h-10 rounded skeleton mb-3" />
           </div>

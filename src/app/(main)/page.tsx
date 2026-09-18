@@ -159,6 +159,7 @@ export default function HomePage() {
   const [retryKey, setRetryKey] = useState(0);
   const userRef = useRef(user);
   userRef.current = user;
+  const reqRef = useRef(0);
   useSyncFeedVotes(posts, user?.id);
 
   useEffect(() => { setPage(0); setHasMore(true); }, [sort, topRange]);
@@ -170,6 +171,8 @@ export default function HomePage() {
       return;
     }
     let cancelled = false;
+    // Only page-0 loads race (sort/range changes); appends must never drop.
+    const myReq = page === 0 ? ++reqRef.current : reqRef.current;
     async function load() {
       if (page === 0) setLoading(true);
       else setLoadingMore(true);
@@ -196,6 +199,7 @@ export default function HomePage() {
         query = query.range(page * 20, (page + 1) * 20 - 1);
         const [{ data, error: fetchErr }, aff] = await Promise.all([query, affPromise]);
         if (fetchErr) throw fetchErr;
+        if (page === 0 && reqRef.current !== myReq) return;
         if (!cancelled && data) {
           const mapped = (data as any[]).map((p: any) => ({
             ...p,
@@ -224,7 +228,7 @@ export default function HomePage() {
           });
           setHasMore(more);
         }
-      } catch (err: any) { if (!cancelled) setError(err.message || 'Failed to load feed'); } finally { if (!cancelled) { setLoading(false); setLoadingMore(false); } }
+      } catch (err: any) { if (!cancelled && (page !== 0 || reqRef.current === myReq)) setError(err.message || 'Failed to load feed'); } finally { if (!cancelled && (page !== 0 || reqRef.current === myReq)) { setLoading(false); setLoadingMore(false); } }
     }
     load();
     return () => { cancelled = true; };
@@ -246,7 +250,7 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
+      <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full max-w-[1460px] mx-auto">
         <aside className="hidden lg:block w-[272px] shrink-0">
           <div className="sticky top-12">
             <Sidebar />
@@ -270,7 +274,7 @@ export default function HomePage() {
           )}
 
           {/* Sort tabs */}
-          <div className="post-card flex items-center gap-1 px-3 py-2 mb-3 flex-wrap">
+          <div className="post-card flex items-center gap-1 px-3 py-2 mb-3 flex-wrap sticky top-12 z-20">
             {FEED_SORTS.map(({ key, label }) => (
               <button key={key} onClick={() => setSort(key)}
                 className={cn('text-sm font-bold px-3 py-1.5 rounded-full hover:bg-[var(--surface-hover)] transition-colors', sort === key ? 'text-[var(--fg)]' : 'text-[var(--fg4)]')}>

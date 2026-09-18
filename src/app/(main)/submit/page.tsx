@@ -43,6 +43,7 @@ function SubmitForm() {
   const [titleFocused, setTitleFocused] = useState(false);
 
   const DRAFT_KEY = 'kura-submit-draft';
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
 
   // Restore text draft once on mount (community resolved after fetch below)
   useEffect(() => {
@@ -63,9 +64,11 @@ function SubmitForm() {
       try {
         if (!title && !body && !url && !communityId) {
           localStorage.removeItem(DRAFT_KEY);
+          setDraftSavedAt(null);
           return;
         }
         localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, body, url, type, communityId }));
+        setDraftSavedAt(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
       } catch {}
     }, 500);
     return () => clearTimeout(t);
@@ -469,7 +472,7 @@ function SubmitForm() {
 
         {/* Draft autosave indicator */}
         <p className="text-xs text-[var(--fg4)] mt-3 text-center pb-20 lg:pb-8">
-          Kura saves your drafts automatically
+          {draftSavedAt ? `Draft saved · ${draftSavedAt}` : 'Kura saves your drafts automatically'}
         </p>
       </div>
   );

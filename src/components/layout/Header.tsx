@@ -50,13 +50,16 @@ export default function Header() {
   }, [user]);
 
   // Keep the unread badge fresh for the session shell (mounts once).
+  // Skips ticks while the tab is hidden — no wasted backend queries.
   useEffect(() => {
     if (!user) {
       setNotifs([]);
       return;
     }
     loadNotifs();
-    const t = setInterval(loadNotifs, 60000);
+    const t = setInterval(() => {
+      if (document.visibilityState !== 'hidden') loadNotifs();
+    }, 60000);
     return () => clearInterval(t);
   }, [user, loadNotifs]);
 

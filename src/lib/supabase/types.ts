@@ -180,6 +180,7 @@ export interface Database {
           is_removed: boolean;
           removed_by: string | null;
           remove_reason: string | null;
+          tags: string[];
           created_at: string;
           updated_at: string;
         };
@@ -200,6 +201,7 @@ export interface Database {
           is_removed?: boolean;
           removed_by?: string | null;
           remove_reason?: string | null;
+          tags?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -220,6 +222,7 @@ export interface Database {
           is_removed?: boolean;
           removed_by?: string | null;
           remove_reason?: string | null;
+          tags?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -298,6 +301,26 @@ export interface Database {
         };
       };
       saved_posts: {
+        Row: {
+          id: string;
+          user_id: string;
+          post_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          post_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          post_id?: string;
+          created_at?: string;
+        };
+      };
+      post_follows: {
         Row: {
           id: string;
           user_id: string;

@@ -1,11 +1,12 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { Home, Users, Compass, ChevronDown } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Home, Users, Compass, ChevronDown, Shuffle } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { formatNumber } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 import { usePopularCommunities, useJoinedCommunities } from '@/lib/usePopularCommunities';
 import { useAuth, useShowLoggedOutUI } from '@/components/providers/AuthProvider';
 import { NavLink, usePendingHref } from '@/components/layout/NavProgress';
@@ -16,8 +17,12 @@ const NAV = [
   { href: '/search', label: 'Explore', icon: Compass },
 ];
 
+// Module cache so random picks never refetch
+let randomSlugs: string[] | null = null;
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const pending = usePendingHref();
   const { user } = useAuth();
   const showLoggedOutUI = useShowLoggedOutUI();
@@ -25,6 +30,29 @@ export default function Sidebar() {
   const popular = usePopularCommunities(5);
   const joined = useJoinedCommunities(user?.id, 8);
   const [joinedOpen, setJoinedOpen] = useState(true);
+  const [rolling, setRolling] = useState(false);
+
+  async function goRandom() {
+    if (rolling) return;
+    setRolling(true);
+    try {
+      if (!randomSlugs) {
+        const supabase = createClient();
+        const { data } = await supabase.from('communities').select('slug').limit(200);
+        randomSlugs = ((data as any[]) || []).map(c => c.slug).filter(Boolean);
+      }
+      const pool = (randomSlugs || []).filter(s => `/k/${s}` !== pathname);
+      if (pool.length === 0) {
+        router.push('/communities');
+        return;
+      }
+      router.push(`/k/${pool[Math.floor(Math.random() * pool.length)]}`);
+    } catch {
+      router.push('/communities');
+    } finally {
+      setRolling(false);
+    }
+  }
 
   return (
     <nav className="space-y-4">
@@ -54,6 +82,13 @@ export default function Sidebar() {
               </NavLink>
             );
           })}
+          <button
+            onClick={goRandom}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-[var(--fg3)] hover:bg-[var(--surface-hover)] hover:text-[var(--fg)]"
+          >
+            <Shuffle className={cn('h-5 w-5 shrink-0', rolling && 'animate-spin')} />
+            {rolling ? 'Rolling…' : 'Random'}
+          </button>
         </div>
       </div>
 

@@ -7,7 +7,7 @@ import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import { EmptyState } from '@/components/ui/Feedback';
 import { cn, formatDate } from '@/lib/utils';
-import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare, Ban, Twitter, Instagram, Github, Settings, Bookmark, ThumbsUp } from 'lucide-react';
+import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare, Ban, Twitter, Instagram, Github, Settings, Bookmark, ThumbsUp, Cake } from 'lucide-react';
 import Link from 'next/link';
 import RoleBadge from '@/components/ui/RoleBadge';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -22,6 +22,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'saved' | 'upvoted'>('posts');
+  const [postSort, setPostSort] = useState<'hot' | 'new' | 'top'>('hot');
   const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
   const [upvotedPosts, setUpvotedPosts] = useState<PostData[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
@@ -92,26 +93,33 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
   useEffect(() => {
     if (!username) return;
+    let cancelled = false;
     async function load() {
       try {
         const supabase = createClient();
         const { data: prof, error: profErr } = await supabase.from('profiles').select('*').eq('username', username).single();
         if (profErr) throw profErr;
+        if (cancelled) return;
         setProfile(prof);
         if (prof) {
           // Parallel queries for posts and comments
+          let postsQuery = supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('author_id', prof.id).eq('is_removed', false);
+          if (postSort === 'new') postsQuery = postsQuery.order('created_at', { ascending: false });
+          else postsQuery = postsQuery.order('upvotes', { ascending: false });
           const [postsResult, commentsResult] = await Promise.all([
-            supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20),
+            postsQuery.limit(20),
             supabase.from('comments').select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20)
           ]);
+          if (cancelled) return;
           if (postsResult.data) setPosts((postsResult.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
           if (postsResult.data && user) fetchAndCacheVotes(supabase, user.id, (postsResult.data as any[]).map((p: any) => p.id));
           if (commentsResult.data) setComments((commentsResult.data as any[]).map((c: any) => ({ id: c.id, body: c.body, post_id: c.post_id, post_title: c.posts?.title, created_at: c.created_at })));
         }
-      } catch (err: any) { setError(err.message || 'Failed to load profile'); } finally { setLoading(false); }
+      } catch (err: any) { if (!cancelled) setError(err.message || 'Failed to load profile'); } finally { if (!cancelled) setLoading(false); }
     }
     load();
-  }, [username]);
+    return () => { cancelled = true; };
+  }, [username, postSort]);
 
   if (loading && !profile) return (
     <div className="bg-[var(--bg)]">
@@ -223,7 +231,20 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           {/* Main Content */}
           <main className="flex-1 min-w-0">
             <div className="pb-20 lg:pb-8">
-              {activeTab === 'posts' && <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." />}
+              {activeTab === 'posts' && (
+                <>
+                  <div className="flex items-center gap-1 mb-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-[var(--fg4)] mr-1">Sort by:</span>
+                    {([['hot', 'Hot'], ['new', 'New'], ['top', 'Top']] as const).map(([key, label]) => (
+                      <button key={key} onClick={() => setPostSort(key)}
+                        className={cn('text-xs font-bold px-2.5 py-1 rounded-full transition-colors', postSort === key ? 'bg-[var(--surface-hover)] text-[var(--fg)]' : 'text-[var(--fg4)] hover:bg-[var(--surface-hover)]')}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." />
+                </>
+              )}
               {activeTab === 'comments' && (comments.length === 0 ? (
                 <EmptyState title="No comments yet" description="This user hasn't commented on anything yet." />
               ) : (
@@ -231,7 +252,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                   <div key={c.id} className="post-card p-3 anim-fade-up">
                     {c.post_title && <Link href={`/post/${c.post_id}`} className="text-xs text-[var(--fg4)] hover:text-[var(--brand-500)] transition-colors font-bold">{c.post_title}</Link>}
                     <p className="text-sm text-[var(--fg2)] mt-1 leading-relaxed break-words">{c.body}</p>
-                    <p className="text-xs text-[var(--fg4)] mt-1.5">{formatDate(c.created_at)}</p>
+                    <p className="text-xs text-[var(--fg4)] mt-1.5" title={new Date(c.created_at).toLocaleString()}>{formatDate(c.created_at)}</p>
                   </div>
                 ))}</div>
               ))}
@@ -264,6 +285,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                       </a>
                     )}
                     <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                    <span className="flex items-center gap-1"><Cake className="h-3.5 w-3.5" /> Cake day {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                   </div>
 
                   {(profile.twitter || profile.instagram || profile.github) && (
@@ -316,6 +338,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                 </a>
               )}
               <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+              <span className="flex items-center gap-1"><Cake className="h-3.5 w-3.5" /> Cake day {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
             </div>
 
             {(profile.twitter || profile.instagram || profile.github) && (

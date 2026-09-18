@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { cn, getInitials } from '@/lib/utils';
 import { optimizeImageUrl } from '@/lib/cloudinary';
 
@@ -18,13 +19,15 @@ const dims: Record<string, string> = {
 };
 
 export default function Avatar({ src, alt, name, size = 'md', className }: AvatarProps) {
-  if (src) {
+  const [failed, setFailed] = useState(false);
+  if (src && !failed) {
     return (
       <img
         src={optimizeImageUrl(src, { width: 128 })}
         alt={alt || name}
         loading="lazy"
         decoding="async"
+        onError={() => setFailed(true)}
         className={cn('rounded-full object-cover shrink-0', dims[size], className)}
       />
     );
