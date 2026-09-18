@@ -7,7 +7,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Kura — Nepal, talking',
   description: 'Kura is a modern community platform for Nepal. Discover communities, share ideas, and connect with people.',
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: '/favicon.svg' },
 };
 
 export const viewport: Viewport = {
@@ -15,7 +15,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f1117' },
+    { media: '(prefers-color-scheme: dark)', color: '#0e1113' },
   ],
 };
 

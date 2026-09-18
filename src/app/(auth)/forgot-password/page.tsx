@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { getSiteUrl } from '@/lib/site';
 import { useToast } from '@/components/providers/ToastProvider';
 import AuthCard from '@/components/ui/AuthCard';
 
@@ -19,7 +20,7 @@ function ForgotPasswordForm() {
     setLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: `${getSiteUrl()}/login`,
     });
     if (error) { toast('error', error.message); setLoading(false); return; }
     setSent(true); setLoading(false);

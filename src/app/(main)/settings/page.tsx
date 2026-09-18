@@ -9,8 +9,8 @@ import { User, Camera, Lock, Image, Twitter, Instagram, Github } from 'lucide-re
 import { uploadToCloudinary, isCloudinaryConfigured, validateImageFile } from '@/lib/cloudinary';
 
 const PROFILE_COLORS = [
-  '#dc143c', '#6366f1', '#10b981', '#f59e0b', '#ef4444',
-  '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899',
+  '#0079D3', '#D93900', '#10b981', '#f59e0b', '#ef4444',
+  '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#787C7E',
 ];
 
 export default function SettingsPage() {
@@ -24,7 +24,7 @@ export default function SettingsPage() {
   const [twitter, setTwitter] = useState('');
   const [instagram, setInstagram] = useState('');
   const [github, setGithub] = useState('');
-  const [themeColor, setThemeColor] = useState('#dc143c');
+  const [themeColor, setThemeColor] = useState('#0079D3');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -62,7 +62,7 @@ export default function SettingsPage() {
         setTwitter(data.twitter || '');
         setInstagram(data.instagram || '');
         setGithub(data.github || '');
-        setThemeColor(data.theme_color || '#dc143c');
+        setThemeColor(data.theme_color || '#0079D3');
         if (data.avatar_url) { setAvatarPreview(data.avatar_url); setSavedAvatarUrl(data.avatar_url); }
         if (data.cover_url) { setBannerPreview(data.cover_url); setSavedBannerUrl(data.cover_url); }
       }

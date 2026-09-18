@@ -4,6 +4,25 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  // Canonical domain: never let two Vercel/alt domains split auth state.
+  // Inactive when NEXT_PUBLIC_SITE_URL is unset (local dev unaffected).
+  const canonical = process.env.NEXT_PUBLIC_SITE_URL;
+  if (canonical) {
+    try {
+      const canonicalUrl = new URL(canonical);
+      const host = request.nextUrl.hostname;
+      const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+      if (canonicalUrl.hostname && host !== canonicalUrl.hostname && !isLocal) {
+        const url = request.nextUrl.clone();
+        url.protocol = canonicalUrl.protocol;
+        url.host = canonicalUrl.host;
+        return NextResponse.redirect(url, 308);
+      }
+    } catch {
+      // Misconfigured env — fail open, never block traffic.
+    }
+  }
+
   const protectedRoutes = ['/submit', '/settings', '/k/create'];
   const isProtected = protectedRoutes.some(r => pathname.startsWith(r))
     || /^\/post\/[^/]+\/edit/.test(pathname);

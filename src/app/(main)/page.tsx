@@ -20,7 +20,7 @@ function FeedSkeleton() {
     <div className="space-y-3">
       {[1, 2, 3, 4].map(i => (
         <div key={i} className="post-card flex">
-          <div className="flex flex-col items-center gap-1 px-2 py-3 bg-[var(--bg-raised)] rounded-l w-10">
+          <div className="flex flex-col items-center gap-1 px-2 py-3 rounded-l w-10">
             <div className="h-6 w-6 rounded skeleton" />
             <div className="h-3 w-6 rounded skeleton" />
             <div className="h-6 w-6 rounded skeleton" />
@@ -227,7 +227,7 @@ export default function HomePage() {
   return (
     <>
       <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
-        <aside className="hidden lg:block w-[228px] shrink-0">
+        <aside className="hidden lg:block w-[272px] shrink-0">
           <div className="sticky top-12">
             <Sidebar />
           </div>

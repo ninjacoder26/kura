@@ -187,11 +187,11 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
 
   return (
     <div className="bg-[var(--bg)]">
-      <div className="h-20 sm:h-24" style={{ backgroundColor: community.color }} />
+      <div className="h-24 sm:h-32" style={{ backgroundColor: community.color }} />
       <div className="bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="px-4 max-w-[1200px] mx-auto">
-          <div className="flex items-end gap-3 -mt-4 pb-3">
-            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-[var(--surface)] shrink-0" style={{ backgroundColor: community.color }}>
+          <div className="flex items-end gap-3 -mt-6 pb-3">
+            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-[var(--surface)] shrink-0" style={{ backgroundColor: community.color }}>
               {community.icon_url ? <img src={community.icon_url} alt={community.name} className="h-full w-full rounded-full object-cover" /> : community.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0 pb-1">

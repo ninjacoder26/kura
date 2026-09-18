@@ -131,7 +131,7 @@ export default function SearchPage() {
 
   return (
     <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
-      <aside className="hidden lg:block w-[228px] shrink-0">
+      <aside className="hidden lg:block w-[272px] shrink-0">
         <div className="sticky top-12"><Sidebar /></div>
       </aside>
 
@@ -252,7 +252,7 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
             {popular.map(c => (
               <CommunityCard
                 key={c.slug}
-                community={{ id: c.id, name: c.name, slug: c.slug, description: c.description, color: c.color || '#6366f1', member_count: c.member_count, post_count: c.post_count, category: 'general' }}
+                community={{ id: c.id, name: c.name, slug: c.slug, description: c.description, color: c.color || '#0079D3', member_count: c.member_count, post_count: c.post_count, category: 'general' }}
               />
             ))}
           </div>

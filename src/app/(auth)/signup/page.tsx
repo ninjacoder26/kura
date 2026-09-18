@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { getSiteUrl } from '@/lib/site';
 import { useToast } from '@/components/providers/ToastProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import AuthCard from '@/components/ui/AuthCard';
@@ -62,7 +63,7 @@ function SignupForm() {
       password,
       options: {
         data: { username, full_name: username },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+        emailRedirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
       },
     });
 
@@ -74,7 +75,7 @@ function SignupForm() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
+      options: { redirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
     });
     if (error) toast('error', error.message);
   }

@@ -262,7 +262,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         </Link>
 
         <article className="post-card flex">
-          <div className="flex flex-col items-center gap-0.5 px-1 py-2 bg-[var(--surface-hover)] rounded-l-[var(--r-md)] w-10 sm:w-11">
+          <div className="flex flex-col items-center gap-0.5 px-1 py-2 w-10 sm:w-11 shrink-0">
             <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')} aria-label="Upvote" aria-pressed={vote === 'up'}><ArrowBigUp className="h-6 w-6" fill={vote === 'up' ? 'currentColor' : 'none'} /></button>
             <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--accent-500)]', vote === 'down' && 'text-[var(--brand-500)]')}>{formatNumber(score)}</span>
             <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')} aria-label="Downvote" aria-pressed={vote === 'down'}><ArrowBigDown className="h-6 w-6" fill={vote === 'down' ? 'currentColor' : 'none'} /></button>
@@ -270,7 +270,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           <div className="flex-1 min-w-0 p-3">
             <div className="flex items-center flex-wrap gap-x-1 text-xs text-[var(--fg4)]">
               {post.community && <><Link href={`/k/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">k/{post.community.slug}</Link><span>·</span></>}
-              <span>by</span> <Link href={`/profile/${post.author.username}`} className="hover:underline">@{post.author.username}</Link><span>·</span><time>{formatDate(post.created_at)}</time>
+              <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link><span>·</span><time>{formatDate(post.created_at)}</time>
             </div>
             <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
             {post.type === 'link' && post.url && safeHostname(post.url) && (

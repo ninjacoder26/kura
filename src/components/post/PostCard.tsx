@@ -250,8 +250,8 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
   return (
     <>
       <div className="post-card flex">
-        {/* Vote column - Reddit style */}
-        <div className="flex flex-col items-center gap-0.5 px-1 py-2 bg-[var(--bg-raised)] rounded-l-[var(--r-md)] w-[36px] sm:w-[40px]">
+        {/* Vote column - Reddit style: transparent, same surface as card */}
+        <div className="flex flex-col items-center gap-0.5 px-1 py-2 w-[36px] sm:w-[40px] shrink-0">
           <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')} aria-label="Upvote" aria-pressed={vote === 'up'}>
             <ArrowBigUp className="h-[22px] w-[22px]" fill={vote === 'up' ? 'currentColor' : 'none'} />
           </button>
@@ -284,8 +284,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
                 <span className="text-[var(--fg4)]">·</span>
               </>
             )}
-            <span>Posted by</span>
-            <Link href={`/profile/${post.author.username}`} className="hover:underline">@{post.author.username}</Link>
+            <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link>
             <span className="text-[var(--fg4)]">·</span>
             <time>{formatDate(post.created_at)}</time>
             {showCommunity && post.community?.id && (

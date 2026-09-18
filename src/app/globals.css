@@ -3,35 +3,39 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Primary - Indigo (trustworthy, calm, professional) */
-  --brand-50: #eef2ff;
-  --brand-100: #e0e7ff;
-  --brand-200: #c7d2fe;
-  --brand-300: #a5b4fc;
-  --brand-400: #818cf8;
-  --brand-500: #6366f1;
-  --brand-600: #4f46e5;
-  --brand-700: #4338ca;
-  --brand-800: #3730a3;
-  --brand-900: #312e81;
+  /* Brand blue — Reddit's link/button blue family.
+     White text on brand-500 hits 4.7:1 (AA). */
+  --brand-50: #E9F3FB;
+  --brand-100: #CBE4F6;
+  --brand-200: #9CC9EC;
+  --brand-300: #66A9DF;
+  --brand-400: #3393D4;
+  --brand-500: #0079D3;
+  --brand-600: #0063AD;
+  --brand-700: #004E88;
+  --brand-800: #003A66;
+  --brand-900: #002743;
 
-  /* Accent - Orange (energetic, creative) */
-  --accent-400: #fb923c;
-  --accent-500: #f97316;
-  --accent-600: #ea580c;
+  /* Accent — Reddit orangered for upvotes.
+     #D93900 on white hits 4.8:1 (AA); classic #FF4500 only manages 3.3:1,
+     so the deepened tone is used on light surfaces. */
+  --accent-400: #ED6A2F;
+  --accent-500: #D93900;
+  --accent-600: #B32F00;
+  --accent-700: #8F2500;
 
-  /* Background */
-  --bg: #dae2e9;
+  /* Background — Reddit's iconic blue-gray canvas + white cards */
+  --bg: #DAE0E6;
   --bg-alt: #ffffff;
   --bg-raised: #ffffff;
   --surface: #ffffff;
-  --surface-hover: #f1f5f9;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --fg: #0f172a;
-  --fg2: #1e293b;
-  --fg3: #64748b;
-  --fg4: #94a3b8;
+  --surface-hover: #F6F7F8;
+  --border: #EDEFF1;
+  --border-strong: #D7DADC;
+  --fg: #1A1A1B;
+  --fg2: #343536;
+  --fg3: #787C7E;
+  --fg4: #A8A9AB;
 
   /* Semantic */
   --success: #10b981;
@@ -51,22 +55,43 @@
   --r-lg: 12px;
   --r-xl: 16px;
   --r-full: 9999px;
+  /* Reddit card radius */
+  --r-card: 16px;
 
   --header-h: 48px;
 }
 
 .dark {
-  --bg: #0c1222;
-  --bg-alt: #141c2e;
-  --bg-raised: #1a2438;
-  --surface: #1a2438;
-  --surface-hover: #243044;
-  --border: #2a3650;
-  --border-strong: #3d4f6f;
-  --fg: #e2e8f0;
-  --fg2: #cbd5e1;
-  --fg3: #94a3b8;
-  --fg4: #64748b;
+  /* Button fills stay deep blue so white text keeps 4.3:1+ on near-black.
+     Text greys are Reddit's dark palette (#D7DADC body, #818384 meta). */
+  --brand-50: #10202E;
+  --brand-100: #14324A;
+  --brand-200: #174A68;
+  --brand-300: #1B6386;
+  --brand-400: #4EA3E3;
+  --brand-500: #0F86D6;
+  --brand-600: #0B6CAD;
+  --brand-700: #0A5488;
+  --brand-800: #083D63;
+  --brand-900: #062A44;
+
+  /* Upvotes go full orangered on dark (5.5:1 on the canvas). */
+  --accent-400: #FF6A2B;
+  --accent-500: #FF4500;
+  --accent-600: #E03D00;
+  --accent-700: #B23100;
+
+  --bg: #0E1113;
+  --bg-alt: #16191D;
+  --bg-raised: #1B2025;
+  --surface: #171B1F;
+  --surface-hover: #232A30;
+  --border: #343841;
+  --border-strong: #4A5058;
+  --fg: #D7DADC;
+  --fg2: #B8BCBF;
+  --fg3: #818384;
+  --fg4: #5B5E61;
 
   --shadow-xs: 0 1px 2px rgba(0,0,0,.2);
   --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
@@ -191,11 +216,11 @@ input, textarea, select, button { font-family: inherit; }
   animation: toastIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Post Card - Reddit style */
+/* Post Card - Reddit style: flat white card, hairline border, no shadow */
 .post-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-card);
   transition: border-color .15s;
   overflow: hidden;
 }
@@ -267,7 +292,7 @@ input, textarea, select, button { font-family: inherit; }
 .sidebar-widget {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-card);
   overflow: hidden;
 }
 .sidebar-widget-header {

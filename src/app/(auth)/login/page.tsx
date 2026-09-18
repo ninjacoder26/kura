@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { getSiteUrl } from '@/lib/site';
 import { useToast } from '@/components/providers/ToastProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import AuthCard from '@/components/ui/AuthCard';
@@ -37,7 +38,25 @@ function LoginForm() {
     setLoading(true); setError('');
 
     const supabase = createClient();
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    let data;
+    let authError;
+    try {
+      ({ data, error: authError } = await supabase.auth.signInWithPassword({ email, password }));
+    } catch (err: any) {
+      authError = { message: err?.message || 'Network error' } as any;
+      data = { session: null } as any;
+    }
+
+    // One automatic retry on transient network failures (cold backends,
+    // flaky mobile networks) — the classic "fails first, works second" case.
+    if (authError && /fetch|network|load failed|timeout|timed out/i.test(authError.message || '')) {
+      await new Promise(r => setTimeout(r, 900));
+      try {
+        ({ data, error: authError } = await supabase.auth.signInWithPassword({ email, password }));
+      } catch (err: any) {
+        authError = { message: err?.message || 'Network error' } as any;
+      }
+    }
 
     if (authError) {
       setError(authError.message);
@@ -74,7 +93,7 @@ function LoginForm() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
+      options: { redirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
     });
     if (error) toast('error', error.message);
   }
