@@ -40,8 +40,7 @@ function fetchPopular(limit: number): Promise<PopularCommunity[]> {
   return inflight;
 }
 
-export function usePopularCommunities(limit = 5): PopularCommunity[] {
-  const [communities, setCommunities] = useState<PopularCommunity[] | null>(cache);
+export function usePopularCommunities(limit = 5): PopularCommunity[] {  const [communities, setCommunities] = useState<PopularCommunity[] | null>(cache);
 
   useEffect(() => {
     if (cache) {
@@ -58,6 +57,11 @@ export function usePopularCommunities(limit = 5): PopularCommunity[] {
   }, [limit]);
 
   return communities ?? [];
+}
+
+/** Drop the popular cache (call after creating a community). */
+export function invalidatePopular(): void {
+  cache = null;
 }
 
 // Joined communities for the left nav (Reddit-style "your communities").

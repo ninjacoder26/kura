@@ -18,6 +18,10 @@ function getConfig(): CloudinaryConfig {
   return { cloudName, uploadPreset };
 }
 
+export function getCloudinaryConfig(): CloudinaryConfig {
+  return getConfig();
+}
+
 export function isCloudinaryConfigured(): boolean {
   const { cloudName } = getConfig();
   return !!cloudName;
@@ -86,8 +90,7 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
 }
 
 /**
- * Rewrites a Cloudinary delivery URL to use automatic format/quality
- * (WebP/AVIF + smart compression) and an optional width cap.
+ * Rewrites a Cloudinary delivery URL to use automatic format/quality * (WebP/AVIF + smart compression) and an optional width cap.
  * Non-Cloudinary URLs (Supabase storage, data: previews, etc.) pass
  * through untouched, so this is safe to apply to any <img src>.
  */
@@ -102,4 +105,53 @@ export function optimizeImageUrl(url: string | null | undefined, options?: { wid
   const params = ['f_auto', 'q_auto'];
   if (options?.width) params.push(`w_${options.width}`, 'c_limit');
   return `${url.slice(0, idx + marker.length)}${params.join(',')}/${after}`;
+}
+
+/**
+ * Unsigned Cloudinary upload with real progress events (XMLHttpRequest —
+ * fetch cannot report upload progress). Falls back to plain fetch upload
+ * when progress cannot be observed.
+ */
+export function uploadToCloudinaryWithProgress(
+  file: File,
+  folder: string = 'kura',
+  onProgress?: (pct: number) => void
+): Promise<CloudinaryUploadResult> {
+  const { cloudName, uploadPreset } = getConfig();
+  if (!cloudName) {
+    return uploadToCloudinary(file, folder).then(r => {
+      onProgress?.(100);
+      return r;
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) onProgress?.(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch {
+          reject(new Error('Upload failed'));
+        }
+      } else {
+        try {
+          const j = JSON.parse(xhr.responseText);
+          reject(new Error(j?.error?.message || `Upload failed (${xhr.status})`));
+        } catch {
+          reject(new Error(`Upload failed (${xhr.status})`));
+        }
+      }
+    };
+    xhr.onerror = () => reject(new Error('Upload failed — check your connection'));
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    formData.append('folder', folder);
+    onProgress?.(0);
+    xhr.send(formData);
+  });
 }

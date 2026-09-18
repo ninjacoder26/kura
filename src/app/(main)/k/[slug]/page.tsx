@@ -9,10 +9,11 @@ import { getPageCache, setPageCache, isCacheFresh } from '@/lib/pageCache';
 import { invalidateJoinedCommunities } from '@/lib/usePopularCommunities';
 import Link from 'next/link';
 import JoinButton from '@/components/community/JoinButton';
+import Avatar from '@/components/ui/Avatar';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
-import { Calendar, Shield, Plus } from 'lucide-react';
+import { Calendar, Shield, Plus, Settings } from 'lucide-react';
 import { cn, formatNumber } from '@/lib/utils';
 import { FEED_SORTS, TOP_RANGES, topRangeCutoff, risingCutoff, type FeedSort, type TopRange } from '@/lib/feedSort';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -29,7 +30,9 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [isMember, setIsMember] = useState(false);
+  const [memberRole, setMemberRole] = useState<string | null>(null);
   const [similar, setSimilar] = useState<any[]>([]);
+  const [mods, setMods] = useState<any[]>([]);
   const [sort, setSort] = useState<FeedSort>('hot');
   const [topRange, setTopRange] = useState<TopRange>('week');
   const [page, setPage] = useState(0);
@@ -120,8 +123,9 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       setPageCache(`kmeta:${slug}`, comm);
 
       if (currentUser && comm) {
-        const { data: member } = await supabase.from('community_members').select('id').eq('community_id', comm.id).eq('user_id', currentUser.id).single();
+        const { data: member } = await supabase.from('community_members').select('id, role').eq('community_id', comm.id).eq('user_id', currentUser.id).single();
         setIsMember(!!member);
+        setMemberRole(member?.role ?? null);
       }
 
       if (postsResult.error) throw postsResult.error;
@@ -152,17 +156,31 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   // Re-check membership when user changes (login/logout)
   useEffect(() => {
     if (!community) return;
-    if (!user) { setIsMember(false); return; }
+    if (!user) { setIsMember(false); setMemberRole(null); return; }
     (async () => {
       const supabase = createClient();
-      const { data } = await supabase.from('community_members').select('id').eq('community_id', community.id).eq('user_id', user.id).single();
+      const { data } = await supabase.from('community_members').select('id, role').eq('community_id', community.id).eq('user_id', user.id).single();
       setIsMember(!!data);
+      setMemberRole(data?.role ?? null);
     })();
   }, [user, community?.id]);
 
-  // Similar communities (same category) for the rail
+  const canModerate = !!user && !!community && (
+    community.created_by === user.id ||
+    memberRole === 'moderator' ||
+    memberRole === 'admin' ||
+    user.role === 'admin'
+  );
+
+  // Similar communities (same category) for the rail — cached per community
   useEffect(() => {
     if (!community?.id) return;
+    const key = `similar:${community.id}`;
+    const cached = getPageCache<any[]>(key);
+    if (cached) {
+      setSimilar(cached);
+      if (isCacheFresh(key)) return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -170,16 +188,49 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         let q = supabase.from('communities').select('id, name, slug, color, icon_url, member_count').order('member_count', { ascending: false }).neq('id', community.id).limit(5);
         if (community.category) q = q.eq('category', community.category);
         const { data } = await q;
-        if (!cancelled && data) setSimilar(data as any[]);
+        if (!cancelled && data) {
+          setSimilar(data as any[]);
+          setPageCache(key, data);
+        }
       } catch {}
     })();
     return () => { cancelled = true; };
   }, [community?.id, community?.category]);
 
+  // Moderator team for the About card
+  useEffect(() => {
+    if (!community?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('community_members')
+          .select('role, profiles(username, display_name, avatar_url)')
+          .eq('community_id', community.id)
+          .neq('role', 'member')
+          .order('joined_at', { ascending: true })
+          .limit(5);
+        if (!cancelled && data) {
+          setMods(
+            ((data as any[]) || [])
+              .map(r => ({ ...(r.profiles || {}), modRole: r.role }))
+              .filter(m => m.username)
+          );
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [community?.id]);
+
   function loadMore() {
     const nextPage = page + 1;
     setPage(nextPage);
     load(nextPage);
+  }
+
+  function handlePostDelete(id: string) {
+    setPosts(prev => prev.filter(p => p.id !== id));
   }
 
   function handleRetry() {
@@ -299,7 +350,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
             )}
           </div>
 
-          <PostList posts={posts} showCommunity={false} />
+          <PostList posts={posts} showCommunity={false} onDelete={handlePostDelete} />
 
           {loadingMore && <div className="mt-3"><LoadingSpinner /></div>}
 
@@ -328,12 +379,35 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
                   <Calendar className="h-3.5 w-3.5" />
                   {new Date(community.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
+                {mods.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-[var(--border)]">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--fg4)] mb-2">Moderators</p>
+                    <div className="space-y-1.5">
+                      {mods.map(m => (
+                        <Link key={m.username} href={`/profile/${m.username}`} className="flex items-center gap-2 group">
+                          <Avatar src={m.avatar_url} name={m.display_name || m.username} size="sm" />
+                          <span className="min-w-0">
+                            <span className="block text-xs font-semibold text-[var(--fg)] group-hover:underline truncate">
+                              u/{m.username}
+                            </span>
+                            <span className="block text-[10px] text-[var(--fg4)] capitalize">{m.modRole}</span>
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <Link href={`/submit?community=${community.slug}`} className="block mt-3">
                   <button className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm py-2">Create Post</button>
                 </Link>
                 <div className="mt-2">
                   <JoinButton communityId={community.id} communityName={community.name} className="w-full py-2" />
                 </div>
+                {canModerate && (
+                  <Link href={`/k/${community.slug}/edit`} className="mt-2 flex items-center justify-center gap-1.5 w-full py-2 rounded-full text-xs font-bold text-[var(--fg3)] border border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--fg)] transition-all">
+                    <Settings className="h-3.5 w-3.5" /> Community settings
+                  </Link>
+                )}
               </div>
             </div>
             {community.rules && (

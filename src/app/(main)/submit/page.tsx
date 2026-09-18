@@ -8,7 +8,8 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
-import { uploadToCloudinary, isCloudinaryConfigured, validateImageFile, type CloudinaryUploadResult } from '@/lib/cloudinary';
+import { uploadToCloudinary, uploadToCloudinaryWithProgress, isCloudinaryConfigured, validateImageFile, type CloudinaryUploadResult } from '@/lib/cloudinary';
+import { clearPageCache } from '@/lib/pageCache';
 
 const POST_TYPES = [
   { value: 'text', label: 'Post', icon: FileText, description: 'Text' },
@@ -39,6 +40,7 @@ function SubmitForm() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const [titleFocused, setTitleFocused] = useState(false);
 
@@ -151,9 +153,10 @@ function SubmitForm() {
   async function uploadImage(): Promise<string | null> {
     if (!imageFile || !user) return null;
     setUploading(true);
+    setUploadProgress(0);
     try {
       if (isCloudinaryConfigured()) {
-        const result = await uploadToCloudinary(imageFile, `kura/${user.id}`);
+        const result = await uploadToCloudinaryWithProgress(imageFile, `kura/${user.id}`, setUploadProgress);
         return result.secure_url;
       }
       // Fallback to Supabase Storage
@@ -169,6 +172,7 @@ function SubmitForm() {
       return null;
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   }
 
@@ -195,6 +199,10 @@ function SubmitForm() {
       }).select('id').single();
       if (error) throw error;
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
+      // New post must appear everywhere instantly — bust the affected caches
+      clearPageCache('home');
+      clearPageCache('discover:trending');
+      if (selectedCommunity) clearPageCache(`k:${selectedCommunity.slug}`);
       // AI tagging runs in the background whenever the tagger is free —
       // never blocks the posting flow.
       if (created?.id) {
@@ -397,9 +405,12 @@ function SubmitForm() {
                     </div>
                     {uploading && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-lg">
-                        <div className="flex flex-col items-center gap-2">
+                        <div className="flex flex-col items-center gap-2 w-2/3">
                           <Loader2 className="h-8 w-8 text-white animate-spin" />
-                          <span className="text-sm text-white font-medium">Uploading...</span>
+                          <span className="text-sm text-white font-medium tabular-nums">Uploading... {uploadProgress}%</span>
+                          <div className="w-full h-1.5 rounded-full bg-white/25 overflow-hidden">
+                            <div className="h-full rounded-full bg-white transition-all" style={{ width: `${uploadProgress}%` }} />
+                          </div>
                         </div>
                       </div>
                     )}

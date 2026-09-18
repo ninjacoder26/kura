@@ -42,6 +42,9 @@ export default function PrivacyPage() {
 
             <h3 className="font-bold mt-3 mb-1">2.4 Cookies</h3>
             <p>We use essential cookies for authentication and session management. We do not use third-party advertising cookies.</p>
+
+            <h3 className="font-bold mt-3 mb-1">2.5 AI Tagging and Recommendations</h3>
+            <p>When you publish a post, its title, body, and community may be sent to our AI tagging provider (Groq) to generate topic tags, which are stored with the post and shown to administrators. Tags also power tag search, tag pages, and soft personalization of your home feed based on posts you upvote (affinity is computed from your upvotes and kept in your browser session — it is not sold or shared). Our human-verification check on login and signup runs entirely in your browser; no data leaves your device for it.</p>
           </section>
 
           <section>
@@ -82,6 +85,16 @@ export default function PrivacyPage() {
                 <strong>Cloudinary (image hosting and delivery):</strong>{' '}
                 stores and serves images you choose to upload (avatars, banners, post images) through its content delivery network.{' '}
                 <a href="https://cloudinary.com/privacy" target="_blank" rel="noopener noreferrer" className="text-[var(--brand-500)] hover:underline">Cloudinary Privacy Policy</a>
+              </li>
+              <li>
+                <strong>Groq (AI post tagging):</strong>{' '}
+                receives post titles, bodies, and community names you publish, solely to generate topic tags. Stored tags become part of the post record.{' '}
+                <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="text-[var(--brand-500)] hover:underline">Groq Privacy Policy</a>
+              </li>
+              <li>
+                <strong>Groq (AI post tagging):</strong>{' '}
+                receives post titles, bodies, and community names you publish, solely to generate topic tags. Stored tags become part of the post record.{' '}
+                <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="text-[var(--brand-500)] hover:underline">Groq Privacy Policy</a>
               </li>
               <li>
                 <strong>Google (optional Sign-In):</strong>{' '}

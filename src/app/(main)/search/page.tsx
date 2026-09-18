@@ -159,6 +159,10 @@ function SearchPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function handlePostDelete(id: string) {
+    setPosts(prev => prev.filter(p => p.id !== id));
+  }
+
   const showResults = query.length >= 2;
 
   return (
@@ -194,7 +198,7 @@ function SearchPageInner() {
               searching && posts.length === 0 ? (
                 <div className="space-y-2">{[1, 2].map(i => <div key={i} className="post-card p-4"><div className="h-4 w-2/3 rounded skeleton mb-2" /><div className="h-3 w-full rounded skeleton" /></div>)}</div>
               ) : (
-                <PostList posts={posts} emptyTitle={searched && !searching ? 'No posts found' : 'Keep typing to search'} emptyDescription={searched && !searching ? `No results for "${query}"` : 'Results appear as you type.'} />
+                <PostList posts={posts} emptyTitle={searched && !searching ? 'No posts found' : 'Keep typing to search'} emptyDescription={searched && !searching ? `No results for "${query}"` : 'Results appear as you type.'} onDelete={handlePostDelete} />
               )
             )}
             {activeTab === 'communities' && (communities.length === 0 ? (
@@ -226,9 +230,17 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
   userRef.current = user;
   useSyncFeedVotes(trending, user?.id);
 
+  function handleTrendingRemove(id: string) {
+    setTrending(prev => {
+      const next = prev.filter(p => p.id !== id);
+      setPageCache('discover:trending', { posts: next });
+      return next;
+    });
+  }
+
   // Trending tag cloud (cached; powers tag discovery for everyone)
   useEffect(() => {
-    if (trendingTags.length > 0) return;
+    if (trendingTags.length > 0 || isCacheFresh('discover:tag-cloud')) return;
     let cancelled = false;
     (async () => {
       try {
@@ -315,7 +327,7 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
             {[1, 2, 3].map(i => <div key={i} className="post-card p-4"><div className="h-4 w-2/3 rounded skeleton mb-2" /><div className="h-3 w-full rounded skeleton" /></div>)}
           </div>
         ) : (
-          <PostList posts={trending} emptyTitle="Nothing trending yet" emptyDescription="Be the first to post something!" />
+          <PostList posts={trending} emptyTitle="Nothing trending yet" emptyDescription="Be the first to post something!" onDelete={handleTrendingRemove} />
         )}
       </div>
 

@@ -27,7 +27,7 @@ export function hasPageCache(key: string): boolean {
 }
 
 /** Feeds younger than this skip their background refetch on revisit. */
-export const FEED_STALE_MS = 30_000;
+export const FEED_STALE_MS = 60_000;
 
 /** True when cached data exists and is younger than maxAgeMs. */
 export function isCacheFresh(key: string, maxAgeMs: number = FEED_STALE_MS): boolean {

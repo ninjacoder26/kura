@@ -9,6 +9,8 @@ import { slugify } from '@/lib/utils';
 import { COMMUNITY_CATEGORIES } from '@/lib/constants';
 import Link from 'next/link';
 import { uploadToCloudinary, isCloudinaryConfigured, validateImageFile } from '@/lib/cloudinary';
+import { clearPageCache } from '@/lib/pageCache';
+import { invalidatePopular, invalidateJoinedCommunities } from '@/lib/usePopularCommunities';
 import { Camera, Loader2, Check, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -120,8 +122,20 @@ export default function CreateCommunityPage() {
         created_by: user.id,
         banner_url: bannerUrl,
         icon_url: iconUrl,
-      }).select('slug').single();
+      }).select('id, slug').single();
       if (error) throw error;
+      // Creator auto-joins as moderator (Reddit behavior) — best effort,
+      // never blocks community creation.
+      if (data?.id) {
+        await supabase
+          .from('community_members')
+          .insert({ community_id: (data as any).id, user_id: user.id, role: 'moderator' })
+          .then(() => {});
+      }
+      // New community must appear in lists/sidebars instantly
+      clearPageCache('communities');
+      invalidatePopular();
+      invalidateJoinedCommunities(user.id);
       toast('success', `k/${slug} created!`);
       router.push(`/k/${data.slug}`);
     } catch (err: any) {

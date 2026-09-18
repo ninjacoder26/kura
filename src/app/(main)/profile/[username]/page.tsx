@@ -42,6 +42,10 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     setUpvotedPosts(prev => prev.filter(p => p.id !== id));
   }
 
+  function handlePostsRemove(id: string) {
+    setPosts(prev => prev.filter(p => p.id !== id));
+  }
+
   // Own-profile extras: saved + upvoted posts (Reddit-style profile tabs)
   useEffect(() => {
     if (!profile || !user || user.id !== profile.id) return;
@@ -242,7 +246,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                       </button>
                     ))}
                   </div>
-                  <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." />
+                  <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." onDelete={handlePostsRemove} />
                 </>
               )}
               {activeTab === 'comments' && (comments.length === 0 ? (

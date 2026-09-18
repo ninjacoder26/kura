@@ -8,6 +8,7 @@ import { getSiteUrl } from '@/lib/site';
 import { useToast } from '@/components/providers/ToastProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import AuthCard from '@/components/ui/AuthCard';
+import Captcha from '@/components/ui/Captcha';
 
 function LoginForm() {
   const router = useRouter();
@@ -20,6 +21,8 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  const [captchaOk, setCaptchaOk] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -35,6 +38,8 @@ function LoginForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!agreed) { setError('Please agree to the Terms of Service and Privacy Policy first.'); return; }
+    if (!captchaOk) { setError('Please complete the human check first.'); return; }
     setLoading(true); setError('');
 
     const supabase = createClient();
@@ -90,6 +95,8 @@ function LoginForm() {
   const showResend = /confirm|verif/i.test(error) && email.length > 0;
 
   async function handleGoogle() {
+    if (!agreed) { toast('error', 'Please agree to the Terms of Service and Privacy Policy first.'); return; }
+    if (!captchaOk) { toast('error', 'Please complete the human check first.'); return; }
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -139,16 +146,27 @@ function LoginForm() {
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required autoComplete="current-password"
               className="w-full h-10 px-3 text-sm rounded-lg border bg-[var(--surface-hover)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-all hover:border-[var(--border-strong)]" />
           </div>
-          <button type="submit" disabled={loading} className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] disabled:opacity-50 py-2.5">
+          <button type="submit" disabled={loading || !agreed || !captchaOk} className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] disabled:opacity-50 py-2.5">
             {loading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
-        <p className="mt-4 text-center text-[11px] leading-relaxed text-[var(--fg4)]">
-          By continuing, you agree to our{' '}
-          <Link href="/terms" className="underline hover:text-[var(--fg3)]">User Agreement</Link>
-          {' '}and acknowledge that you understand the{' '}
-          <Link href="/privacy" className="underline hover:text-[var(--fg3)]">Privacy Policy</Link>.
-        </p>
+        <div className="mt-4 space-y-3">
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={e => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded accent-[var(--brand-500)] cursor-pointer"
+            />
+            <span className="text-[11px] leading-relaxed text-[var(--fg4)]">
+              I agree to the{' '}
+              <Link href="/terms" className="underline hover:text-[var(--fg3)]">Terms of Service</Link>
+              {' '}and{' '}
+              <Link href="/privacy" className="underline hover:text-[var(--fg3)]">Privacy Policy</Link>.
+            </span>
+          </label>
+          <Captcha onChange={setCaptchaOk} />
+        </div>
     </AuthCard>
   );
 }

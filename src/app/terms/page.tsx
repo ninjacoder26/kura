@@ -9,7 +9,7 @@ export default function TermsPage() {
       <Header />
       <div className="px-4 py-8 max-w-[740px] mx-auto">
         <h1 className="text-2xl font-bold text-[var(--fg)] mb-2">Terms of Service</h1>
-        <p className="text-xs text-[var(--fg4)] mb-6">Last updated: September 15, 2026</p>
+        <p className="text-xs text-[var(--fg4)] mb-6">Last updated: September 18, 2026</p>
 
         <div className="space-y-6 text-sm text-[var(--fg2)] leading-relaxed">
           <section>
@@ -30,7 +30,7 @@ export default function TermsPage() {
               <li>All activities that occur under your account</li>
               <li>Notifying us immediately of any unauthorized use</li>
             </ul>
-            <p className="mt-2">You must provide accurate and complete information during registration and keep your account information up to date.</p>
+            <p className="mt-2">You must provide accurate and complete information during registration and keep your account information up to date. Registration requires you to expressly accept these Terms and the Privacy Policy via the consent checkbox, and to pass a human-verification check. Accounts created by automated means in circumvention of these checks may be suspended.</p>
           </section>
 
           <section>
@@ -58,6 +58,9 @@ export default function TermsPage() {
 
             <h3 className="font-bold mt-3 mb-1">5.3 DMCA / Copyright</h3>
             <p>If you believe your copyrighted work has been used on Kura without authorization, please contact us at <a href="mailto:ninjacoder26@gmail.com" className="text-[var(--brand-500)] hover:underline">ninjacoder26@gmail.com</a> with the required information under the Nepal Copyright Act, 2059 (2002).</p>
+
+            <h3 className="font-bold mt-3 mb-1">5.4 AI Tagging and Recommendations</h3>
+            <p>Posts you publish may be automatically analyzed to generate topic tags, which power search, tag pages, and personalized recommendations based on content you upvote. Tagging is automated and provides no guarantee of accuracy; tags do not alter your content. Details of this processing are described in our Privacy Policy.</p>
           </section>
 
           <section>
@@ -66,8 +69,8 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-base font-bold text-[var(--fg)] mb-2">7. Communities and Voting</h2>
-            <p>Kura allows users to create and participate in communities. Community moderators are responsible for enforcing community-specific rules. The voting system is used to surface quality content and is not a measure of truth or factuality.</p>
+            <h2 className="text-base font-bold text-[var(--fg)] mb-2">7. Communities, Voting, and Moderation</h2>
+            <p>Kura allows users to create and participate in communities. Community creators and appointed moderators may edit their community&apos;s description, rules, appearance, and settings, and enforce community-specific rules. Site administrators may remove any content or restrict any account that violates these Terms. The voting system is used to surface quality content and is not a measure of truth or factuality. Users may report content they believe violates these Terms through the in-app reporting tools; reports are reviewed by moderators.</p>
           </section>
 
           <section>

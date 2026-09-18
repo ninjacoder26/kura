@@ -25,7 +25,8 @@ export async function middleware(request: NextRequest) {
 
   const protectedRoutes = ['/submit', '/settings', '/k/create'];
   const isProtected = protectedRoutes.some(r => pathname.startsWith(r))
-    || /^\/post\/[^/]+\/edit/.test(pathname);
+    || /^\/post\/[^/]+\/edit/.test(pathname)
+    || /^\/k\/[^/]+\/edit/.test(pathname);
 
   // Public pages (home, communities, posts, profiles, search) skip Supabase
   // entirely — no server roundtrip blocking the navigation. The client SDK
