@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { X, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import { requireSession, friendlyDbError } from '@/lib/dbErrors';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 
@@ -27,6 +29,7 @@ interface ReportDialogProps {
 export default function ReportDialog({ targetType, targetId, onClose }: ReportDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [category, setCategory] = useState('spam');
   const [submitting, setSubmitting] = useState(false);
 
@@ -38,6 +41,11 @@ export default function ReportDialog({ targetType, targetId, onClose }: ReportDi
     setSubmitting(true);
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        onClose();
+        router.push('/login');
+      }))) return;
       const reason = REASONS.find(r => r.key === category);
       const { error } = await supabase.from('reports').insert({
         reporter_id: user.id,
@@ -50,7 +58,7 @@ export default function ReportDialog({ targetType, targetId, onClose }: ReportDi
       toast('success', 'Thanks — our moderators will review this');
       onClose();
     } catch (err: any) {
-      toast('error', err.message || 'Failed to submit report');
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'submit this report' }));
     } finally {
       setSubmitting(false);
     }

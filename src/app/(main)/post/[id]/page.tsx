@@ -13,6 +13,7 @@ import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { fetchAndCacheCommentVotes, markVoted, markSavedState } from '@/lib/feedVoteCache';
+import { requireSession, friendlyDbError } from '@/lib/dbErrors';
 import { optimizeImageUrl } from '@/lib/cloudinary';
 import { useRouter } from 'next/navigation';
 
@@ -142,6 +143,15 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     setScore(oldScore + delta);
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) {
+        setVote(oldValue);
+        markVoted(user.id, id, oldValue);
+        setScore(oldScore);
+        return;
+      }
       if (newValue) {
         const { error } = await supabase.from('votes').upsert({ user_id: user.id, post_id: id, value: newValue === 'up' ? 1 : -1 });
         if (error) throw error;
@@ -153,7 +163,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       setVote(oldValue);
       markVoted(user.id, id, oldValue);
       setScore(oldScore);
-      toast('error', err.message || 'Failed to vote');
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'vote' }));
     }
   }
 
@@ -164,6 +174,14 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     markSavedState(user.id, id, !saved);
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) {
+        setSaved(oldSaved);
+        markSavedState(user.id, id, oldSaved);
+        return;
+      }
       if (oldSaved) {
         const { error } = await supabase.from('saved_posts').delete().eq('user_id', user.id).eq('post_id', id);
         if (error) throw error;
@@ -176,7 +194,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     } catch (err: any) {
       setSaved(oldSaved);
       markSavedState(user.id, id, oldSaved);
-      toast('error', err.message || 'Failed to save');
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'save this post' }));
     }
   }
 
@@ -195,18 +213,26 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   async function handleDelete() {
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) return;
       const { error } = await supabase.from('posts').update({ is_removed: true }).eq('id', id);
       if (error) throw error;
       toast('success', 'Post deleted');
       router.push('/');
-    } catch (err: any) { toast('error', err.message || 'Failed to delete'); }
+    } catch (err: any) { toast('error', friendlyDbError(err.message, { authed: true, action: 'delete this post' })); }
   }
 
   async function handleComment(body: string) {
     if (!user) { toast('info', 'Log in to comment'); return; }
+    const supabase = createClient();
+    if (!(await requireSession(supabase, () => {
+      toast('error', 'Your session expired. Please log in again.');
+      router.push('/login');
+    }))) return;
     setSubmittingComment(true);
     try {
-      const supabase = createClient();
       const { error } = await supabase.from('comments').insert({ body, author_id: user.id, post_id: id });
       if (error) throw error;
       // Notify the post author (best effort, never blocks)
@@ -221,7 +247,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       }
       toast('success', 'Comment added');
       await loadPost();
-    } catch (err: any) { toast('error', err.message || 'Failed to add comment'); } finally { setSubmittingComment(false); }
+    } catch (err: any) { toast('error', friendlyDbError(err.message, { authed: true, action: 'comment' })); } finally { setSubmittingComment(false); }
   }
 
   function handleShare() {

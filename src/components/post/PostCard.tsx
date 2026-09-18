@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, Trash2, Pencil, ExternalLink, Maximize2, MoreHorizontal, Flag } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
 import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
+import { requireSession, friendlyDbError } from '@/lib/dbErrors';
 import { optimizeImageUrl } from '@/lib/cloudinary';
 import JoinButton from '@/components/community/JoinButton';
 import {
@@ -81,6 +83,7 @@ function safeHostname(url: string): string | null {
 const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }: PostCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const userId = user?.id;
   // Resolved synchronously from the feed batch cache when available.
   const [vote, setVote] = useState<'up' | 'down' | null>(() => (userId ? getCachedVote(userId, post.id) ?? null : null));
@@ -168,6 +171,15 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
 
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) {
+        setVote(oldVote);
+        markVoted(user.id, post.id, oldVote);
+        setScore(post.upvotes - post.downvotes);
+        return;
+      }
       let result;
       if (newVote) {
         result = await supabase.from('votes').upsert({ user_id: user.id, post_id: post.id, value: newVote === 'up' ? 1 : -1 });
@@ -179,7 +191,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
       setVote(oldVote);
       markVoted(user.id, post.id, oldVote);
       setScore(post.upvotes - post.downvotes);
-      toast('error', err.message || 'Failed to vote');
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'vote' }));
     }
   }
 
@@ -191,6 +203,14 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
     markSavedState(user.id, post.id, !oldSaved);
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) {
+        setSaved(oldSaved);
+        markSavedState(user.id, post.id, oldSaved);
+        return;
+      }
       let result;
       if (oldSaved) {
         result = await supabase.from('saved_posts').delete().eq('user_id', user.id).eq('post_id', post.id);
@@ -202,7 +222,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
     } catch (err: any) {
       setSaved(oldSaved);
       markSavedState(user.id, post.id, oldSaved);
-      toast('error', err.message || 'Failed to save post');
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'save this post' }));
     }
   }
 
@@ -222,12 +242,16 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
     setDeleting(true);
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) return;
       const { error } = await supabase.from('posts').update({ is_removed: true }).eq('id', post.id);
       if (error) throw error;
       toast('success', 'Post deleted');
       onDelete?.(post.id);
     } catch (err: any) {
-      toast('error', err.message || 'Failed to delete');
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'delete this post' }));
     } finally {
       setDeleting(false);
     }
@@ -289,7 +313,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
             <time>{formatDate(post.created_at)}</time>
             {showCommunity && post.community?.id && (
               <span className="ml-auto pl-2">
-                <JoinButton communityId={post.community.id} communityName={post.community.name} className="!text-[11px] !py-0.5 !px-3 !min-h-0" />
+                <JoinButton communityId={post.community.id} communityName={post.community.name} className="!text-xs !py-1 !px-3.5 !min-h-[28px]" />
               </span>
             )}
           </div>

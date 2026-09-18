@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
+import { requireSession, friendlyDbError } from '@/lib/dbErrors';
 import { invalidateJoinedCommunities } from '@/lib/usePopularCommunities';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +39,7 @@ interface JoinButtonProps {
 export default function JoinButton({ communityId, communityName, className }: JoinButtonProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [, force] = useState(0);
   const [checking, setChecking] = useState(false);
 
@@ -84,6 +87,13 @@ export default function JoinButton({ communityId, communityName, className }: Jo
     toast('success', wasMember ? `Left ${communityName}` : `Joined ${communityName}`);
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) {
+        setCached(user.id, communityId, wasMember);
+        return;
+      }
       if (wasMember) {
         const { error } = await supabase.from('community_members').delete().eq('community_id', communityId).eq('user_id', user.id);
         if (error) throw error;
@@ -94,7 +104,7 @@ export default function JoinButton({ communityId, communityName, className }: Jo
       invalidateJoinedCommunities(user.id);
     } catch (err: any) {
       setCached(user.id, communityId, wasMember);
-      toast('error', err.message || 'Failed');
+      toast('error', friendlyDbError(err.message, { authed: true, action: wasMember ? 'leave this community' : 'join this community' }));
     }
   }
 

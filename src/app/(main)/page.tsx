@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
-import { getPageCache, setPageCache, hasPageCache } from '@/lib/pageCache';
+import { getPageCache, setPageCache, hasPageCache, isCacheFresh } from '@/lib/pageCache';
 import Sidebar from '@/components/layout/Sidebar';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
@@ -162,6 +162,12 @@ export default function HomePage() {
   useEffect(() => { setPage(0); setHasMore(true); }, [sort, topRange]);
 
   useEffect(() => {
+    // Fresh cache (<30s): skip the refetch entirely on revisit — zero backend load
+    if (page === 0 && retryKey === 0 && isCacheFresh(feedKey)) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
     async function load() {
       if (page === 0) setLoading(true);
       else setLoadingMore(true);
@@ -183,7 +189,7 @@ export default function HomePage() {
         query = query.range(page * 20, (page + 1) * 20 - 1);
         const { data, error: fetchErr } = await query;
         if (fetchErr) throw fetchErr;
-        if (data) {
+        if (!cancelled && data) {
           const mapped = (data as any[]).map((p: any) => ({
             ...p,
             author: p.author || { username: 'unknown' },
@@ -205,9 +211,10 @@ export default function HomePage() {
           });
           setHasMore(more);
         }
-      } catch (err: any) { setError(err.message || 'Failed to load feed'); } finally { setLoading(false); setLoadingMore(false); }
+      } catch (err: any) { if (!cancelled) setError(err.message || 'Failed to load feed'); } finally { if (!cancelled) { setLoading(false); setLoadingMore(false); } }
     }
     load();
+    return () => { cancelled = true; };
   }, [sort, topRange, page, retryKey]);
 
   function handlePostDelete(id: string) {
@@ -233,7 +240,7 @@ export default function HomePage() {
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 w-full max-w-[760px]">
           {/* Hero for logged-out users */}
           {showLoggedOutUI && <HeroBanner />}
 

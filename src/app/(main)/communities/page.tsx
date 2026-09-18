@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { getPageCache, setPageCache, hasPageCache } from '@/lib/pageCache';
+import { getPageCache, setPageCache, hasPageCache, isCacheFresh } from '@/lib/pageCache';
 import Sidebar from '@/components/layout/Sidebar';
 import CommunityCard from '@/components/community/CommunityCard';
 import type { CommunityData } from '@/components/community/CommunityCard';
@@ -25,6 +25,11 @@ export default function CommunitiesPage() {
 
   useEffect(() => {
     let cancelled = false;
+    // Fresh cache (<30s): skip the refetch entirely on revisit
+    if (page === 0 && isCacheFresh(listKey)) {
+      setLoading(false);
+      return () => {};
+    }
     async function load() {
       if (page === 0) setLoading(true);
       else setLoadingMore(true);
@@ -58,7 +63,7 @@ export default function CommunitiesPage() {
         <aside className="hidden lg:block w-[272px] shrink-0">
           <div className="sticky top-12"><Sidebar /></div>
         </aside>
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 w-full max-w-[960px]">
           <div className="flex items-center gap-2 mb-3">
             <h1 className="text-lg font-medium text-[var(--fg)]">Browse Communities</h1>
             {loading && filtered.length > 0 && (

@@ -10,7 +10,7 @@ import { Search as SearchIcon, Users, FileText, Loader2, TrendingUp, ChevronRigh
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
-import { getPageCache, setPageCache, hasPageCache } from '@/lib/pageCache';
+import { getPageCache, setPageCache, hasPageCache, isCacheFresh } from '@/lib/pageCache';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { usePopularCommunities } from '@/lib/usePopularCommunities';
 import { COMMUNITY_CATEGORIES } from '@/lib/constants';
@@ -195,6 +195,11 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
 
   useEffect(() => {
     let cancelled = false;
+    // Fresh cache (<30s): skip the refetch entirely on revisit
+    if (isCacheFresh('discover:trending')) {
+      setLoadingTrending(false);
+      return () => { cancelled = true; };
+    }
     (async () => {
       try {
         const supabase = createClient();

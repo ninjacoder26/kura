@@ -68,6 +68,7 @@ function EditPostForm() {
             </button>
           </div>
         </form>
+        <div className="pb-20 lg:pb-8" />
       </div>
   );
 }

@@ -115,7 +115,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   if (loading && !profile) return (
     <div className="bg-[var(--bg)]">
       <div className="h-32 sm:h-40 bg-[var(--surface)] animate-pulse" />
-      <div className="max-w-[900px] mx-auto px-4 -mt-10">
+      <div className="max-w-[900px] mx-auto px-3 sm:px-4 -mt-10">
         <div className="flex items-end gap-3 mb-4">
           <div className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] rounded-full bg-[var(--surface-hover)] animate-pulse border-4 border-[var(--surface)]" />
           <div className="flex-1 pb-1">
@@ -125,7 +125,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </div>
         <div className="h-10 bg-[var(--surface-hover)] rounded animate-pulse" />
       </div>
-      <div className="max-w-[900px] mx-auto px-4 py-4">
+      <div className="max-w-[900px] mx-auto px-3 sm:px-4 py-4">
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
             <div key={i} className="post-card p-4">
@@ -197,7 +197,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </div>
       )}
 
-      <div className="max-w-[900px] mx-auto px-4 py-4">
+      <div className="max-w-[900px] mx-auto px-3 sm:px-4 py-4">
         {/* Tabs */}
         <div className="flex items-center gap-0 border-b border-[var(--border)] mb-3">
           {[

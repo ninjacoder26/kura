@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { requireSession, friendlyDbError } from '@/lib/dbErrors';
 import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
-import { getPageCache, setPageCache } from '@/lib/pageCache';
+import { getPageCache, setPageCache, isCacheFresh } from '@/lib/pageCache';
 import { invalidateJoinedCommunities } from '@/lib/usePopularCommunities';
 import Link from 'next/link';
 import PostList from '@/components/post/PostList';
@@ -18,6 +20,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 export default function CommunityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [slug, setSlug] = useState('');
   const [community, setCommunity] = useState<any>(null);
   const [posts, setPosts] = useState<PostData[]>([]);
@@ -62,6 +65,12 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   const load = useCallback(async (pageNum: number = 0) => {
     if (!slug) return;
     const currentUser = userRef.current;
+    const postsKey = `k:${slug}:${sort}:${topRange}`;
+    // Fresh cache (<30s): skip the refetch entirely on revisit
+    if (pageNum === 0 && isCacheFresh(postsKey) && communityRef.current) {
+      setLoading(false);
+      return;
+    }
     if (pageNum === 0) setLoading(true);
     else setLoadingMore(true);
 
@@ -116,7 +125,6 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       // Batch vote/save state in 2 queries (claims sync so cards mount warm)
       if (currentUser) fetchAndCacheVotes(supabase, currentUser.id, mapped.map((p: any) => p.id));
       const more = mapped.length === 20;
-      const postsKey = `k:${slug}:${sort}:${topRange}`;
       setPosts(prev => {
         const next = pageNum === 0 ? mapped : [...prev, ...mapped];
         if (pageNum === 0) setPageCache(postsKey, { posts: next, hasMore: more });
@@ -149,6 +157,13 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
     load(nextPage);
   }
 
+  function handleRetry() {
+    setError('');
+    setPage(0);
+    // Bypass the fresh-cache throttle by clearing this feed's key first
+    load(0);
+  }
+
   async function toggleJoin() {
     if (!user) { toast('info', 'Log in to join communities'); return; }
     const wasMember = isMember;
@@ -159,6 +174,14 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
 
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) {
+        setIsMember(wasMember);
+        setCommunity((c: any) => c ? { ...c, member_count: c.member_count + (wasMember ? 1 : -1) } : c);
+        return;
+      }
       if (wasMember) {
         const { error } = await supabase.from('community_members').delete().eq('community_id', community.id).eq('user_id', user.id);
         if (error) throw error;
@@ -171,13 +194,15 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       // Revert on error
       setIsMember(wasMember);
       setCommunity((c: any) => c ? { ...c, member_count: c.member_count + (wasMember ? 1 : -1) } : c);
-      toast('error', err.message || 'Failed');
+      toast('error', friendlyDbError(err.message, { authed: true, action: wasMember ? 'leave this community' : 'join this community' }));
     }
   }
 
   if (loading && !community) return <div className="px-4 py-8"><LoadingSpinner /></div>;
 
-  if (error || !community) {
+  // Error page only when there is nothing cached to show; otherwise the
+  // feed renders with a small inline retry banner (no webpage switching).
+  if (!community) {
     return (
         <div className="px-4 py-8">
           <EmptyState title={error || 'Community not found'} action={<Link href="/communities"><button className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm">Browse communities</button></Link>} />
@@ -207,8 +232,16 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         </div>
       </div>
 
-      <div className="flex px-4 py-4 gap-5 max-w-[1200px] mx-auto">
+      <div className="flex px-3 sm:px-4 py-3 sm:py-4 gap-4 sm:gap-5 max-w-[1200px] mx-auto w-full">
         <main className="flex-1 min-w-0">
+          {error && (
+            <div className="post-card p-3 mb-3 flex items-center gap-2">
+              <p className="flex-1 text-xs text-[var(--error)]">{error}</p>
+              <button onClick={handleRetry} className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-xs shrink-0">
+                Retry
+              </button>
+            </div>
+          )}
           <Link href={`/submit?community=${community.slug}`} className="block mb-3">
             <div className="post-card flex items-center gap-3 p-3 hover:border-[var(--border-strong)] transition-colors">
               <div className="h-9 w-9 rounded-full bg-[var(--surface-hover)] flex items-center justify-center border border-[var(--border)] shrink-0">

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowBigUp, ArrowBigDown, Reply, Trash2, Flag, ChevronDown } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import Avatar from '@/components/ui/Avatar';
@@ -9,6 +10,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
+import { requireSession, friendlyDbError } from '@/lib/dbErrors';
 import {
   getCachedCommentVote,
   isCommentVoteClaimed,
@@ -45,6 +47,7 @@ interface CommentItemProps {
 function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const userId = user?.id;
   const [vote, setVote] = useState<'up' | 'down' | null>(() => (userId ? getCachedCommentVote(userId, comment.id) ?? null : null));
   const [score, setScore] = useState(comment.upvotes - comment.downvotes);
@@ -133,6 +136,15 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
 
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) {
+        setVote(oldVote);
+        if (userId) markCommentVoted(userId, comment.id, oldVote);
+        setScore(comment.upvotes - comment.downvotes);
+        return;
+      }
       let result;
       if (newVote) {
         result = await supabase
@@ -152,15 +164,19 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
       setVote(oldVote);
       if (userId) markCommentVoted(userId, comment.id, oldVote);
       setScore(comment.upvotes - comment.downvotes);
-      toast('error', err.message || 'Failed to vote');
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'vote' }));
     }
   }
 
   async function handleReply() {
     if (!user || !replyBody.trim()) return;
+    const supabase = createClient();
+    if (!(await requireSession(supabase, () => {
+      toast('error', 'Your session expired. Please log in again.');
+      router.push('/login');
+    }))) return;
     setSubmittingReply(true);
     try {
-      const supabase = createClient();
       const { error } = await supabase.from('comments').insert({
         body: replyBody.trim(),
         author_id: user.id,
@@ -184,7 +200,7 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
       setReplyBody('');
       onReplyAdded?.();
     } catch (err: any) {
-      toast('error', err.message || 'Failed');
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'reply' }));
     } finally {
       setSubmittingReply(false);
     }
@@ -206,6 +222,10 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
     setDeleting(true);
     try {
       const supabase = createClient();
+      if (!(await requireSession(supabase, () => {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+      }))) return;
       const { error } = await supabase
         .from('comments')
         .update({ is_removed: true, body: '[deleted]' })
@@ -214,7 +234,7 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
       toast('success', 'Comment deleted');
       onReplyAdded?.();
     } catch (err: any) {
-      toast('error', err.message || 'Failed');
+      toast('error', friendlyDbError(err.message, { authed: true, action: 'delete this comment' }));
     } finally {
       setDeleting(false);
     }
