@@ -111,7 +111,7 @@ html {
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.5;
   overflow-x: hidden;
 }
@@ -194,14 +194,6 @@ input, textarea, select, button { font-family: inherit; }
   opacity: 0.85;
 }
 
-/* Vote button press effect */
-.vote-btn {
-  transition: transform 0.1s ease, color 0.1s ease;
-}
-.vote-btn:active {
-  transform: scale(1.3);
-}
-
 /* Smooth page transitions */
 .page-enter {
   animation: fadeIn 0.15s ease-out;
@@ -236,28 +228,44 @@ input, textarea, select, button { font-family: inherit; }
   }
 }
 
-/* Vote Button - Reddit style, larger touch targets */
+/* Vote Button - Reddit style: quiet by default, gray pill on hover,
+   pop on press, orange/blue when active */
 .vote-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 2px;
+  border-radius: 6px;
   color: var(--fg4);
-  transition: color .1s;
+  transition: transform .1s ease, color .1s ease, background-color .1s ease;
 }
 .vote-btn:hover {
   color: var(--fg2);
+  background: var(--surface-hover);
+}
+.vote-btn:active {
+  transform: scale(1.3);
 }
 .vote-btn.upvoted {
   color: var(--accent-500);
 }
+.vote-btn.upvoted:hover {
+  background: transparent;
+}
 .vote-btn.downvoted {
   color: var(--brand-500);
 }
+.vote-btn.downvoted:hover {
+  background: transparent;
+}
 
-/* Button - Reddit style */
+/* Round icon buttons (header, dialogs) — circular hover like Reddit */
+.icon-btn {
+  border-radius: var(--r-full) !important;
+}
+
+/* Button - Reddit style: 14px semibold pill */
 .kura-btn {
   display: inline-flex;
   align-items: center;
@@ -265,7 +273,7 @@ input, textarea, select, button { font-family: inherit; }
   gap: 6px;
   padding: 6px 16px;
   border-radius: var(--r-full);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.2;
   transition: all .1s ease;

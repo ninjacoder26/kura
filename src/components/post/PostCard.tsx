@@ -255,7 +255,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
           <button onClick={() => handleVote('up')} className={cn('vote-btn', vote === 'up' && 'upvoted')} aria-label="Upvote" aria-pressed={vote === 'up'}>
             <ArrowBigUp className="h-[22px] w-[22px]" fill={vote === 'up' ? 'currentColor' : 'none'} />
           </button>
-          <span className={cn('text-[11px] font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--accent-500)]', vote === 'down' && 'text-[var(--brand-500)]')}>
+          <span className={cn('text-xs font-bold tabular-nums leading-none', vote === 'up' && 'text-[var(--accent-500)]', vote === 'down' && 'text-[var(--brand-500)]')}>
             {formatNumber(score)}
           </span>
           <button onClick={() => handleVote('down')} className={cn('vote-btn', vote === 'down' && 'downvoted')} aria-label="Downvote" aria-pressed={vote === 'down'}>
@@ -294,9 +294,9 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
             )}
           </div>
 
-          {/* Title - Larger, bolder */}
+          {/* Title */}
           <Link href={`/post/${post.id}`} className="block group/title mt-1.5">
-            <h3 className="text-[17px] font-semibold text-[var(--fg)] group-hover/title:underline leading-snug">{post.title}</h3>
+            <h3 className="text-[18px] font-semibold text-[var(--fg)] group-hover/title:underline leading-snug">{post.title}</h3>
           </Link>
 
           {/* Link preview */}
@@ -337,7 +337,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
 
           {/* Body preview */}
           {post.body && (
-            <div className="mt-2 text-[13px] text-[var(--fg3)] line-clamp-3 leading-relaxed break-words">
+            <div className="mt-2 text-sm text-[var(--fg3)] line-clamp-3 leading-relaxed break-words">
               {post.body}
             </div>
           )}

@@ -107,9 +107,9 @@ export default function Header() {
           <span className="font-bold text-xl tracking-tight hidden md:block text-[var(--fg)]">kura</span>
         </Link>
 
-        {/* Search */}
-        <div className="flex-1 max-w-[690px] hidden sm:block">
-          <Link href="/search">
+        {/* Search — centered like Reddit */}
+        <div className="flex-1 hidden sm:flex justify-center min-w-0 px-2">
+          <Link href="/search" className="w-full max-w-[690px]">
             <div className="flex items-center h-10 px-4 rounded-full bg-[var(--surface-hover)] border border-[var(--border)] hover:border-[var(--brand-400)] hover:bg-[var(--surface)] transition-all cursor-text group">
               <Search className="h-4 w-4 mr-2.5 text-[var(--fg4)] group-hover:text-[var(--brand-500)] shrink-0 transition-colors" />
               <span className="text-sm text-[var(--fg4)]">Search Kura</span>
@@ -126,14 +126,14 @@ export default function Header() {
             </button>
           </Link>
           <Link href="/submit" className="sm:hidden" aria-label="Create post">
-            <button className="vote-btn !w-9 !h-9" aria-label="Create post"><Plus className="h-5 w-5" /></button>
+            <button className="vote-btn icon-btn !w-9 !h-9" aria-label="Create post"><Plus className="h-5 w-5" /></button>
           </Link>
 
           {/* Notifications */}
           <div ref={notifRef} className="relative">
             <button
               onClick={() => { setNotifOpen(!notifOpen); if (!notifOpen) loadNotifs(); }}
-              className="vote-btn !w-9 !h-9 relative"
+              className="vote-btn icon-btn !w-9 !h-9 relative"
               aria-label="Notifications"
               title="Notifications"
             >
@@ -188,7 +188,7 @@ export default function Header() {
           </div>
 
           {/* Theme toggle */}
-          <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="vote-btn !w-9 !h-9" aria-label="Toggle theme" title="Toggle theme">
+          <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="vote-btn icon-btn !w-9 !h-9" aria-label="Toggle theme" title="Toggle theme">
             {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
 
@@ -241,7 +241,7 @@ export default function Header() {
 
           {/* Mobile search */}
           <Link href="/search" className="sm:hidden" aria-label="Search">
-            <button className="vote-btn !w-9 !h-9" aria-label="Search"><Search className="h-5 w-5" /></button>
+            <button className="vote-btn icon-btn !w-9 !h-9" aria-label="Search"><Search className="h-5 w-5" /></button>
           </Link>
         </div>
       </div>

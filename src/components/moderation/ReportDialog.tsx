@@ -63,7 +63,7 @@ export default function ReportDialog({ targetType, targetId, onClose }: ReportDi
         <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
           <Flag className="h-4 w-4 text-[var(--fg4)]" />
           <h2 className="text-sm font-bold text-[var(--fg)] flex-1">Report {targetType}</h2>
-          <button onClick={onClose} className="vote-btn !w-8 !h-8" aria-label="Close">
+          <button onClick={onClose} className="vote-btn icon-btn !w-8 !h-8" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>

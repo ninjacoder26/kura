@@ -192,11 +192,11 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         <div className="px-4 max-w-[1200px] mx-auto">
           <div className="flex items-end gap-3 -mt-6 pb-3">
             <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-[var(--surface)] shrink-0" style={{ backgroundColor: community.color }}>
-              {community.icon_url ? <img src={community.icon_url} alt={community.name} className="h-full w-full rounded-full object-cover" /> : community.name.charAt(0)}
+              {community.icon_url ? <img src={community.icon_url} alt={community.name} loading="lazy" decoding="async" className="h-full w-full rounded-full object-cover" /> : community.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0 pb-1">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-bold text-[var(--fg)]">{community.name}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-[var(--fg)]">{community.name}</h1>
                 <button onClick={toggleJoin} className={`pressable kura-btn text-sm py-1.5 px-5 ${isMember ? 'border border-[var(--border)] text-[var(--fg2)] bg-transparent hover:border-[var(--border-strong)]' : 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)]'}`}>
                   {isMember ? 'Joined' : 'Join'}
                 </button>
