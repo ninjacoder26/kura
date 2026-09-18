@@ -239,7 +239,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
     <div className="bg-[var(--bg)]">
       <div className="h-24 sm:h-32" style={{ backgroundColor: community.color }} />
       <div className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="px-4 max-w-[1200px] mx-auto">
+        <div className="px-3 sm:px-4">
           <div className="flex items-end gap-3 -mt-6 pb-3">
             <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-[var(--surface)] shrink-0" style={{ backgroundColor: community.color }}>
               {community.icon_url ? <img src={community.icon_url} alt={community.name} loading="lazy" decoding="async" className="h-full w-full rounded-full object-cover" /> : community.name.charAt(0)}
@@ -257,7 +257,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         </div>
       </div>
 
-      <div className="flex px-3 sm:px-4 py-3 sm:py-4 gap-4 sm:gap-5 max-w-[1200px] mx-auto w-full">
+      <div className="flex px-3 sm:px-4 py-3 sm:py-4 gap-4 sm:gap-5 w-full">
         <main className="flex-1 min-w-0">
           {error && (
             <div className="post-card p-3 mb-3 flex items-center gap-2">

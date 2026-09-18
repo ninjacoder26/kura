@@ -147,7 +147,7 @@ function SearchPageInner() {
         <div className="sticky top-12"><Sidebar /></div>
       </aside>
 
-      <main className="flex-1 min-w-0 max-w-[740px] mx-auto w-full">
+      <main className="flex-1 min-w-0 w-full">
         <div className="relative mb-3">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)]" />
           <input type="text" value={query} onChange={e => handleSearch(e.target.value)} placeholder="Search Kura"

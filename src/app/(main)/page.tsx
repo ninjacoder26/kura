@@ -257,7 +257,7 @@ export default function HomePage() {
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 w-full xl:max-w-[760px]">
+        <main className="flex-1 min-w-0 w-full">
           {/* Hero for logged-out users */}
           {showLoggedOutUI && <HeroBanner />}
 
