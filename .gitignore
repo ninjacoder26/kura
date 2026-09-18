@@ -32,6 +32,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local-only update logs (never push to GitHub)
+update-logs/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

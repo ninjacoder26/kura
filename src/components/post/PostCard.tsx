@@ -9,8 +9,10 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
 import { requireSession, friendlyDbError } from '@/lib/dbErrors';
+import { bumpTagAffinity } from '@/lib/tagAffinity';
 import { optimizeImageUrl } from '@/lib/cloudinary';
 import JoinButton from '@/components/community/JoinButton';
+import RoleBadge from '@/components/ui/RoleBadge';
 import {
   getCachedVote,
   getCachedSaved,
@@ -28,6 +30,7 @@ interface PostAuthor {
   username: string;
   display_name?: string;
   avatar_url?: string;
+  role?: string | null;
 }
 
 interface PostCommunity {
@@ -45,6 +48,7 @@ export interface PostData {
   type?: string;
   url?: string;
   image_url?: string;
+  tags?: string[] | null;
   author: PostAuthor;
   author_id?: string;
   community?: PostCommunity;
@@ -166,6 +170,9 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
     interactedRef.current = true;
     setVote(newVote);
     markVoted(user.id, post.id, newVote);
+    // Recommendations react instantly: upvotes grow tag affinity, un-votes shrink it
+    if (newVote === 'up' && oldVote !== 'up') bumpTagAffinity(user.id, post.tags, 1);
+    else if (oldVote === 'up' && newVote !== 'up') bumpTagAffinity(user.id, post.tags, -1);
     const delta = (newVote === 'up' ? 1 : newVote === 'down' ? -1 : 0) - (oldVote === 'up' ? 1 : oldVote === 'down' ? -1 : 0);
     setScore(score + delta);
 
@@ -190,6 +197,8 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
     } catch (err: any) {
       setVote(oldVote);
       markVoted(user.id, post.id, oldVote);
+      if (newVote === 'up' && oldVote !== 'up') bumpTagAffinity(user.id, post.tags, -1);
+      else if (oldVote === 'up' && newVote !== 'up') bumpTagAffinity(user.id, post.tags, 1);
       setScore(post.upvotes - post.downvotes);
       toast('error', friendlyDbError(err.message, { authed: true, action: 'vote' }));
     }
@@ -309,6 +318,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
               </>
             )}
             <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link>
+            <RoleBadge role={post.author.role} />
             <span className="text-[var(--fg4)]">·</span>
             <time>{formatDate(post.created_at)}</time>
             {showCommunity && post.community?.id && (
@@ -366,6 +376,22 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
             </div>
           )}
 
+          {/* AI tags — tap to explore the topic */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+              {post.tags.slice(0, 3).map(tag => (
+                <Link
+                  key={tag}
+                  href={`/search?q=${encodeURIComponent(tag)}`}
+                  onClick={e => e.stopPropagation()}
+                  className="px-2 py-0.5 rounded-full text-[11px] font-semibold text-[var(--brand-500)] bg-[var(--brand-500)]/10 hover:bg-[var(--brand-500)]/20 transition-colors"
+                >
+                  #{tag}
+                </Link>
+              ))}
+            </div>
+          )}
+
           {/* Action bar - Reddit style with proper spacing */}
           <div className="flex items-center gap-1 mt-2 -ml-1 flex-wrap">
             <Link href={`/post/${post.id}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
@@ -394,14 +420,14 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
               )}
             </div>
             {user && user.id === post.author_id && (
-              <>
-                <Link href={`/post/${post.id}/edit`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
-                  <Pencil className="h-5 w-5" /> Edit
-                </Link>
-                <button onClick={handleDeleteClick} disabled={deleting} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20')}>
-                  <Trash2 className="h-5 w-5" /> {confirmingDelete ? (deleting ? 'Deleting…' : 'Confirm?') : 'Delete'}
-                </button>
-              </>
+              <Link href={`/post/${post.id}/edit`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors">
+                <Pencil className="h-5 w-5" /> Edit
+              </Link>
+            )}
+            {user && (user.id === post.author_id || user.role === 'admin') && (
+              <button onClick={handleDeleteClick} disabled={deleting} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20')}>
+                <Trash2 className="h-5 w-5" /> {confirmingDelete ? (deleting ? 'Deleting…' : 'Confirm?') : 'Delete'}
+              </button>
             )}
           </div>
         </div>

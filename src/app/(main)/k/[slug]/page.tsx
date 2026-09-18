@@ -81,7 +81,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
       // runs in PARALLEL with the community fetch — one round trip total.
       let postsQuery = supabase
         .from('posts')
-        .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!inner(id,name,slug,color,icon_url)')
+        .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!inner(id,name,slug,color,icon_url)')
         .eq('is_removed', false)
         .eq('community.slug', slug);
 

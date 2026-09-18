@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowBigUp, ArrowBigDown, Reply, Trash2, Flag, ChevronDown } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import Avatar from '@/components/ui/Avatar';
+import RoleBadge from '@/components/ui/RoleBadge';
 import ReportDialog from '@/components/moderation/ReportDialog';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -24,6 +25,7 @@ interface CommentAuthor {
   username: string;
   display_name?: string;
   avatar_url?: string;
+  role?: string | null;
 }
 
 export interface CommentData {
@@ -255,6 +257,7 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
         <Link href={`/profile/${comment.author.username}`} className="text-xs font-bold text-[var(--fg)] hover:underline">
           @{comment.author.username}
         </Link>
+        <RoleBadge role={comment.author.role} />
         <span className="text-[var(--fg4)]">·</span>
         <time className="text-[11px] text-[var(--fg4)]">{formatDate(comment.created_at)}</time>
         {collapsed && comment.children && comment.children.length > 0 && (
@@ -284,6 +287,11 @@ function CommentItem({ comment, onReplyAdded }: CommentItemProps) {
         {user && user.id === comment.author_id && (
           <button onClick={handleDeleteClick} disabled={deleting} className={cn('flex items-center gap-1 px-2 py-1 text-[11px] font-bold rounded transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20')}>
             <Trash2 className="h-3.5 w-3.5" /> {confirmingDelete ? (deleting ? '…' : 'Confirm?') : 'Delete'}
+          </button>
+        )}
+        {user && user.role === 'admin' && user.id !== comment.author_id && (
+          <button onClick={handleDeleteClick} disabled={deleting} className={cn('flex items-center gap-1 px-2 py-1 text-[11px] font-bold rounded transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20')}>
+            <Trash2 className="h-3.5 w-3.5" /> {confirmingDelete ? (deleting ? '…' : 'Confirm?') : 'Remove'}
           </button>
         )}
         {user && (

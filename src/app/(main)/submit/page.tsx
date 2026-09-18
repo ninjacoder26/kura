@@ -181,7 +181,7 @@ function SubmitForm() {
         imageUrl = await uploadImage();
         if (type === 'image' && !imageUrl) { setSubmitting(false); return; }
       }
-      const { error } = await supabase.from('posts').insert({
+      const { data: created, error } = await supabase.from('posts').insert({
         title: title.trim(),
         body: body.trim() || null,
         type,
@@ -189,9 +189,18 @@ function SubmitForm() {
         image_url: imageUrl,
         author_id: user.id,
         community_id: communityId || null,
-      });
+      }).select('id').single();
       if (error) throw error;
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
+      // AI tagging runs in the background whenever the tagger is free —
+      // never blocks the posting flow.
+      if (created?.id) {
+        fetch('/api/tag-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postId: created.id }),
+        }).catch(() => {});
+      }
       toast('success', 'Post created!');
       router.push(selectedCommunity ? `/k/${selectedCommunity.slug}` : '/');
     } catch (err: any) {

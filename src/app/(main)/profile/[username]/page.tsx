@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/Feedback';
 import { cn, formatDate } from '@/lib/utils';
 import { MapPin, Calendar, Link as LinkIcon, ArrowBigUp, MessageSquare, Ban, Twitter, Instagram, Github, Settings, Bookmark, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
+import RoleBadge from '@/components/ui/RoleBadge';
 import { useAuth } from '@/components/providers/AuthProvider';
 
 interface UserComment { id: string; body: string; post_id: string; post_title?: string; created_at: string; }
@@ -53,7 +54,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         if (activeTab === 'saved') {
           const { data } = await supabase
             .from('saved_posts')
-            .select('post:posts(*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url))')
+            .select('post:posts(*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url))')
             .eq('user_id', profile.id)
             .order('created_at', { ascending: false })
             .limit(20);
@@ -66,7 +67,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         } else {
           const { data } = await supabase
             .from('votes')
-            .select('post:posts(*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url))')
+            .select('post:posts(*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url))')
             .eq('user_id', profile.id)
             .eq('value', 1)
             .not('post_id', 'is', null)
@@ -100,7 +101,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         if (prof) {
           // Parallel queries for posts and comments
           const [postsResult, commentsResult] = await Promise.all([
-            supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20),
+            supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20),
             supabase.from('comments').select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20)
           ]);
           if (postsResult.data) setPosts((postsResult.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
@@ -170,6 +171,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                 <h1 className="text-xl sm:text-2xl font-bold text-[var(--fg)]">
                   {profile.display_name || profile.username}
                 </h1>
+                <RoleBadge role={profile.role} size="md" />
                 {profile.is_banned && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 rounded-full">
                     <Ban className="h-3 w-3" /> Banned

@@ -57,7 +57,7 @@ export default function TermsPage() {
             <p>Kura reserves the right to remove any content that violates these Terms or is otherwise objectionable, at our sole discretion. We may also suspend or terminate accounts of repeat offenders.</p>
 
             <h3 className="font-bold mt-3 mb-1">5.3 DMCA / Copyright</h3>
-            <p>If you believe your copyrighted work has been used on Kura without authorization, please contact us at <a href="mailto:legal@kura.com.np" className="text-[var(--brand-500)] hover:underline">legal@kura.com.np</a> with the required information under the Nepal Copyright Act, 2059 (2002).</p>
+            <p>If you believe your copyrighted work has been used on Kura without authorization, please contact us at <a href="mailto:ninjacoder26@gmail.com" className="text-[var(--brand-500)] hover:underline">ninjacoder26@gmail.com</a> with the required information under the Nepal Copyright Act, 2059 (2002).</p>
           </section>
 
           <section>
@@ -97,7 +97,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-bold text-[var(--fg)] mb-2">13. Contact</h2>
-            <p>For questions about these Terms, contact us at <a href="mailto:legal@kura.com.np" className="text-[var(--brand-500)] hover:underline">legal@kura.com.np</a></p>
+            <p>For questions about these Terms, contact us at <a href="mailto:ninjacoder26@gmail.com" className="text-[var(--brand-500)] hover:underline">ninjacoder26@gmail.com</a></p>
           </section>
         </div>
 

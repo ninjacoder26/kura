@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
+import { getTagAffinity, tagBoost } from '@/lib/tagAffinity';
 import { getPageCache, setPageCache, hasPageCache, isCacheFresh } from '@/lib/pageCache';
 import Sidebar from '@/components/layout/Sidebar';
 import PostList from '@/components/post/PostList';
@@ -146,7 +147,8 @@ export default function HomePage() {
   const showLoggedOutUI = useShowLoggedOutUI();
   const [sort, setSort] = useState<FeedSort>('hot');
   const [topRange, setTopRange] = useState<TopRange>('week');
-  const feedKey = `home:${sort}:${topRange}`;
+  // Reranked per user (affinity differs), so the user is part of the key.
+  const feedKey = `home:${sort}:${topRange}:${user?.id ?? 'anon'}`;
   // Seed from cache: revisits render instantly, revalidate happens below.
   const [posts, setPosts] = useState<PostData[]>(() => getPageCache<{ posts: PostData[] }>(feedKey)?.posts ?? []);
   const [loading, setLoading] = useState(() => !hasPageCache(feedKey));
@@ -173,7 +175,12 @@ export default function HomePage() {
       else setLoadingMore(true);
       try {
         const supabase = createClient();
-        let query = supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('is_removed', false);
+        // Affinity loads in parallel with posts — never on the critical path
+        const uid = userRef.current?.id;
+        const affPromise: Promise<Map<string, number> | null> = uid
+          ? getTagAffinity(supabase, uid)
+          : Promise.resolve(null);
+        let query = supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('is_removed', false);
 
         if (sort === 'new') query = query.order('created_at', { ascending: false });
         else if (sort === 'top') {
@@ -187,7 +194,7 @@ export default function HomePage() {
         else query = query.order('upvotes', { ascending: false }).order('downvotes', { ascending: true });
 
         query = query.range(page * 20, (page + 1) * 20 - 1);
-        const { data, error: fetchErr } = await query;
+        const [{ data, error: fetchErr }, aff] = await Promise.all([query, affPromise]);
         if (fetchErr) throw fetchErr;
         if (!cancelled && data) {
           const mapped = (data as any[]).map((p: any) => ({
@@ -195,17 +202,23 @@ export default function HomePage() {
             author: p.author || { username: 'unknown' },
             community: p.community || undefined,
           }));
+          // Recommendation blend (soft, in-page only): familiar tags nudge up.
+          // Skipped for New (recency stays strict) and logged-out users.
+          let ranked = mapped;
+          if (aff && sort !== 'new' && mapped.length > 1) {
+            const scoreOf = (p: any) => p.upvotes + tagBoost(aff, p.tags) * 2;
+            ranked = [...mapped].sort((a, b) => scoreOf(b) - scoreOf(a));
+          }
           // Batch vote/save state in 2 queries (claims sync so cards mount warm)
-          const uid = userRef.current?.id;
-          if (uid) fetchAndCacheVotes(supabase, uid, mapped.map(p => p.id));
+          if (uid) fetchAndCacheVotes(supabase, uid, ranked.map(p => p.id));
           const more = data.length === 20;
           setPosts(prev => {
-            const next = page === 0 ? mapped : [...prev, ...mapped];
+            const next = page === 0 ? ranked : [...prev, ...ranked];
             // Cache the accumulated feed so back-navigation is instant
             if (page === 0) setPageCache(feedKey, { posts: next, hasMore: more });
             else {
               const prevCached = getPageCache<{ posts: PostData[] }>(feedKey);
-              if (prevCached) setPageCache(feedKey, { posts: [...prevCached.posts, ...mapped], hasMore: more });
+              if (prevCached) setPageCache(feedKey, { posts: [...prevCached.posts, ...ranked], hasMore: more });
             }
             return next;
           });
@@ -215,7 +228,7 @@ export default function HomePage() {
     }
     load();
     return () => { cancelled = true; };
-  }, [sort, topRange, page, retryKey]);
+  }, [sort, topRange, page, retryKey, feedKey]);
 
   function handlePostDelete(id: string) {
     setPosts(prev => {

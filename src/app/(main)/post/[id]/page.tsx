@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import CommentThread, { type CommentData, collectCommentIds } from '@/components/comments/CommentThread';
+import RoleBadge from '@/components/ui/RoleBadge';
 import ReportDialog from '@/components/moderation/ReportDialog';
 import CommentForm from '@/components/comments/CommentForm';
 import { LoadingSpinner, EmptyState } from '@/components/ui/Feedback';
@@ -62,7 +63,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     const currentUser = userRef.current;
     try {
       const supabase = createClient();
-      const { data: postData, error: postErr } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('id', id).single();
+      const { data: postData, error: postErr } = await supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('id', id).single();
       if (postErr) throw postErr;
       // Deleted/lost author rows must never crash the page
       setPost(postData ? { ...postData, author: postData.author || { username: 'unknown' } } : postData);
@@ -75,7 +76,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       }
 
       const queries: Promise<any>[] = [
-        supabase.from('comments').select('*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url)').eq('post_id', id).eq('is_removed', false).order('created_at', { ascending: true })
+        supabase.from('comments').select('*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url,role)').eq('post_id', id).eq('is_removed', false).order('created_at', { ascending: true })
       ];
 
       if (currentUser) {
@@ -296,7 +297,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           <div className="flex-1 min-w-0 p-3">
             <div className="flex items-center flex-wrap gap-x-1 text-xs text-[var(--fg4)]">
               {post.community && <><Link href={`/k/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">k/{post.community.slug}</Link><span>·</span></>}
-              <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link><span>·</span><time>{formatDate(post.created_at)}</time>
+              <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link><RoleBadge role={post.author.role} /><span>·</span><time>{formatDate(post.created_at)}</time>
             </div>
             <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2">{post.title}</h1>
             {post.type === 'link' && post.url && safeHostname(post.url) && (
@@ -341,6 +342,9 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
                   <Link href={`/post/${id}/edit`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[var(--fg4)] hover:bg-[var(--surface-hover)] transition-colors"><Pencil className="h-5 w-5" /> Edit</Link>
                   <button onClick={handleDeleteClick} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20')}><Trash2 className="h-5 w-5" /> {confirmingDelete ? 'Confirm?' : 'Delete'}</button>
                 </>
+              )}
+              {user && user.role === 'admin' && user.id !== post.author_id && (
+                <button onClick={handleDeleteClick} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-[var(--error)] hover:bg-red-50 dark:hover:bg-red-900/20')}><Trash2 className="h-5 w-5" /> {confirmingDelete ? 'Confirm?' : 'Remove'}</button>
               )}
             </div>
           </div>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
-import { User, Camera, Lock, Image, Twitter, Instagram, Github } from 'lucide-react';
+import { User, Camera, Lock, Image, Twitter, Instagram, Github, Crown } from 'lucide-react';
 import { uploadToCloudinary, isCloudinaryConfigured, validateImageFile } from '@/lib/cloudinary';
 
 const PROFILE_COLORS = [
@@ -340,7 +340,50 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+
+        {/* Admin tools — visible to admins only */}
+        {user.role === 'admin' && (
+          <AdminTools />
+        )}
         <div className="pb-20 lg:pb-8" />
       </div>
+  );
+}
+
+function AdminTools() {
+  const { toast } = useToast();
+  const [sweeping, setSweeping] = useState(false);
+  const [lastSweep, setLastSweep] = useState<{ tagged: number; at: string } | null>(null);
+
+  async function handleSweep() {
+    setSweeping(true);
+    try {
+      const res = await fetch('/api/tag-post', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) throw new Error(json.error || 'Sweep failed');
+      const n = (json.tagged || []).length;
+      setLastSweep({ tagged: n, at: new Date().toLocaleTimeString() });
+      toast('success', n > 0 ? `Tagged ${n} post${n === 1 ? '' : 's'}` : 'Nothing untagged — all caught up');
+    } catch (err: any) {
+      toast('error', err.message || 'Sweep failed');
+    } finally {
+      setSweeping(false);
+    }
+  }
+
+  return (
+    <div className="mt-8 pt-6 border-t border-[var(--border)]">
+      <h2 className="text-sm font-bold text-[var(--fg)] mb-1 flex items-center gap-2">
+        <Crown className="h-4 w-4 text-[#FFB000]" fill="currentColor" /> Admin Tools
+      </h2>
+      <p className="text-xs text-[var(--fg4)] mb-4">Run the AI tagger over the oldest untagged posts (3 per run).</p>
+      <button type="button" onClick={handleSweep} disabled={sweeping}
+        className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all ${!sweeping ? 'bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)]' : 'bg-[var(--fg4)] text-[var(--bg)] cursor-not-allowed opacity-50'}`}>
+        {sweeping ? 'Tagging…' : 'Tag untagged posts'}
+      </button>
+      {lastSweep && (
+        <p className="text-xs text-[var(--fg4)] mt-2">Last run tagged {lastSweep.tagged} at {lastSweep.at}</p>
+      )}
+    </div>
   );
 }

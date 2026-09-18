@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
@@ -67,9 +68,11 @@ function DiscoverTopics({ onPick }: { onPick?: (label: string) => void }) {
   );
 }
 
-export default function SearchPage() {
+function SearchPageInner() {
   const { user } = useAuth();
-  const [query, setQuery] = useState('');
+  const searchParams = useSearchParams();
+  const initialQ = searchParams.get('q') || '';
+  const [query, setQuery] = useState(initialQ);
   const [activeTab, setActiveTab] = useState('posts');
   const [posts, setPosts] = useState<PostData[]>([]);
   const [communities, setCommunities] = useState<CommunityData[]>([]);
@@ -83,7 +86,7 @@ export default function SearchPage() {
   useSyncFeedVotes(posts, user?.id);
 
   function escapeIlike(str: string) {
-    return str.replace(/%/g, '\\%').replace(/_/g, '\\_');
+    return str.replace(/[,()]/g, '').replace(/%/g, '\\%').replace(/_/g, '\\_');
   }
 
   const doSearch = useCallback(async (q: string) => {
@@ -92,10 +95,13 @@ export default function SearchPage() {
     setSearching(true);
     setSearched(true);
     const escaped = escapeIlike(q);
+    // Exact-tag matches (tags are normalized lowercase-hyphen) OR title text
+    const qTrim = q.trim().toLowerCase();
+    const tagTerm = /^[a-z0-9-]{2,24}$/.test(qTrim) ? `,tags.cs.{${qTrim}}` : '';
     try {
       const supabase = createClient();
       const [postRes, commRes, peopleRes] = await Promise.all([
-        supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('is_removed', false).ilike('title', `%${escaped}%`).order('created_at', { ascending: false }).limit(10),
+        supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('is_removed', false).or(`title.ilike.%${escaped}%${tagTerm}`).order('created_at', { ascending: false }).limit(10),
         supabase.from('communities').select('*').or(`name.ilike.%${escaped}%,slug.ilike.%${escaped}%`).order('member_count', { ascending: false }).limit(10),
         supabase.from('profiles').select('username, display_name, avatar_url, bio').or(`username.ilike.%${escaped}%,display_name.ilike.%${escaped}%`).limit(10),
       ]);
@@ -126,6 +132,12 @@ export default function SearchPage() {
     }
     debounceRef.current = setTimeout(() => doSearch(q), 300);
   }
+
+  // Deep-linked searches (e.g. tapping a #tag chip) run once on mount
+  useEffect(() => {
+    if (initialQ.length >= 2) doSearch(initialQ);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const showResults = query.length >= 2;
 
@@ -205,7 +217,7 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
         const supabase = createClient();
         const { data } = await supabase
           .from('posts')
-          .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)')
+          .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)')
           .eq('is_removed', false)
           .order('upvotes', { ascending: false })
           .limit(6);
@@ -267,5 +279,21 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
+          <div className="flex-1 min-w-0 max-w-[740px] mx-auto w-full">
+            <div className="h-10 rounded skeleton mb-3" />
+          </div>
+        </div>
+      }
+    >
+      <SearchPageInner />
+    </Suspense>
   );
 }
