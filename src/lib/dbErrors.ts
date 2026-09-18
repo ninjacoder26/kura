@@ -32,13 +32,16 @@ export async function requireSession(
  */
 export function friendlyDbError(
   message: string | undefined,
-  opts: { authed: boolean; action?: string }
+  opts: { authed: boolean; action?: string; adminHint?: boolean }
 ): string {
   const msg = message || '';
   const action = opts.action || 'do that';
   if (/row-level security|RLS|policy/i.test(msg)) {
+    const adminNote = opts.adminHint
+      ? ' As admin, run migrations 007 and 012 in the Supabase SQL editor, then retry.'
+      : '';
     return opts.authed
-      ? `You don't have permission to ${action}. If this is yours, log out and back in, then retry.`
+      ? `You don't have permission to ${action}. If this is yours, log out and back in, then retry.${adminNote}`
       : 'Your session expired. Please log in again.';
   }
   if (/jwt|token expired|invalid token|refresh token/i.test(msg)) {

@@ -11,6 +11,7 @@ import { Search as SearchIcon, Users, FileText, Loader2, TrendingUp, ChevronRigh
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
+import { topVocab } from '@/lib/tagging';
 import { getPageCache, setPageCache, hasPageCache, isCacheFresh } from '@/lib/pageCache';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { usePopularCommunities } from '@/lib/usePopularCommunities';
@@ -97,10 +98,14 @@ function SearchPageInner() {
     setSearching(true);
     setSearched(true);
     const escaped = escapeIlike(q);
+    // Exact-tag matches use tags.cs (needs only migration 008, always safe:
+    // the term is added only for normalized tag-shaped queries).
+    const qTrim = q.trim().toLowerCase();
+    const tagTerm = /^[a-z0-9-]{2,24}$/.test(qTrim) ? `,tags.cs.{${qTrim}}` : '';
     try {
       const supabase = createClient();
       const [postRes, commRes, peopleRes] = await Promise.all([
-        supabase.from('posts').select(POST_SELECT).eq('is_removed', false).ilike('title', `%${escaped}%`).order('created_at', { ascending: false }).limit(10),
+        supabase.from('posts').select(POST_SELECT).eq('is_removed', false).or(`title.ilike.%${escaped}%${tagTerm}`).order('created_at', { ascending: false }).limit(10),
         supabase.from('communities').select('*').or(`name.ilike.%${escaped}%,slug.ilike.%${escaped}%`).order('member_count', { ascending: false }).limit(10),
         supabase.from('profiles').select('username, display_name, avatar_url, bio').or(`username.ilike.%${escaped}%,display_name.ilike.%${escaped}%`).limit(10),
       ]);
@@ -216,9 +221,29 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
   const popular = usePopularCommunities(5);
   const [trending, setTrending] = useState<PostData[]>(() => getPageCache<{ posts: PostData[] }>('discover:trending')?.posts ?? []);
   const [loadingTrending, setLoadingTrending] = useState(() => !hasPageCache('discover:trending'));
+  const [trendingTags, setTrendingTags] = useState<string[]>(() => getPageCache<string[]>('discover:tag-cloud') ?? []);
   const userRef = useRef(user);
   userRef.current = user;
   useSyncFeedVotes(trending, user?.id);
+
+  // Trending tag cloud (cached; powers tag discovery for everyone)
+  useEffect(() => {
+    if (trendingTags.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.from('posts').select('tags').eq('is_removed', false).order('created_at', { ascending: false }).limit(150);
+        if (!cancelled && data) {
+          const top = topVocab((data as any[]).map(r => r.tags), 12);
+          setTrendingTags(top);
+          setPageCache('discover:tag-cloud', top);
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -263,6 +288,23 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
         <h2 className="text-xs font-bold uppercase tracking-wide text-[var(--fg4)] mb-2">Browse by topic</h2>
         <DiscoverTopics onPick={onPick} />
       </div>
+
+      {trendingTags.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-wide text-[var(--fg4)] mb-2">Trending tags</h2>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {trendingTags.map(tag => (
+              <Link
+                key={tag}
+                href={`/tag/${encodeURIComponent(tag)}`}
+                className="px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap transition-colors shrink-0 bg-[var(--brand-500)]/10 text-[var(--brand-500)] hover:bg-[var(--brand-500)]/20"
+              >
+                #{tag}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--fg4)] mb-2">

@@ -12,6 +12,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
 import { requireSession, friendlyDbError } from '@/lib/dbErrors';
+import { rpcDelete } from '@/lib/deleteOps';
 import {
   getCachedCommentVote,
   isCommentVoteClaimed,
@@ -236,15 +237,45 @@ const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceColl
         toast('error', 'Your session expired. Please log in again.');
         router.push('/login');
       }))) return;
-      const { error } = await supabase
-        .from('comments')
-        .update({ is_removed: true, body: '[deleted]' })
-        .eq('id', comment.id);
-      if (error) throw error;
-      toast('success', 'Comment deleted');
-      onReplyAdded?.();
+      const outcome = await rpcDelete(supabase, 'delete_comment', comment.id);
+      if (outcome.ok) {
+        toast('success', 'Comment deleted');
+        onReplyAdded?.();
+        return;
+      }
+      if (outcome.reason === 'missing_rpc') {
+        const { error } = await supabase
+          .from('comments')
+          .update({ is_removed: true, body: '[deleted]' })
+          .eq('id', comment.id);
+        if (error) throw error;
+        toast('success', 'Comment deleted');
+        onReplyAdded?.();
+        return;
+      }
+      if (outcome.reason === 'forbidden') {
+        throw new Error(user?.role === 'admin' ? 'DB_FORBIDDEN_ADMIN' : 'DB_FORBIDDEN');
+      }
+      if (outcome.reason === 'not_found') {
+        toast('error', 'Already gone.');
+        onReplyAdded?.();
+        return;
+      }
+      if (outcome.reason === 'session') {
+        toast('error', 'Your session expired. Please log in again.');
+        router.push('/login');
+        return;
+      }
+      throw new Error(outcome.message || 'Delete failed');
     } catch (err: any) {
-      toast('error', friendlyDbError(err.message, { authed: true, action: 'delete this comment' }));
+      const m = err.message || '';
+      if (m === 'DB_FORBIDDEN_ADMIN') {
+        toast('error', 'Database refused this. Run migrations 007, 012 and 013 in the Supabase SQL editor, then retry.');
+      } else if (m === 'DB_FORBIDDEN') {
+        toast('error', "This isn't yours to delete.");
+      } else {
+        toast('error', friendlyDbError(m, { authed: true, action: 'delete this comment', adminHint: user?.role === 'admin' }));
+      }
     } finally {
       setDeleting(false);
     }
