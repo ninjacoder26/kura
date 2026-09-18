@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
+import { getPageCache, setPageCache } from '@/lib/pageCache';
 import { invalidateJoinedCommunities } from '@/lib/usePopularCommunities';
 import Link from 'next/link';
 import PostList from '@/components/post/PostList';
@@ -31,17 +32,28 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   const userRef = useRef(user);
   userRef.current = user;
   const communityRef = useRef<any>(null);
+  const sortRef = useRef(sort);
+  sortRef.current = sort;
+  const topRangeRef = useRef(topRange);
+  topRangeRef.current = topRange;
   useSyncFeedVotes(posts, user?.id);
 
   useEffect(() => {
     let cancelled = false;
     params.then(p => {
       if (cancelled) return;
-      // Fresh community: clear stale content immediately (no flash of old data)
-      setCommunity(null);
-      communityRef.current = null;
-      setPosts([]);
+      // Seed instantly from cache (revalidate happens right after)
+      const sk = sortRef.current;
+      const tr = topRangeRef.current;
+      const cached = getPageCache<{ posts: PostData[]; hasMore: boolean }>(`k:${p.slug}:${sk}:${tr}`);
+      const meta = getPageCache<any>(`kmeta:${p.slug}`);
+      setCommunity(meta ?? null);
+      communityRef.current = meta ?? null;
+      setPosts(cached?.posts ?? []);
+      setHasMore(cached?.hasMore ?? true);
+      setIsMember(false);
       setError('');
+      setLoading(!(cached || meta));
       setSlug(p.slug);
     });
     return () => { cancelled = true; };
@@ -56,31 +68,13 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
     try {
       const supabase = createClient();
 
-      // Community first (fast indexed lookup; also fails fast on bad slugs)
-      let comm = pageNum === 0 ? null : communityRef.current;
-      if (!comm) {
-        const { data, error } = await supabase.from('communities').select('*').eq('slug', slug).single();
-        if (error) throw error;
-        comm = data;
-        communityRef.current = comm;
-        setCommunity(comm);
-        if (currentUser && comm) {
-          const { data: member } = await supabase.from('community_members').select('id').eq('community_id', comm.id).eq('user_id', currentUser.id).single();
-          setIsMember(!!member);
-        }
-      }
-      if (!comm) {
-        setPosts([]);
-        setHasMore(false);
-        return;
-      }
-
-      // Posts filtered server-side so sort + pagination are actually correct
+      // Posts filtered by community SLUG server-side (!inner join) so this
+      // runs in PARALLEL with the community fetch — one round trip total.
       let postsQuery = supabase
         .from('posts')
-        .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)')
+        .select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url), community:communities!inner(id,name,slug,color,icon_url)')
         .eq('is_removed', false)
-        .eq('community_id', comm.id);
+        .eq('community.slug', slug);
 
       if (sort === 'new') postsQuery = postsQuery.order('created_at', { ascending: false });
       else if (sort === 'top') {
@@ -93,10 +87,27 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
 
       postsQuery = postsQuery.range(pageNum * 20, (pageNum + 1) * 20 - 1);
 
-      const { data, error } = await postsQuery;
-      if (error) throw error;
+      const needMeta = pageNum === 0 && !communityRef.current;
+      const [commResult, postsResult] = await Promise.all([
+        needMeta
+          ? supabase.from('communities').select('*').eq('slug', slug).single()
+          : Promise.resolve({ data: communityRef.current, error: null } as any),
+        postsQuery,
+      ]);
 
-      const mapped = ((data as any[]) || []).map((p: any) => ({
+      if (commResult.error) throw commResult.error;
+      const comm = commResult.data;
+      communityRef.current = comm;
+      setCommunity(comm);
+      setPageCache(`kmeta:${slug}`, comm);
+
+      if (currentUser && comm) {
+        const { data: member } = await supabase.from('community_members').select('id').eq('community_id', comm.id).eq('user_id', currentUser.id).single();
+        setIsMember(!!member);
+      }
+
+      if (postsResult.error) throw postsResult.error;
+      const mapped = ((postsResult.data as any[]) || []).map((p: any) => ({
         ...p,
         author: p.author || { username: 'unknown' },
         community: p.community || undefined,
@@ -104,8 +115,18 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
 
       // Batch vote/save state in 2 queries (claims sync so cards mount warm)
       if (currentUser) fetchAndCacheVotes(supabase, currentUser.id, mapped.map((p: any) => p.id));
-      setPosts(prev => pageNum === 0 ? mapped : [...prev, ...mapped]);
-      setHasMore(mapped.length === 20);
+      const more = mapped.length === 20;
+      const postsKey = `k:${slug}:${sort}:${topRange}`;
+      setPosts(prev => {
+        const next = pageNum === 0 ? mapped : [...prev, ...mapped];
+        if (pageNum === 0) setPageCache(postsKey, { posts: next, hasMore: more });
+        else {
+          const prevCached = getPageCache<{ posts: PostData[] }>(postsKey);
+          if (prevCached) setPageCache(postsKey, { posts: [...prevCached.posts, ...mapped], hasMore: more });
+        }
+        return next;
+      });
+      setHasMore(more);
     } catch (err: any) { setError(err.message || 'Failed to load community'); } finally { setLoading(false); setLoadingMore(false); }
   }, [slug, sort, topRange]);
 

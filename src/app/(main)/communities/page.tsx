@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getPageCache, setPageCache, hasPageCache } from '@/lib/pageCache';
 import Sidebar from '@/components/layout/Sidebar';
 import CommunityCard from '@/components/community/CommunityCard';
 import type { CommunityData } from '@/components/community/CommunityCard';
@@ -10,11 +11,13 @@ import { Users } from 'lucide-react';
 import { COMMUNITY_CATEGORIES } from '@/lib/constants';
 
 export default function CommunitiesPage() {
-  const [communities, setCommunities] = useState<CommunityData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState('all');
+  const listKey = `communities:${category}`;
+  // Seed from cache: revisits render instantly, revalidate happens below.
+  const [communities, setCommunities] = useState<CommunityData[]>(() => getPageCache<{ list: CommunityData[] }>(listKey)?.list ?? []);
+  const [loading, setLoading] = useState(() => !hasPageCache(listKey));
   const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('all');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
@@ -32,8 +35,13 @@ export default function CommunitiesPage() {
         query = query.range(page * 20, (page + 1) * 20 - 1);
         const { data } = await query;
         if (!cancelled && data) {
-          setCommunities(prev => page === 0 ? (data as any[]) : [...prev, ...(data as any[])]);
-          setHasMore(data.length === 20);
+          const more = data.length === 20;
+          setCommunities(prev => {
+            const next = page === 0 ? (data as any[]) : [...prev, ...(data as any[])];
+            setPageCache(listKey, { list: next, hasMore: more });
+            return next;
+          });
+          setHasMore(more);
         }
       } catch { } finally { if (!cancelled) { setLoading(false); setLoadingMore(false); } }
     }

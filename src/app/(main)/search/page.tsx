@@ -10,6 +10,7 @@ import { Search as SearchIcon, Users, FileText, Loader2, TrendingUp, ChevronRigh
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
+import { getPageCache, setPageCache, hasPageCache } from '@/lib/pageCache';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { usePopularCommunities } from '@/lib/usePopularCommunities';
 import { COMMUNITY_CATEGORIES } from '@/lib/constants';
@@ -186,8 +187,8 @@ export default function SearchPage() {
 function Discover({ onPick }: { onPick: (q: string) => void }) {
   const { user } = useAuth();
   const popular = usePopularCommunities(5);
-  const [trending, setTrending] = useState<PostData[]>([]);
-  const [loadingTrending, setLoadingTrending] = useState(true);
+  const [trending, setTrending] = useState<PostData[]>(() => getPageCache<{ posts: PostData[] }>('discover:trending')?.posts ?? []);
+  const [loadingTrending, setLoadingTrending] = useState(() => !hasPageCache('discover:trending'));
   const userRef = useRef(user);
   userRef.current = user;
   useSyncFeedVotes(trending, user?.id);
@@ -213,6 +214,7 @@ function Discover({ onPick }: { onPick: (q: string) => void }) {
           const uid = userRef.current?.id;
           if (uid) fetchAndCacheVotes(supabase, uid, mapped.map((p: any) => p.id));
           setTrending(mapped);
+          setPageCache('discover:trending', { posts: mapped });
         }
       } catch {
         // Discover still shows communities even if trending fails

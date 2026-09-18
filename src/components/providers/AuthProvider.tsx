@@ -94,3 +94,36 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
+
+/**
+ * Synchronously checks whether a Supabase session token exists in local
+ * storage. Used to render the correct logged-out UI on the very first
+ * frame (before the async auth check resolves) so logged-out users never
+ * see content flash in late. Best-effort: any doubt returns false and the
+ * normal auth flow corrects the UI within a frame or two.
+ */
+export function hasStoredSession(): boolean {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return false;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const ref = url.replace(/^https?:\/\//, '').split('.')[0];
+    if (!ref) return false;
+    return window.localStorage.getItem(`sb-${ref}-auth-token`) != null;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * True when the logged-out UI (hero, join promos) should show: authoritative
+ * once auth resolves, best-guess on the first frame before that.
+ */
+export function useShowLoggedOutUI(): boolean {
+  const { user, loading } = useAuth();
+  const [bootLoggedOut, setBootLoggedOut] = useState<boolean | null>(null);
+  useEffect(() => {
+    setBootLoggedOut(!hasStoredSession());
+  }, []);
+  if (!loading) return !user;
+  return bootLoggedOut === true;
+}

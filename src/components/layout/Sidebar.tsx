@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { formatNumber } from '@/lib/utils';
 import { usePopularCommunities, useJoinedCommunities } from '@/lib/usePopularCommunities';
-import { useAuth } from '@/components/providers/AuthProvider';
+import { useAuth, useShowLoggedOutUI } from '@/components/providers/AuthProvider';
 import { NavLink, usePendingHref } from '@/components/layout/NavProgress';
 
 const NAV = [
@@ -19,7 +19,8 @@ const NAV = [
 export default function Sidebar() {
   const pathname = usePathname();
   const pending = usePendingHref();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
+  const showLoggedOutUI = useShowLoggedOutUI();
   // Cached across navigations: renders synchronously, never flashes empty.
   const popular = usePopularCommunities(5);
   const joined = useJoinedCommunities(user?.id, 8);
@@ -57,7 +58,7 @@ export default function Sidebar() {
       </div>
 
       {/* Logged-out promo — Reddit-style join card */}
-      {!authLoading && !user && (
+      {showLoggedOutUI && (
         <div className="sidebar-widget p-4 anim-fade-up">
           <p className="text-sm text-[var(--fg2)] leading-relaxed">
             Log in to follow communities, vote on posts, and join the conversation.

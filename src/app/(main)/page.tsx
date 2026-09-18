@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
+import { getPageCache, setPageCache, hasPageCache } from '@/lib/pageCache';
 import Sidebar from '@/components/layout/Sidebar';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
 import Link from 'next/link';
 import { Sparkles, Plus, Users, TrendingUp, Shield, MessageCircle, ChevronRight } from 'lucide-react';
 import { cn, formatNumber } from '@/lib/utils';
-import { useAuth } from '@/components/providers/AuthProvider';
+import { useAuth, useShowLoggedOutUI } from '@/components/providers/AuthProvider';
 import { usePopularCommunities } from '@/lib/usePopularCommunities';
 import { FEED_SORTS, TOP_RANGES, topRangeCutoff, risingCutoff, type FeedSort, type TopRange } from '@/lib/feedSort';
 import Avatar from '@/components/ui/Avatar';
@@ -141,14 +142,18 @@ function TrendingCommunities() {
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
-  const [posts, setPosts] = useState<PostData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState('');
+  // Correct on the first frame (no hero pop-in after auth resolves)
+  const showLoggedOutUI = useShowLoggedOutUI();
   const [sort, setSort] = useState<FeedSort>('hot');
   const [topRange, setTopRange] = useState<TopRange>('week');
+  const feedKey = `home:${sort}:${topRange}`;
+  // Seed from cache: revisits render instantly, revalidate happens below.
+  const [posts, setPosts] = useState<PostData[]>(() => getPageCache<{ posts: PostData[] }>(feedKey)?.posts ?? []);
+  const [loading, setLoading] = useState(() => !hasPageCache(feedKey));
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState('');
   const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(() => getPageCache<{ hasMore: boolean }>(feedKey)?.hasMore ?? true);
   const [retryKey, setRetryKey] = useState(0);
   const userRef = useRef(user);
   userRef.current = user;
@@ -187,8 +192,18 @@ export default function HomePage() {
           // Batch vote/save state in 2 queries (claims sync so cards mount warm)
           const uid = userRef.current?.id;
           if (uid) fetchAndCacheVotes(supabase, uid, mapped.map(p => p.id));
-          setPosts(prev => page === 0 ? mapped : [...prev, ...mapped]);
-          setHasMore(data.length === 20);
+          const more = data.length === 20;
+          setPosts(prev => {
+            const next = page === 0 ? mapped : [...prev, ...mapped];
+            // Cache the accumulated feed so back-navigation is instant
+            if (page === 0) setPageCache(feedKey, { posts: next, hasMore: more });
+            else {
+              const prevCached = getPageCache<{ posts: PostData[] }>(feedKey);
+              if (prevCached) setPageCache(feedKey, { posts: [...prevCached.posts, ...mapped], hasMore: more });
+            }
+            return next;
+          });
+          setHasMore(more);
         }
       } catch (err: any) { setError(err.message || 'Failed to load feed'); } finally { setLoading(false); setLoadingMore(false); }
     }
@@ -196,7 +211,11 @@ export default function HomePage() {
   }, [sort, topRange, page, retryKey]);
 
   function handlePostDelete(id: string) {
-    setPosts(prev => prev.filter(p => p.id !== id));
+    setPosts(prev => {
+      const next = prev.filter(p => p.id !== id);
+      setPageCache(feedKey, { posts: next, hasMore });
+      return next;
+    });
   }
 
   function handleRetry() {
@@ -215,8 +234,8 @@ export default function HomePage() {
         </aside>
 
         <main className="flex-1 min-w-0">
-          {/* Hero for logged-out users — gated on auth resolving to avoid flashing it at logged-in users */}
-          {!authLoading && !user && <HeroBanner />}
+          {/* Hero for logged-out users */}
+          {showLoggedOutUI && <HeroBanner />}
 
           {/* Composer — Reddit-style quick create box */}
           {!authLoading && user && (
@@ -281,7 +300,7 @@ export default function HomePage() {
           )}
 
           {/* Empty state for logged-out users */}
-          {!authLoading && !loading && posts.length === 0 && !error && !user && (
+          {showLoggedOutUI && !loading && posts.length === 0 && !error && (
             <div className="post-card p-5 mb-3 anim-fade-up text-center">
               <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] flex items-center justify-center mx-auto mb-3">
                 <Sparkles className="h-6 w-6 text-white" />
@@ -358,7 +377,7 @@ export default function HomePage() {
             <TrendingCommunities />
 
             {/* Rules - only for logged-out */}
-            {!authLoading && !user && <RuleCard />}
+            {showLoggedOutUI && <RuleCard />}
 
             {/* Footer links */}
             <div className="text-[11px] text-[var(--fg4)] space-y-1 px-1">

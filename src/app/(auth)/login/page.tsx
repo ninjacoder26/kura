@@ -116,6 +116,12 @@ function LoginForm() {
             {loading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
+        <p className="mt-4 text-center text-[11px] leading-relaxed text-[var(--fg4)]">
+          By continuing, you agree to our{' '}
+          <Link href="/terms" className="underline hover:text-[var(--fg3)]">User Agreement</Link>
+          {' '}and acknowledge that you understand the{' '}
+          <Link href="/privacy" className="underline hover:text-[var(--fg3)]">Privacy Policy</Link>.
+        </p>
     </AuthCard>
   );
 }
