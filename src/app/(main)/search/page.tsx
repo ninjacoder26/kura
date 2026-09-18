@@ -151,7 +151,7 @@ function SearchPageInner() {
         <div className="relative mb-3">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)]" />
           <input type="text" value={query} onChange={e => handleSearch(e.target.value)} placeholder="Search Kura"
-            className="w-full h-10 pl-10 pr-4 text-sm rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-colors" />
+            className="w-full h-10 pl-10 pr-4 text-sm rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-colors" />
           {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg4)] animate-spin" />}
         </div>
 
@@ -286,7 +286,7 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-    <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full max-w-[1460px] mx-auto">
+    <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
           <div className="flex-1 min-w-0 max-w-[740px] mx-auto w-full">
             <div className="h-10 rounded skeleton mb-3" />
           </div>

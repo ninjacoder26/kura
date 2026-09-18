@@ -20,8 +20,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full h-10 px-3 text-sm rounded border',
-            'bg-[var(--bg)] border-[var(--border)]',
+            'w-full h-10 px-3 text-sm rounded-lg border',
+            'bg-[var(--surface-hover)] border-[var(--border)]',
             'text-[var(--fg)] placeholder:text-[var(--fg4)]',
             'transition-all',
             'hover:border-[var(--border-strong)]',

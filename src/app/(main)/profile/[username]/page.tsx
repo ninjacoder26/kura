@@ -311,7 +311,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     </div>
                   )}
 
-                  <div className="flex items-center gap-5 pt-3 border-t border-[var(--border)] text-sm">
+                  <div className="flex items-center gap-5 pt-3 border-t border-[var(--border)] text-sm tabular-nums">
                     <div><p className="font-bold text-[var(--fg)]">{(profile.post_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
                     <div><p className="font-bold text-[var(--fg)]">{(profile.comment_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Comments</p></div>
                     <div><p className="font-bold" style={{ color: profileColor }}>{(profile.reputation || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Reputation</p></div>
@@ -364,7 +364,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               </div>
             )}
 
-            <div className="flex items-center gap-5 pt-3 border-t border-[var(--border)] text-sm">
+            <div className="flex items-center gap-5 pt-3 border-t border-[var(--border)] text-sm tabular-nums">
               <div><p className="font-bold text-[var(--fg)]">{(profile.post_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
               <div><p className="font-bold text-[var(--fg)]">{(profile.comment_count || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Comments</p></div>
               <div><p className="font-bold" style={{ color: profileColor }}>{(profile.reputation || 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Reputation</p></div>

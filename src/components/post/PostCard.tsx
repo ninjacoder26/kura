@@ -385,8 +385,8 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
             </div>
           )}
 
-          {/* AI tags — tap to explore the topic */}
-          {post.tags && post.tags.length > 0 && (
+          {/* AI tags — visible to admins only (engine + search use them silently) */}
+          {user?.role === 'admin' && post.tags && post.tags.length > 0 && (
             <div className="flex items-center gap-1.5 mt-2 flex-wrap">
               {post.tags.slice(0, 3).map(tag => (
                 <Link

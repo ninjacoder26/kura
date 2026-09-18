@@ -236,7 +236,7 @@ function SubmitForm() {
               type="button"
               onClick={() => setShowDropdown(!showDropdown)}
               className={cn(
-                'flex items-center gap-2 w-full sm:w-72 h-10 px-3 text-sm rounded border bg-[var(--surface)] transition-colors text-left',
+                'flex items-center gap-2 w-full sm:w-72 h-10 px-3 text-sm rounded-lg border bg-[var(--surface)] transition-colors text-left',
                 showDropdown ? 'border-[var(--brand-500)] ring-1 ring-[var(--brand-600)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
               )}
             >
@@ -263,7 +263,7 @@ function SubmitForm() {
                       placeholder="Search communities"
                       value={communitySearch}
                       onChange={e => setCommunitySearch(e.target.value)}
-                      className="w-full h-9 pl-9 pr-3 text-sm bg-[var(--bg)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--brand-500)]"
+                      className="w-full h-9 pl-9 pr-3 text-sm bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--brand-500)]"
                       autoFocus
                     />
                   </div>
@@ -345,7 +345,7 @@ function SubmitForm() {
                 maxLength={300}
                 required
                 className={cn(
-                  'w-full px-4 py-3 text-lg font-medium rounded-lg border bg-[var(--bg)] transition-all outline-none',
+                  'w-full px-4 py-3 text-lg font-medium rounded-lg border bg-[var(--surface-hover)] transition-all outline-none',
                   titleFocused ? 'border-[var(--brand-500)] ring-1 ring-[var(--brand-600)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
                 )}
               />
@@ -361,7 +361,7 @@ function SubmitForm() {
                   onChange={e => setBody(e.target.value)}
                   placeholder="Text (optional)"
                   rows={8}
-                  className="w-full px-4 py-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all resize-y min-h-[120px]"
+                  className="w-full px-4 py-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--surface-hover)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all resize-y min-h-[120px]"
                 />
               </div>
             )}
@@ -376,7 +376,7 @@ function SubmitForm() {
                   value={url}
                   onChange={e => setUrl(e.target.value)}
                   placeholder="Url"
-                  className="w-full h-12 pl-10 pr-4 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all"
+                  className="w-full h-12 pl-10 pr-4 text-sm rounded-lg border border-[var(--border)] bg-[var(--surface-hover)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all"
                 />
               </div>
             )}

@@ -352,7 +352,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
               {post.community && <><Link href={`/k/${post.community.slug}`} className="font-bold text-[var(--fg)] hover:underline">k/{post.community.slug}</Link><span>·</span></>}
               <Link href={`/profile/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link><RoleBadge role={post.author.role} /><span>·</span><time dateTime={post.created_at}>{formatDate(post.created_at)}</time>
             </div>
-            <h1 className="text-xl font-medium text-[var(--fg)] leading-snug mt-2 break-words">{post.title}</h1>
+            <h1 className="text-xl font-semibold text-[var(--fg)] leading-snug mt-2 break-words">{post.title}</h1>
             {post.type === 'link' && post.url && safeHostname(post.url) && (
               <a href={post.url} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--brand-500)] bg-[var(--brand-500)]/10 hover:bg-[var(--brand-500)]/20 transition-colors">
@@ -470,7 +470,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
                 {communityInfo.description && (
                   <p className="text-xs text-[var(--fg3)] leading-relaxed line-clamp-3 break-words">{communityInfo.description}</p>
                 )}
-                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[var(--border)] text-sm">
+                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[var(--border)] text-sm tabular-nums">
                   <div><p className="font-bold text-[var(--fg)]">{(communityInfo.member_count ?? 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Members</p></div>
                   <div><p className="font-bold text-[var(--fg)]">{(communityInfo.post_count ?? 0).toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
                   <div><p className="font-bold text-[var(--accent-500)]">{upvotePct}%</p><p className="text-[11px] text-[var(--fg4)]">Upvoted</p></div>

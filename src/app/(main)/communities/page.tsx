@@ -59,11 +59,11 @@ export default function CommunitiesPage() {
   });
 
   return (
-      <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full max-w-[1460px] mx-auto">
+      <div className="flex px-3 sm:px-4 py-3 gap-4 sm:gap-5 w-full">
         <aside className="hidden lg:block w-[272px] shrink-0">
           <div className="sticky top-12"><Sidebar /></div>
         </aside>
-        <main className="flex-1 min-w-0 w-full max-w-[960px]">
+        <main className="flex-1 min-w-0 w-full">
           <div className="flex items-center gap-2 mb-3">
             <h1 className="text-lg font-medium text-[var(--fg)]">Browse Communities</h1>
             {loading && filtered.length > 0 && (
@@ -71,7 +71,7 @@ export default function CommunitiesPage() {
             )}
           </div>
           <input type="text" placeholder="Filter communities" value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full h-10 px-4 text-sm rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-colors mb-3" />
+            className="w-full h-10 px-4 text-sm rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-colors mb-3" />
           <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide">
             {[{ value: 'all', label: 'All' }, ...COMMUNITY_CATEGORIES].map(c => (
               <button key={c.value} onClick={() => setCategory(c.value)}

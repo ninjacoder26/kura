@@ -51,7 +51,7 @@ function ForgotPasswordForm() {
           <div>
             <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required
-              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-all hover:border-[var(--border-strong)]" />
+              className="w-full h-10 px-3 text-sm rounded-lg border bg-[var(--surface-hover)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-all hover:border-[var(--border-strong)]" />
           </div>
           <button type="submit" disabled={loading} className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] disabled:opacity-50 py-2.5">
             {loading ? 'Sending...' : 'Send Reset Link'}

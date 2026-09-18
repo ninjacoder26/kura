@@ -20,8 +20,8 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={textareaId}
           className={cn(
-            'w-full min-h-[120px] p-3 text-sm rounded border resize-y',
-            'bg-[var(--bg)] border-[var(--border)]',
+            'w-full min-h-[120px] p-3 text-sm rounded-lg border resize-y',
+            'bg-[var(--surface-hover)] border-[var(--border)]',
             'text-[var(--fg)] placeholder:text-[var(--fg4)]',
             'transition-all',
             'hover:border-[var(--border-strong)]',

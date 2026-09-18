@@ -210,7 +210,7 @@ export default function CreateCommunityPage() {
                   required
                   minLength={3}
                   maxLength={21}
-                  className="w-full h-11 pl-8 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all"
+                  className="w-full h-11 pl-8 pr-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--surface-hover)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all"
                 />
               </div>
               {slug && (
@@ -237,7 +237,7 @@ export default function CreateCommunityPage() {
               placeholder="Tell people what this community is about"
               rows={3}
               maxLength={500}
-              className="w-full p-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all resize-none"
+              className="w-full p-3 text-sm rounded-lg border border-[var(--border)] bg-[var(--surface-hover)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] hover:border-[var(--border-strong)] transition-all resize-none"
             />
             <p className="text-xs text-[var(--fg4)] mt-1">{description.length}/500</p>
           </div>

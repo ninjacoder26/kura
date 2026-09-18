@@ -129,7 +129,7 @@ function LoginForm() {
           <div>
             <label className="block text-xs font-bold text-[var(--fg2)] mb-1.5 uppercase tracking-wide">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required autoComplete="email"
-              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-all hover:border-[var(--border-strong)]" />
+              className="w-full h-10 px-3 text-sm rounded-lg border bg-[var(--surface-hover)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-all hover:border-[var(--border-strong)]" />
           </div>
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -137,7 +137,7 @@ function LoginForm() {
               <Link href="/forgot-password" className="text-xs text-[var(--brand-500)] font-bold hover:underline">Forgot?</Link>
             </div>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required autoComplete="current-password"
-              className="w-full h-10 px-3 text-sm rounded border bg-[var(--bg)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-all hover:border-[var(--border-strong)]" />
+              className="w-full h-10 px-3 text-sm rounded-lg border bg-[var(--surface-hover)] border-[var(--border)] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:outline-none focus:border-[var(--brand-500)] transition-all hover:border-[var(--border-strong)]" />
           </div>
           <button type="submit" disabled={loading} className="kura-btn w-full bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] disabled:opacity-50 py-2.5">
             {loading ? 'Logging in...' : 'Log In'}

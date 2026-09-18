@@ -320,7 +320,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
               <div className="sidebar-widget-header">About Community</div>
               <div className="p-3">
                 <p className="text-sm text-[var(--fg2)] leading-relaxed">{community.description}</p>
-                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[var(--border)] text-sm">
+                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[var(--border)] text-sm tabular-nums">
                   <div><p className="font-bold text-[var(--fg)]">{community.member_count?.toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Members</p></div>
                   <div><p className="font-bold text-[var(--fg)]">{community.post_count?.toLocaleString()}</p><p className="text-[11px] text-[var(--fg4)]">Posts</p></div>
                 </div>

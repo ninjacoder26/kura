@@ -319,7 +319,7 @@ const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceColl
             onChange={e => setReplyBody(e.target.value)}
             placeholder="What are your thoughts?"
             maxLength={10000}
-            className="w-full p-2 text-sm bg-[var(--bg)] border border-[var(--border)] rounded outline-none resize-none min-h-[80px] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:border-[var(--brand-500)]"
+            className="w-full p-2 text-sm bg-[var(--surface-hover)] border border-[var(--border)] rounded outline-none resize-none min-h-[80px] text-[var(--fg)] placeholder:text-[var(--fg4)] focus:border-[var(--brand-500)]"
             autoFocus
           />
           <div className="flex items-center justify-end gap-2 mt-1.5">
