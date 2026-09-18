@@ -181,6 +181,7 @@ export interface Database {
           removed_by: string | null;
           remove_reason: string | null;
           tags: string[];
+          tags_text: string;
           created_at: string;
           updated_at: string;
         };

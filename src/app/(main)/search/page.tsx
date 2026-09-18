@@ -89,28 +89,43 @@ function SearchPageInner() {
     return str.replace(/[,()]/g, '').replace(/%/g, '\\%').replace(/_/g, '\\_');
   }
 
+  const POST_SELECT = '*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)';
+
   const doSearch = useCallback(async (q: string) => {
     const requestId = ++requestRef.current;
     if (q.length < 2) { setPosts([]); setCommunities([]); setPeople([]); setSearched(false); return; }
     setSearching(true);
     setSearched(true);
     const escaped = escapeIlike(q);
-    // Exact-tag matches (tags are normalized lowercase-hyphen) OR title text
-    const qTrim = q.trim().toLowerCase();
-    const tagTerm = /^[a-z0-9-]{2,24}$/.test(qTrim) ? `,tags.cs.{${qTrim}}` : '';
     try {
       const supabase = createClient();
       const [postRes, commRes, peopleRes] = await Promise.all([
-        supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('is_removed', false).or(`title.ilike.%${escaped}%${tagTerm}`).order('created_at', { ascending: false }).limit(10),
+        supabase.from('posts').select(POST_SELECT).eq('is_removed', false).ilike('title', `%${escaped}%`).order('created_at', { ascending: false }).limit(10),
         supabase.from('communities').select('*').or(`name.ilike.%${escaped}%,slug.ilike.%${escaped}%`).order('member_count', { ascending: false }).limit(10),
         supabase.from('profiles').select('username, display_name, avatar_url, bio').or(`username.ilike.%${escaped}%,display_name.ilike.%${escaped}%`).limit(10),
       ]);
+      // Tag prefix/substring matches ("dis" → "discussion") run separately
+      // so a missing tags_text column (migration 011 not run yet) can never
+      // blank out the title results above.
+      let tagHits: any[] = [];
+      try {
+        const tagRes = await supabase.from('posts').select(POST_SELECT).eq('is_removed', false).ilike('tags_text', `%${escaped}%`).order('created_at', { ascending: false }).limit(10);
+        if (tagRes.data) tagHits = tagRes.data;
+      } catch {}
       // Ignore stale responses from earlier keystrokes
       if (requestRef.current !== requestId) return;
       if (postRes.data) {
-        setPosts((postRes.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
+        const seen = new Set<string>();
+        const merged = [...(postRes.data as any[]), ...tagHits]
+          .filter(p => {
+            if (!p || seen.has(p.id)) return false;
+            seen.add(p.id);
+            return true;
+          })
+          .slice(0, 10);
+        setPosts(merged.map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
         const uid = userRef.current?.id;
-        if (uid) fetchAndCacheVotes(supabase, uid, (postRes.data as any[]).map((p: any) => p.id));
+        if (uid) fetchAndCacheVotes(supabase, uid, merged.map((p: any) => p.id));
       }
       if (commRes.data) setCommunities(commRes.data as any[]);
       if (peopleRes.data) setPeople(peopleRes.data as PersonResult[]);
