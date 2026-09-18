@@ -222,7 +222,7 @@ export default function Header() {
                     <Settings className="h-4 w-4" /> Settings
                   </Link>
                   <div className="border-t border-[var(--border)] my-1" />
-                  <button onClick={async () => { setUserMenuOpen(false); await signOut(); router.push('/'); router.refresh(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors">
+                  <button onClick={async () => { setUserMenuOpen(false); await signOut(); router.push('/'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--fg2)] hover:bg-[var(--surface-hover)] transition-colors">
                     <LogOut className="h-4 w-4" /> Log Out
                   </button>
                 </div>

@@ -14,6 +14,7 @@ function LoginForm() {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const redirectTo = searchParams.get('redirect') || '/';
+  const urlError = searchParams.get('error');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,6 +26,11 @@ function LoginForm() {
       router.replace(redirectTo);
     }
   }, [user, authLoading, redirectTo, router]);
+
+  // Surface OAuth/callback failures (e.g. expired code) instead of failing silently
+  useEffect(() => {
+    if (urlError) setError(decodeURIComponent(urlError.replace(/\+/g, ' ')));
+  }, [urlError]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,8 +54,10 @@ function LoginForm() {
     }
 
     toast('success', 'Logged in successfully');
+    // Push only — no router.refresh() here: refreshing mid-navigation can
+    // cancel the in-flight push and strand the user on the login page.
+    // The redirect effect above lands them once auth state arrives.
     router.push(redirectTo);
-    router.refresh();
   }
 
   async function handleResendConfirmation() {
@@ -60,7 +68,7 @@ function LoginForm() {
     else toast('success', 'Confirmation email sent — check your inbox');
   }
 
-  const showResend = error.toLowerCase().includes('confirm') && email.length > 0;
+  const showResend = /confirm|verif/i.test(error) && email.length > 0;
 
   async function handleGoogle() {
     const supabase = createClient();
