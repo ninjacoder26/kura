@@ -160,7 +160,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       {/* Banner */}
       <div className="h-24 sm:h-36 relative">
         {profile.cover_url ? (
-          <img src={profile.cover_url} alt="" className="w-full h-full object-cover" />
+          <img src={profile.cover_url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${profileColor}, ${profileColor}88)` }} />
         )}

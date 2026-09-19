@@ -145,6 +145,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
 
   async function handleVote(value: 'up' | 'down') {
     if (!user) { toast('info', 'Log in to vote'); return; }
+    if (post?.is_locked) { toast('info', 'This post is locked'); return; }
     const oldValue = vote;
     const newValue = vote === value ? null : value;
     const oldScore = score;
@@ -475,7 +476,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           ))}
         </div>
 
-        <div className="pb-20 lg:pb-8"><CommentThread comments={sortedComments} onCommentChange={loadPost} /></div>
+        <div className="pb-20 lg:pb-8"><CommentThread comments={sortedComments} onCommentChange={loadPost} locked={post.is_locked} /></div>
       </main>
 
       {/* Community rail — Reddit style */}

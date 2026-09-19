@@ -29,6 +29,19 @@ function getCached(userId: string | undefined, communityId: string): boolean | n
   return memberCache.get(cacheKey(userId, communityId)) ?? null;
 }
 
+/** Drop one user's cached rows (call after joining/leaving elsewhere). */
+export function clearMemberCache(userId?: string): void {
+  if (!userId) {
+    memberCache.clear();
+    return;
+  }
+  const prefix = `${userId}:`;
+  Array.from(memberCache.keys()).forEach(k => {
+    if (k.startsWith(prefix)) memberCache.delete(k);
+  });
+  listeners.forEach(l => l());
+}
+
 interface JoinButtonProps {
   communityId: string;
   communityName: string;

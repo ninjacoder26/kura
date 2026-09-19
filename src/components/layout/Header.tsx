@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Search, Plus, Sun, Moon, LogOut, User, ChevronDown, Bell, Settings } from 'lucide-react';
+import { Search, Plus, Sun, Moon, LogOut, User, ChevronDown, Bell, Settings, X } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { cn, formatNumber } from '@/lib/utils';
@@ -25,6 +25,7 @@ export default function Header() {
   const { user, loading, signOut } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [notifs, setNotifs] = useState<NotificationItem[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -66,6 +67,12 @@ export default function Header() {
   }, [user, loadNotifs]);
 
   const unreadCount = notifs.filter(n => !n.is_read).length;
+
+  function handleHeaderSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    router.push(q.length > 0 ? `/search?q=${encodeURIComponent(q)}` : '/search');
+  }
 
   async function markAllRead() {
     if (!user || unreadCount === 0) return;
@@ -114,12 +121,29 @@ export default function Header() {
 
         {/* Search — centered like Reddit */}
         <div className="flex-1 hidden sm:flex justify-center min-w-0 px-2">
-          <Link href="/search" className="w-full max-w-[690px]">
-            <div className="flex items-center h-10 px-4 rounded-full bg-[var(--surface-hover)] border border-[var(--border)] hover:border-[var(--brand-400)] hover:bg-[var(--surface)] transition-all cursor-text group">
+          <form onSubmit={handleHeaderSearch} className="w-full max-w-[690px]" role="search">
+            <div className="flex items-center h-10 px-4 rounded-full bg-[var(--surface-hover)] border border-[var(--border)] hover:border-[var(--brand-400)] focus-within:border-[var(--brand-500)] focus-within:bg-[var(--surface)] transition-all group">
               <Search className="h-4 w-4 mr-2.5 text-[var(--fg4)] group-hover:text-[var(--brand-500)] shrink-0 transition-colors" />
-              <span className="text-sm text-[var(--fg4)]">Search Kura</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search Kura"
+                aria-label="Search Kura"
+                className="flex-1 min-w-0 bg-transparent outline-none border-none text-sm text-[var(--fg)] placeholder:text-[var(--fg4)]"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                  className="h-6 w-6 rounded-full hover:bg-[var(--border)] flex items-center justify-center text-[var(--fg4)] hover:text-[var(--fg)] transition-colors shrink-0"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
-          </Link>
+          </form>
         </div>
 
         {/* Right actions */}

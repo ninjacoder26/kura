@@ -37,7 +37,7 @@ function PersonRow({ person }: { person: PersonResult }) {
       <div className="post-card flex items-center gap-3 p-3 hover:border-[var(--border-strong)] transition-colors">
         <div className="h-12 w-12 rounded-full bg-[var(--brand-500)] flex items-center justify-center text-white font-bold text-base shrink-0 overflow-hidden">
           {person.avatar_url ? (
-            <img src={person.avatar_url} alt="" className="h-full w-full object-cover" />
+            <img src={person.avatar_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
           ) : (
             (person.display_name || person.username || '?').charAt(0).toUpperCase()
           )}
@@ -72,8 +72,7 @@ function DiscoverTopics({ onPick }: { onPick?: (label: string) => void }) {
 function SearchPageInner() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const initialQ = searchParams.get('q') || '';
-  const [query, setQuery] = useState(initialQ);
+  const [query, setQuery] = useState(() => searchParams.get('q') || '');
   const [activeTab, setActiveTab] = useState('posts');
   const [posts, setPosts] = useState<PostData[]>([]);
   const [communities, setCommunities] = useState<CommunityData[]>([]);
@@ -153,11 +152,20 @@ function SearchPageInner() {
     debounceRef.current = setTimeout(() => doSearch(q), 300);
   }
 
-  // Deep-linked searches (e.g. tapping a #tag chip) run once on mount
+  // Deep-linked searches (tag chips, header box) run on mount AND whenever
+  // ?q= changes without a remount (same-path navigation, back/forward).
   useEffect(() => {
-    if (initialQ.length >= 2) doSearch(initialQ);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const q = searchParams.get('q') || '';
+    setQuery(q);
+    if (q.length >= 2) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      doSearch(q);
+    } else {
+      requestRef.current++;
+      setPosts([]); setCommunities([]); setPeople([]);
+      setSearching(false); setSearched(false);
+    }
+  }, [searchParams, doSearch]);
 
   function handlePostDelete(id: string) {
     setPosts(prev => prev.filter(p => p.id !== id));

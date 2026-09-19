@@ -8,7 +8,7 @@ import { fetchAndCacheVotes, useSyncFeedVotes } from '@/lib/feedVoteCache';
 import { getPageCache, setPageCache, isCacheFresh } from '@/lib/pageCache';
 import { invalidateJoinedCommunities } from '@/lib/usePopularCommunities';
 import Link from 'next/link';
-import JoinButton from '@/components/community/JoinButton';
+import JoinButton, { clearMemberCache } from '@/components/community/JoinButton';
 import Avatar from '@/components/ui/Avatar';
 import PostList from '@/components/post/PostList';
 import type { PostData } from '@/components/post/PostCard';
@@ -39,6 +39,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   const [hasMore, setHasMore] = useState(true);
   const userRef = useRef(user);
   userRef.current = user;
+  const memberRoleRef = useRef<string | null>(null);
   const reqRef = useRef(0);
   const communityRef = useRef<any>(null);
   const sortRef = useRef(sort);
@@ -126,6 +127,7 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         const { data: member } = await supabase.from('community_members').select('id, role').eq('community_id', comm.id).eq('user_id', currentUser.id).single();
         setIsMember(!!member);
         setMemberRole(member?.role ?? null);
+        memberRoleRef.current = member?.role ?? null;
       }
 
       if (postsResult.error) throw postsResult.error;
@@ -156,12 +158,13 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   // Re-check membership when user changes (login/logout)
   useEffect(() => {
     if (!community) return;
-    if (!user) { setIsMember(false); setMemberRole(null); return; }
+    if (!user) { setIsMember(false); setMemberRole(null); memberRoleRef.current = null; return; }
     (async () => {
       const supabase = createClient();
       const { data } = await supabase.from('community_members').select('id, role').eq('community_id', community.id).eq('user_id', user.id).single();
       setIsMember(!!data);
       setMemberRole(data?.role ?? null);
+      memberRoleRef.current = data?.role ?? null;
     })();
   }, [user, community?.id]);
 
@@ -230,7 +233,12 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   }
 
   function handlePostDelete(id: string) {
-    setPosts(prev => prev.filter(p => p.id !== id));
+    setPosts(prev => {
+      const next = prev.filter(p => p.id !== id);
+      const cached = getPageCache<{ posts: PostData[]; hasMore: boolean }>(`k:${slug}:${sort}:${topRange}`);
+      if (cached) setPageCache(`k:${slug}:${sort}:${topRange}`, { posts: cached.posts.filter(p => p.id !== id), hasMore: cached.hasMore });
+      return next;
+    });
   }
 
   function handleRetry() {
@@ -243,8 +251,12 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
   async function toggleJoin() {
     if (!user) { toast('info', 'Log in to join communities'); return; }
     const wasMember = isMember;
+    const wasRole = memberRoleRef.current;
     // Optimistic update
     setIsMember(!wasMember);
+    const optimisticRole = !wasMember ? 'member' : null;
+    setMemberRole(optimisticRole);
+    memberRoleRef.current = optimisticRole;
     setCommunity((c: any) => c ? { ...c, member_count: c.member_count + (wasMember ? -1 : 1) } : c);
     toast('success', wasMember ? `Left ${community.name}` : `Joined ${community.name}`);
 
@@ -255,6 +267,8 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         router.push('/login');
       }))) {
         setIsMember(wasMember);
+        setMemberRole(wasRole);
+        memberRoleRef.current = wasRole;
         setCommunity((c: any) => c ? { ...c, member_count: c.member_count + (wasMember ? 1 : -1) } : c);
         return;
       }
@@ -265,10 +279,13 @@ export default function CommunityPage({ params }: { params: Promise<{ slug: stri
         const { error } = await supabase.from('community_members').insert({ community_id: community.id, user_id: user.id });
         if (error) throw error;
       }
+      clearMemberCache(user.id);
       invalidateJoinedCommunities(user.id);
     } catch (err: any) {
       // Revert on error
       setIsMember(wasMember);
+      setMemberRole(wasRole);
+      memberRoleRef.current = wasRole;
       setCommunity((c: any) => c ? { ...c, member_count: c.member_count + (wasMember ? 1 : -1) } : c);
       toast('error', friendlyDbError(err.message, { authed: true, action: wasMember ? 'leave this community' : 'join this community' }));
     }

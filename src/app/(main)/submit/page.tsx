@@ -10,6 +10,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { uploadToCloudinary, uploadToCloudinaryWithProgress, isCloudinaryConfigured, validateImageFile, type CloudinaryUploadResult } from '@/lib/cloudinary';
 import { clearPageCache } from '@/lib/pageCache';
+import { useJoinedCommunities } from '@/lib/usePopularCommunities';
 
 const POST_TYPES = [
   { value: 'text', label: 'Post', icon: FileText, description: 'Text' },
@@ -35,7 +36,8 @@ function SubmitForm() {
   const [communityId, setCommunityId] = useState('');
   const [communitySearch, setCommunitySearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
-  const [communities, setCommunities] = useState<{ id: string; slug: string; name: string; color?: string }[]>([]);
+  const [communities, setCommunities] = useState<{ id: string; slug: string; name: string; color?: string; is_private?: boolean; is_archived?: boolean }[]>([]);
+  const joinedCommunities = useJoinedCommunities(user?.id, 50);
   const [submitting, setSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -92,7 +94,7 @@ function SubmitForm() {
     async function load() {
       try {
         const supabase = createClient();
-        const { data } = await supabase.from('communities').select('id, slug, name, color').order('name');
+        const { data } = await supabase.from('communities').select('id, slug, name, color, is_private, is_archived').order('name');
         if (data) {
           setCommunities(data as any[]);
           if (preselectedCommunity) {
@@ -114,7 +116,10 @@ function SubmitForm() {
     load();
   }, [preselectedCommunity]);
 
-  const filtered = communities.filter(c =>
+  const joinedSlugs = new Set(joinedCommunities.map(c => c.slug));
+  // Archived communities accept no posts; private ones only for members
+  const visibleCommunities = communities.filter(c => !c.is_archived && (!c.is_private || joinedSlugs.has(c.slug)));
+  const filtered = visibleCommunities.filter(c =>
     c.name.toLowerCase().includes(communitySearch.toLowerCase()) ||
     c.slug.includes(communitySearch.toLowerCase())
   ).slice(0, 10);
@@ -180,6 +185,23 @@ function SubmitForm() {
     e.preventDefault();
     if (!title.trim() || !user) return;
     if (!communityId) { toast('error', 'Choose a community to post in'); return; }
+    const sel = communities.find(c => c.id === communityId);
+    if (sel?.is_archived) { toast('error', 'This community is archived and accepts no new posts'); return; }
+    if (sel?.is_private && !joinedSlugs.has(sel.slug)) { toast('error', 'Join this private community before posting'); return; }
+    let finalUrl: string | null = null;
+    if (type === 'link') {
+      const raw = url.trim();
+      if (!raw) { toast('error', 'Add a link URL first'); return; }
+      const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+      try {
+        const parsed = new URL(withProto);
+        if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('bad protocol');
+        finalUrl = withProto;
+      } catch {
+        toast('error', 'That link URL doesn\'t look valid');
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       const supabase = createClient();
@@ -192,7 +214,7 @@ function SubmitForm() {
         title: title.trim(),
         body: body.trim() || null,
         type,
-        url: type === 'link' ? url : null,
+        url: type === 'link' ? finalUrl : null,
         image_url: imageUrl,
         author_id: user.id,
         community_id: communityId || null,

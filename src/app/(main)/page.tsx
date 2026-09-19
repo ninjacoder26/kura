@@ -11,6 +11,7 @@ import type { PostData } from '@/components/post/PostCard';
 import Link from 'next/link';
 import { Sparkles, Plus, Users, TrendingUp, Shield, MessageCircle, ChevronRight } from 'lucide-react';
 import { cn, formatNumber } from '@/lib/utils';
+import { PostSkeleton } from '@/components/ui/Feedback';
 import { useAuth, useShowLoggedOutUI } from '@/components/providers/AuthProvider';
 import { usePopularCommunities } from '@/lib/usePopularCommunities';
 import { FEED_SORTS, TOP_RANGES, topRangeCutoff, risingCutoff, type FeedSort, type TopRange } from '@/lib/feedSort';
@@ -18,20 +19,9 @@ import Avatar from '@/components/ui/Avatar';
 
 function FeedSkeleton() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="post-card flex">
-          <div className="flex flex-col items-center gap-1 px-2 py-3 rounded-l w-10">
-            <div className="h-6 w-6 rounded skeleton" />
-            <div className="h-3 w-6 rounded skeleton" />
-            <div className="h-6 w-6 rounded skeleton" />
-          </div>
-          <div className="flex-1 p-2 space-y-2">
-            <div className="h-2.5 w-32 rounded skeleton" />
-            <div className="h-4 w-full rounded skeleton" />
-            <div className="h-3 w-2/3 rounded skeleton" />
-          </div>
-        </div>
+        <PostSkeleton key={i} />
       ))}
     </div>
   );

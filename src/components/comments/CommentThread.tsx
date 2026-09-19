@@ -46,9 +46,10 @@ interface CommentItemProps {
   comment: CommentData;
   onReplyAdded?: () => void;
   forceCollapsed?: boolean | null;
+  locked?: boolean;
 }
 
-const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceCollapsed }: CommentItemProps) {
+const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceCollapsed, locked }: CommentItemProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -132,6 +133,10 @@ const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceColl
       toast('info', 'Log in to vote');
       return;
     }
+    if (locked) {
+      toast('info', 'This post is locked');
+      return;
+    }
 
     const oldVote = vote;
     const newVote = vote === value ? null : value;
@@ -181,6 +186,7 @@ const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceColl
 
   async function handleReply() {
     if (!user || !replyBody.trim()) return;
+    if (locked) { toast('info', 'This post is locked'); return; }
     const supabase = createClient();
     if (!(await requireSession(supabase, () => {
       toast('error', 'Your session expired. Please log in again.');
@@ -323,9 +329,11 @@ const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceColl
         <button onClick={() => handleVote('down')} className={cn('vote-btn !h-6 !w-6', vote === 'down' && 'downvoted')} aria-label="Downvote comment">
           <ArrowBigDown className="h-4 w-4" fill={vote === 'down' ? 'currentColor' : 'none'} />
         </button>
-        <button onClick={() => user ? setShowReply(!showReply) : toast('info', 'Log in to reply')} className="flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] rounded transition-colors ml-1">
-          <Reply className="h-3.5 w-3.5" /> Reply
-        </button>
+        {comment.depth < 10 && (
+          <button onClick={() => user ? setShowReply(!showReply) : toast('info', 'Log in to reply')} className="flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-[var(--fg4)] hover:bg-[var(--surface-hover)] rounded transition-colors ml-1">
+            <Reply className="h-3.5 w-3.5" /> Reply
+          </button>
+        )}
         {user && user.id === comment.author_id && (
           <button onClick={handleDeleteClick} disabled={deleting} className={cn('flex items-center gap-1 px-2 py-1 text-[11px] font-bold rounded transition-colors', confirmingDelete ? 'bg-[var(--error)] text-white' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20')}>
             <Trash2 className="h-3.5 w-3.5" /> {confirmingDelete ? (deleting ? '…' : 'Confirm?') : 'Delete'}
@@ -364,7 +372,7 @@ const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceColl
 
       {comment.children && comment.children.length > 0 && (
         <div>
-          {comment.children.map(child => <CommentItem key={child.id} comment={child} onReplyAdded={onReplyAdded} forceCollapsed={forceCollapsed} />)}
+          {comment.children.map(child => <CommentItem key={child.id} comment={child} onReplyAdded={onReplyAdded} forceCollapsed={forceCollapsed} locked={locked} />)}
         </div>
       )}
         </>
@@ -377,7 +385,7 @@ const CommentItem = memo(function CommentItem({ comment, onReplyAdded, forceColl
   );
 })
 
-export default function CommentThread({ comments, onCommentChange }: { comments: CommentData[]; onCommentChange?: () => void }) {
+export default function CommentThread({ comments, onCommentChange, locked }: { comments: CommentData[]; onCommentChange?: () => void; locked?: boolean }) {
   const { user } = useAuth();
   const idsKey = collectCommentIds(comments).join(',');
   const [collapseAll, setCollapseAll] = useState<boolean | null>(null);
@@ -402,7 +410,7 @@ export default function CommentThread({ comments, onCommentChange }: { comments:
           {collapseAll === true ? 'Expand all' : 'Collapse all'}
         </button>
       </div>
-      {comments.map(comment => <CommentItem key={comment.id} comment={comment} onReplyAdded={onCommentChange} forceCollapsed={collapseAll} />)}
+      {comments.map(comment => <CommentItem key={comment.id} comment={comment} onReplyAdded={onCommentChange} forceCollapsed={collapseAll} locked={locked} />)}
     </div>
   );
 }

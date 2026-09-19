@@ -36,6 +36,8 @@ export default function ReportDialog({ targetType, targetId, onClose }: ReportDi
   async function handleSubmit() {
     if (!user) {
       toast('info', 'Log in to report content');
+      onClose();
+      router.push('/login');
       return;
     }
     setSubmitting(true);

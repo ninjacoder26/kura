@@ -10,6 +10,15 @@ export async function GET(request: Request) {
     next = '/';
   }
 
+  // Always land on the canonical production domain when configured —
+  // Supabase may invoke this route on a preview deployment URL (which can
+  // carry Vercel protection), but the session belongs on the public site.
+  // Localhost dev is exempt so local OAuth testing keeps working.
+  const reqHost = new URL(request.url).hostname;
+  const isLocal = reqHost === 'localhost' || reqHost === '127.0.0.1' || reqHost === '[::1]';
+  const canonical = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/+$/, '');
+  const base = !isLocal && canonical ? canonical : origin;
+
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -55,10 +64,10 @@ export async function GET(request: Request) {
       }
 
       // Propagate cookies to redirect response
-      const response = NextResponse.redirect(`${origin}${next}`);
+      const response = NextResponse.redirect(`${base}${next}`);
       return response;
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=Could+not+verify+email`);
+  return NextResponse.redirect(`${base}/login?error=Could+not+verify+email`);
 }

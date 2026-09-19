@@ -26,7 +26,7 @@ export default memo(function CommunityCard({ community }: { community: Community
           style={{ backgroundColor: community.color }}
         >
           {community.icon_url ? (
-            <img src={community.icon_url} alt={community.name} className="h-full w-full rounded-full object-cover" />
+            <img src={community.icon_url} alt={community.name} loading="lazy" decoding="async" className="h-full w-full rounded-full object-cover" />
           ) : (
             community.name.charAt(0)
           )}

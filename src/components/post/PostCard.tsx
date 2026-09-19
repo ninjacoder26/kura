@@ -167,6 +167,7 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
 
   async function handleVote(value: 'up' | 'down') {
     if (!user) { toast('info', 'Log in to vote'); return; }
+    if (post.is_locked) { toast('info', 'This post is locked'); return; }
     const oldVote = vote;
     const newVote = vote === value ? null : value;
     interactedRef.current = true;

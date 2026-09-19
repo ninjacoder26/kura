@@ -44,7 +44,7 @@ export function Skeleton({ className }: { className?: string }) {
 export function CommunitySkeleton() {
   return (
     <div className="post-card flex items-center gap-3 p-3">
-      <Skeleton className="h-10 w-10 rounded-full" />
+      <Skeleton className="h-12 w-12 rounded-full shrink-0" />
       <div className="space-y-1.5 flex-1">
         <Skeleton className="h-3.5 w-24" />
         <Skeleton className="h-2.5 w-16" />
@@ -56,14 +56,14 @@ export function CommunitySkeleton() {
 export function PostSkeleton() {
   return (
     <div className="post-card flex">
-      <div className="flex flex-col items-center gap-1 px-2 py-3 bg-[var(--bg-raised)] rounded-l w-10">
-        <Skeleton className="h-5 w-5 rounded" />
+      <div className="flex flex-col items-center gap-0.5 px-1 py-2 w-[36px] sm:w-[40px] shrink-0">
+        <Skeleton className="h-6 w-6 rounded-md" />
         <Skeleton className="h-3 w-6" />
-        <Skeleton className="h-5 w-5 rounded" />
+        <Skeleton className="h-6 w-6 rounded-md" />
       </div>
-      <div className="flex-1 p-2 space-y-2">
+      <div className="flex-1 min-w-0 p-2.5 sm:p-3 space-y-2">
         <Skeleton className="h-3 w-32" />
-        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-[18px] w-3/4" />
         <Skeleton className="h-3 w-full" />
         <div className="flex gap-2 pt-1">
           <Skeleton className="h-6 w-20 rounded-full" />
