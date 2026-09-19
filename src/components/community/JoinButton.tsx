@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -49,7 +49,7 @@ interface JoinButtonProps {
 }
 
 /** Reddit-style Join/Joined pill with optimistic update. Safe inside cards wrapped in Links. */
-export default function JoinButton({ communityId, communityName, className }: JoinButtonProps) {
+const JoinButton = memo(function JoinButton({ communityId, communityName, className }: JoinButtonProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -136,4 +136,6 @@ export default function JoinButton({ communityId, communityName, className }: Jo
       {isMember ? 'Joined' : 'Join'}
     </button>
   );
-}
+})
+
+export default JoinButton;

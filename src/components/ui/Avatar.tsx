@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { cn, getInitials } from '@/lib/utils';
 import { optimizeImageUrl } from '@/lib/cloudinary';
 
@@ -18,7 +18,7 @@ const dims: Record<string, string> = {
   xl: 'h-16 w-16 text-lg',
 };
 
-export default function Avatar({ src, alt, name, size = 'md', className }: AvatarProps) {
+export default memo(function Avatar({ src, alt, name, size = 'md', className }: AvatarProps) {
   const [failed, setFailed] = useState(false);
   if (src && !failed) {
     return (
@@ -44,4 +44,4 @@ export default function Avatar({ src, alt, name, size = 'md', className }: Avata
       {getInitials(name)}
     </div>
   );
-}
+})

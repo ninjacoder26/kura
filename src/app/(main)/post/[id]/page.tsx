@@ -16,7 +16,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 import { fetchAndCacheCommentVotes, markVoted, markSavedState } from '@/lib/feedVoteCache';
 import { requireSession, friendlyDbError } from '@/lib/dbErrors';
 import { rpcDelete } from '@/lib/deleteOps';
-import { optimizeImageUrl } from '@/lib/cloudinary';
+import { optimizeImageUrl, responsiveImage } from '@/lib/cloudinary';
 import { useRouter } from 'next/navigation';
 
 /** Never throws — an invalid post URL must not crash the page. */
@@ -365,6 +365,8 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
       ? Math.round((post.upvotes / (post.upvotes + post.downvotes)) * 100)
       : 100;
 
+  const detailImage = useMemo(() => responsiveImage(post?.image_url, { width: 1200 }), [post?.image_url]);
+
   if (loading && !post) return <div className="px-4 py-8"><LoadingSpinner /></div>;
   if (error || !post) return <div className="px-4 py-8"><EmptyState title={error || 'Post not found'} action={<Link href="/" className="kura-btn bg-[var(--brand-500)] text-white hover:bg-[var(--brand-600)] text-sm">Go home</Link>} /></div>;
 
@@ -405,7 +407,9 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
                 <div className="relative rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--bg)]">
                   {!imageLoaded && <div className="w-full h-[300px] skeleton" />}
                   <img
-                    src={optimizeImageUrl(post.image_url, { width: 1200 })}
+                    src={detailImage.src}
+                    srcSet={detailImage.srcSet}
+                    sizes={detailImage.sizes}
                     alt={post.title}
                     loading="lazy"
                     decoding="async"

@@ -90,7 +90,30 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
 }
 
 /**
- * Rewrites a Cloudinary delivery URL to use automatic format/quality * (WebP/AVIF + smart compression) and an optional width cap.
+ * Responsive image props for a Cloudinary (or passthrough) URL.
+ * Emits a srcSet with two widths so phones download ~half the bytes
+ * instead of the desktop-sized file. Non-Cloudinary URLs pass through
+ * unchanged (plain src, no srcSet).
+ */
+export function responsiveImage(
+  url: string | null | undefined,
+  options?: { width?: number; smallWidth?: number; sizes?: string }
+): { src: string; srcSet?: string; sizes?: string } {
+  const src = optimizeImageUrl(url, { width: options?.width });
+  if (!url || !url.includes('res.cloudinary.com') || !url.includes('/image/upload/')) {
+    return { src };
+  }
+  const small = options?.smallWidth ?? 640;
+  return {
+    src,
+    srcSet: `${optimizeImageUrl(url, { width: small })} ${small}w, ${src} ${options?.width ?? 1080}w`,
+    sizes: options?.sizes ?? `(max-width: 640px) ${small}px, ${options?.width ?? 1080}px`,
+  };
+}
+
+/**
+ * Rewrites a Cloudinary delivery URL to use automatic format/quality
+ * (WebP/AVIF + smart compression) and an optional width cap.
  * Non-Cloudinary URLs (Supabase storage, data: previews, etc.) pass
  * through untouched, so this is safe to apply to any <img src>.
  */

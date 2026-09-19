@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, BookmarkCheck, Trash2, Pencil, ExternalLink, Maximize2, MoreHorizontal, Flag, ImageOff } from 'lucide-react';
 import { cn, formatDate, formatNumber } from '@/lib/utils';
-import { useState, useEffect, useRef, memo, useCallback } from 'react';
+import { useState, useEffect, useRef, memo, useCallback, useMemo } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { createClient } from '@/lib/supabase/client';
 import { requireSession, friendlyDbError } from '@/lib/dbErrors';
 import { rpcDelete } from '@/lib/deleteOps';
 import { bumpTagAffinity } from '@/lib/tagAffinity';
-import { optimizeImageUrl } from '@/lib/cloudinary';
+import { optimizeImageUrl, responsiveImage } from '@/lib/cloudinary';
 import JoinButton from '@/components/community/JoinButton';
 import RoleBadge from '@/components/ui/RoleBadge';
 import {
@@ -319,6 +319,8 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
 
   const handleImageLoad = useCallback(() => setImageLoaded(true), []);
 
+  const feedImage = useMemo(() => responsiveImage(post.image_url, { width: 1080 }), [post.image_url]);
+
   return (
     <>
       <div className="post-card flex">
@@ -395,7 +397,9 @@ const PostCard = memo(function PostCard({ post, showCommunity = true, onDelete }
                   <div className="w-full h-[200px] sm:h-[300px] skeleton" />
                 )}
                 <img
-                  src={optimizeImageUrl(post.image_url, { width: 1080 })}
+                  src={feedImage.src}
+                  srcSet={feedImage.srcSet}
+                  sizes={feedImage.sizes}
                   alt={post.title}
                   loading="lazy"
                   decoding="async"

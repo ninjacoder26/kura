@@ -23,6 +23,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'saved' | 'upvoted'>('posts');
   const [postSort, setPostSort] = useState<'hot' | 'new' | 'top'>('hot');
+  const [postsPage, setPostsPage] = useState(0);
+  const [postsHasMore, setPostsHasMore] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
   const [upvotedPosts, setUpvotedPosts] = useState<PostData[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
@@ -33,6 +36,26 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   useSyncFeedVotes(upvotedPosts, user?.id);
 
   useEffect(() => { params.then(p => setUsername(p.username)); }, [params]);
+
+  // Full reset when switching profiles
+  useEffect(() => {
+    setProfile(null);
+    setPosts([]);
+    setComments([]);
+    setPostsPage(0);
+    setPostsHasMore(true);
+    setLoadingPosts(true);
+    setError('');
+  }, [username]);
+
+  // Reset posts when sort changes (profile + comments stay put)
+  useEffect(() => {
+    setPosts([]);
+    setPostsPage(0);
+    setPostsHasMore(true);
+    setLoadingPosts(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postSort]);
 
   function handleSavedRemove(id: string) {
     setSavedPosts(prev => prev.filter(p => p.id !== id));
@@ -95,35 +118,57 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, profile?.id, user?.id]);
 
+  // Profile + comments load once per username (never re-fetched for paging)
   useEffect(() => {
     if (!username) return;
     let cancelled = false;
-    async function load() {
+    (async () => {
       try {
+        setLoading(true);
         const supabase = createClient();
         const { data: prof, error: profErr } = await supabase.from('profiles').select('*').eq('username', username).single();
         if (profErr) throw profErr;
         if (cancelled) return;
         setProfile(prof);
-        if (prof) {
-          // Parallel queries for posts and comments
-          let postsQuery = supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('author_id', prof.id).eq('is_removed', false);
-          if (postSort === 'new') postsQuery = postsQuery.order('created_at', { ascending: false });
-          else postsQuery = postsQuery.order('upvotes', { ascending: false });
-          const [postsResult, commentsResult] = await Promise.all([
-            postsQuery.limit(20),
-            supabase.from('comments').select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20)
-          ]);
-          if (cancelled) return;
-          if (postsResult.data) setPosts((postsResult.data as any[]).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined })));
-          if (postsResult.data && user) fetchAndCacheVotes(supabase, user.id, (postsResult.data as any[]).map((p: any) => p.id));
-          if (commentsResult.data) setComments((commentsResult.data as any[]).map((c: any) => ({ id: c.id, body: c.body, post_id: c.post_id, post_title: c.posts?.title, created_at: c.created_at })));
-        }
-      } catch (err: any) { if (!cancelled) setError(err.message || 'Failed to load profile'); } finally { if (!cancelled) setLoading(false); }
-    }
-    load();
+        const { data: commentsData } = await supabase.from('comments').select('id, body, post_id, created_at, posts!comments_post_id_fkey(title)').eq('author_id', prof.id).eq('is_removed', false).order('created_at', { ascending: false }).limit(20);
+        if (cancelled) return;
+        if (commentsData) setComments((commentsData as any[]).map((c: any) => ({ id: c.id, body: c.body, post_id: c.post_id, post_title: c.posts?.title, created_at: c.created_at })));
+      } catch (err: any) {
+        if (!cancelled) setError(err.message || 'Failed to load profile');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
-  }, [username, postSort]);
+  }, [username]);
+
+  // Posts paginate independently (profile/comments untouched)
+  useEffect(() => {
+    if (!profile?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (postsPage === 0) setLoadingPosts(true);
+        const supabase = createClient();
+        let postsQuery = supabase.from('posts').select('*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)').eq('author_id', profile.id).eq('is_removed', false);
+        if (postSort === 'new') postsQuery = postsQuery.order('created_at', { ascending: false });
+        else postsQuery = postsQuery.order('upvotes', { ascending: false });
+        const { data, error } = await postsQuery.range(postsPage * 20, (postsPage + 1) * 20 - 1);
+        if (error) throw error;
+        if (cancelled) return;
+        const mapped = ((data as any[]) || []).map((p: any) => ({ ...p, author: p.author || { username: 'unknown' }, community: p.community || undefined }));
+        setPosts(prev => postsPage === 0 ? mapped : [...prev, ...mapped]);
+        setPostsHasMore(mapped.length === 20);
+        if (user) fetchAndCacheVotes(supabase, user.id, mapped.map((p: any) => p.id));
+      } catch (err: any) {
+        if (!cancelled) setError(err.message || 'Failed to load posts');
+      } finally {
+        if (!cancelled) setLoadingPosts(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, postSort, postsPage]);
 
   if (loading && !profile) return (
     <div className="bg-[var(--bg)]">
@@ -246,7 +291,20 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                       </button>
                     ))}
                   </div>
-                  <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." onDelete={handlePostsRemove} />
+                  {loadingPosts && posts.length === 0 ? (
+                    <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="post-card p-4"><div className="h-4 w-2/3 rounded skeleton mb-2" /><div className="h-3 w-full rounded skeleton" /></div>)}</div>
+                  ) : (
+                    <>
+                      <PostList posts={posts} emptyTitle="No posts yet" emptyDescription="This user hasn't posted anything yet." onDelete={handlePostsRemove} />
+                      {postsHasMore && posts.length > 0 && (
+                        <div className="flex justify-center mt-4">
+                          <button onClick={() => setPostsPage(p => p + 1)} className="kura-btn border border-[var(--border)] text-[var(--fg2)] hover:border-[var(--border-strong)] bg-transparent text-sm">
+                            Load More
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </>
               )}
               {activeTab === 'comments' && (comments.length === 0 ? (

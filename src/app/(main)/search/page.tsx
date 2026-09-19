@@ -91,6 +91,10 @@ function SearchPageInner() {
 
   const POST_SELECT = '*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,role), community:communities!posts_community_id_fkey(id,name,slug,color,icon_url)';
 
+  // Circuit breaker: once the tags_text column proves missing (migration
+  // 011 not run), stop spending a query on it for the rest of the session.
+  const tagsTextDead = useRef(false);
+
   const doSearch = useCallback(async (q: string) => {
     const requestId = ++requestRef.current;
     if (q.length < 2) { setPosts([]); setCommunities([]); setPeople([]); setSearched(false); return; }
@@ -109,13 +113,23 @@ function SearchPageInner() {
         supabase.from('profiles').select('username, display_name, avatar_url, bio').or(`username.ilike.%${escaped}%,display_name.ilike.%${escaped}%`).limit(10),
       ]);
       // Tag prefix/substring matches ("dis" → "discussion") run separately
-      // so a missing tags_text column (migration 011 not run yet) can never
-      // blank out the title results above.
+      // so a missing tags_text column (migration 011 not run yet) can
+      // never blank out the title results above.
       let tagHits: any[] = [];
-      try {
-        const tagRes = await supabase.from('posts').select(POST_SELECT).eq('is_removed', false).ilike('tags_text', `%${escaped}%`).order('created_at', { ascending: false }).limit(10);
-        if (tagRes.data) tagHits = tagRes.data;
-      } catch {}
+      if (!tagsTextDead.current) {
+        try {
+          const tagRes = await supabase.from('posts').select(POST_SELECT).eq('is_removed', false).ilike('tags_text', `%${escaped}%`).order('created_at', { ascending: false }).limit(10);
+          if (tagRes.error) throw tagRes.error;
+          if (tagRes.data) tagHits = tagRes.data;
+        } catch (err: any) {
+          // Column absent (42703 / tags_text) → stop asking for the session.
+          // Anything else is transient: leave the breaker off and retry next time.
+          const msg = `${err?.message || ''} ${err?.code || ''}`;
+          if (/tags_text|42703|does not exist/i.test(msg)) {
+            tagsTextDead.current = true;
+          }
+        }
+      }
       // Ignore stale responses from earlier keystrokes
       if (requestRef.current !== requestId) return;
       if (postRes.data) {
